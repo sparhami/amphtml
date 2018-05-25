@@ -67,7 +67,6 @@ export const RTC_ERROR_ENUM = {
 };
 
 export class RealTimeConfigManager {
-
   /**
    * @param {!./amp-a4a.AmpA4A} a4aElement
    */
