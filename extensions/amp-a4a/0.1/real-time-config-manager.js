@@ -289,6 +289,7 @@ export class RealTimeConfigManager {
     }));
   }
 
+
   /**
    * @param {string} url
    * @return {string}
