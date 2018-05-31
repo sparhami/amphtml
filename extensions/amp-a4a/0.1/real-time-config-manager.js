@@ -97,6 +97,7 @@ export class RealTimeConfigManager {
   /**
    * @param {string} error
    * @param {string} callout
+   * @param {string} errorReportingUrl
    * @param {number=} opt_rtcTime
    * @return {!Promise<!rtcResponseDef>}
    * @private
@@ -141,7 +142,6 @@ export class RealTimeConfigManager {
    * example.com/example.php
    * @param {string} url
    * @return {string}
-   * @visibleForTesting
    */
   getCalloutParam_(url) {
     const parsedUrl = parseUrlDeprecated(url);
@@ -248,6 +248,7 @@ export class RealTimeConfigManager {
      * depending on what the url requires to be substituted, i.e. a long
      * async call. Thus, however long the URL replacement took is treated as a
      * time penalty.
+     * @param {string} url
      */
     const send = url => {
       if (Object.keys(this.seenUrls_).length == MAX_RTC_CALLOUTS) {
@@ -293,7 +294,6 @@ export class RealTimeConfigManager {
   /**
    * @param {string} url
    * @return {string}
-   * @visibleForTesting
    */
   truncUrl_(url) {
     url = url.substr(0, MAX_URL_LENGTH - 12).replace(/%\w?$/, '');
@@ -360,7 +360,6 @@ export class RealTimeConfigManager {
    * IMPORTANT: If the rtcConfig is invalid, RTC is aborted, and the ad
    *   request continues without RTC.
    * @param {!Element} element
-   * @visibleForTesting
    */
   validateRtcConfig_(element) {
     const defaultTimeoutMillis = 1000;
