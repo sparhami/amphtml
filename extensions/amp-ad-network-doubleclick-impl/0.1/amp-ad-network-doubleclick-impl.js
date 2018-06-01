@@ -688,7 +688,7 @@ export class AmpAdNetworkDoubleclickImpl extends AmpA4A {
   }
 
   /** @override */
-  rtcIsSupported() {
+  isRtcSupported() {
     return true;
   }
 

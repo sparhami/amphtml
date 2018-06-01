@@ -1786,7 +1786,7 @@ export class AmpA4A extends AMP.BaseElement {
    * @return {Promise<!Array<!rtcResponseDef>>|undefined}
    */
   tryExecuteRealTimeConfig_(consentState) {
-    if (!this.rtcIsSupported()) {
+    if (!this.isRtcSupported()) {
       if (this.element.getAttribute('rtc-config')) {
         user().error(TAG, 'RTC not supported for ad network ' +
                      `${this.element.getAttribute('type')}`);
@@ -1807,7 +1807,7 @@ export class AmpA4A extends AMP.BaseElement {
    * by that Fast Fetch impl, should be overridden to return true.
    * @return {boolean}
    */
-  rtcIsSupported() {
+  isRtcSupported() {
     return false;
   }
 
