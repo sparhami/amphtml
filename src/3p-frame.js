@@ -248,7 +248,7 @@ export function getDefaultBootstrapBaseUrl(parentWindow, opt_srcFileBasename) {
 function getAdsLocalhost(win) {
   let adsUrl = urls.thirdParty; // local dev with a non-localhost server
   if (adsUrl.indexOf('ampproject.net') > -1) {
-    adsUrl = 'http://ads.localhost'; // local dev with a localhost server
+    adsUrl = 'http://' + win.location.hostname; // local dev with a localhost server
   }
   return adsUrl + ':' + (win.location.port || win.parent.location.port);
 }

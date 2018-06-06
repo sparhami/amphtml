@@ -71,7 +71,7 @@ if (sendCachingHeaders) {
 gulp.src(process.cwd())
     .pipe(webserver({
       port,
-      host,
+      host: '0.0.0.0',
       directoryListing: true,
       https: useHttps,
       middleware,
