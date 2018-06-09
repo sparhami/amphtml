@@ -48,7 +48,6 @@ const ATTRS_TO_PROPAGATE_ON_BUILD = [
   'controls',
   'crossorigin',
   'disableremoteplayback',
-  'poster',
   'controlsList',
 ];
 
@@ -57,7 +56,11 @@ const ATTRS_TO_PROPAGATE_ON_BUILD = [
  *       video manager since amp-video implements the VideoInterface.
  * @private {!Array<string>}
  */
-const ATTRS_TO_PROPAGATE_ON_LAYOUT = ['loop', 'preload'];
+const ATTRS_TO_PROPAGATE_ON_LAYOUT = [
+  'loop',
+  'preload',
+  'poster',
+];
 
 /** @private {!Array<string>} */
 const ATTRS_TO_PROPAGATE =
@@ -162,6 +165,28 @@ class AmpVideo extends AMP.BaseElement {
     return videoSrc;
   }
 
+  /**
+   * Prepares the <video>'s poster for prerendering. Since not all videos can
+   * be prerendered, we do not want to rely on layoutCallback to set up the
+   * poster when prerendering.
+   * @oaram {string} poster The poster for the video, if given.
+   */
+  preparePosterForPrerender(poster) {
+    const viewer = Services.viewerForDoc(this.getAmpDoc());
+    if (viewer.visibilityState != VisibilityState.PRERENDER) {
+      return;
+    }
+
+    // We cannot check isInViewport until after we have completed building,
+    // so use a mutate to wait for a good time. Since isInViewport is cached,
+    // this does not need a measure.
+    this.mutateElement(() => {
+      if (this.isInViewport()) {
+        this.video_.setAttribute('poster', poster);
+      }
+    });
+  }
+
   /** @override */
   isLayoutSupported(layout) {
     return isLayoutSizeDefined(layout);
@@ -179,6 +204,9 @@ class AmpVideo extends AMP.BaseElement {
           'No "poster" attribute has been provided for amp-video.');
     }
 
+    if (poster) {
+      this.preparePosterForPrerender(poster);
+    }
     this.isPrerenderAllowed_ = this.hasAnyCachedSources_();
 
     // Enable inline play for iOS.
