@@ -144,7 +144,7 @@ this.$ = ($$[$0] !== undefined && $$[$0] !== null
                 && $$[$0] !== '' && $$[$0] !== 0 && $$[$0] !== false);
 break;
 case 20:
-this.$ = Object.prototype.toString.call($$[$0-2]) == '[object Object]' && $$[$0-2].hasOwnProperty($$[$0]) ? $$[$0-2][$$[$0]] : null;
+this.$ = Object.prototype.toString.call($$[$0-2]) == '[object Object]' && $$[$0 - 2].hasOwnProperty($$[$0]/* touch */) ? $$[$0-2][$$[$0]] : null;
 break;
 case 21:
 this.$ = yy[$$[$0]] !== undefined ? yy[$$[$0]] : null;

@@ -280,7 +280,8 @@ function validateAllowedFields(data, allowedFields) {
   };
 
   for (const field in data) {
-    if (!data.hasOwnProperty(field) || field in defaultAvailableFields) {
+    if (!data.hasOwnProperty(field/* touch */) ||
+        field in defaultAvailableFields) {
       continue;
     }
     if (allowedFields.indexOf(field) < 0) {

@@ -79,7 +79,7 @@ function loadCMTag(global, data, publisherUrl, referrerUrl) {
       return;
     }
     const name = 'medianet_' + type;
-    if (data.hasOwnProperty(type)) {
+    if (data.hasOwnProperty(type/* touch */)) {
       global[name] = data[type];
     }
   }

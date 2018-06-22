@@ -253,7 +253,7 @@ export class InstrumentationService {
       // Goes through each of the boundaries and fires an event if it has not
       // been fired so far and it should be.
       for (const b in bounds) {
-        if (!bounds.hasOwnProperty(b)) {
+        if (!bounds.hasOwnProperty(b/* touch */)) {
           continue;
         }
         const bound = parseInt(b, 10);

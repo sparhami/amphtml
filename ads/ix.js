@@ -68,7 +68,7 @@ export function ix(global, data) {
 
 function prepareData(data) {
   for (const attr in data) {
-    if (data.hasOwnProperty(attr) && /^ix[A-Z]/.test(attr)) {
+    if (data.hasOwnProperty(attr/* touch */) && /^ix[A-Z]/.test(attr)) {
       delete data[attr];
     }
   }

@@ -25,7 +25,7 @@ function forEachOnObject(theObject, callback) {
   if (typeof theObject === 'object' && theObject !== null) {
     if (typeof callback === 'function') {
       for (const key in theObject) {
-        if (theObject.hasOwnProperty(key)) {
+        if (theObject.hasOwnProperty(key/* touch */)) {
           callback(key, theObject[key]);
         }
       }

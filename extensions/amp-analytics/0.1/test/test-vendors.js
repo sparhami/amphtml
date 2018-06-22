@@ -41,8 +41,8 @@ describe('analytics vendors', () => {
       ' those in ANALYTICS_IFRAME_TRANSPORT_CONFIG)', () => {
     for (const vendor in ANALYTICS_CONFIG) {
       const vendorEntry = ANALYTICS_CONFIG[vendor];
-      if (vendorEntry.hasOwnProperty('transport') &&
-          vendorEntry.transport.hasOwnProperty('iframe')) {
+      if (vendorEntry.hasOwnProperty('transport'/* touch */) &&
+          vendorEntry.transport.hasOwnProperty('iframe'/* touch */)) {
         const vendorITEntry = ANALYTICS_IFRAME_TRANSPORT_CONFIG[vendor];
         expect(vendorITEntry).to.exist;
       }

@@ -128,7 +128,7 @@ export function getTrackerKeyName(eventType) {
   if (!isReservedTriggerType(eventType)) {
     return 'custom';
   }
-  return TRACKER_TYPE.hasOwnProperty(eventType) ?
+  return TRACKER_TYPE.hasOwnProperty(eventType/* touch */) ?
     TRACKER_TYPE[eventType].name : eventType;
 }
 
@@ -139,7 +139,7 @@ export function getTrackerKeyName(eventType) {
 export function getTrackerTypesForParentType(parentType) {
   const filtered = {};
   Object.keys(TRACKER_TYPE).forEach(key => {
-    if (TRACKER_TYPE.hasOwnProperty(key) &&
+    if (TRACKER_TYPE.hasOwnProperty(key/* touch */) &&
         TRACKER_TYPE[key].allowedFor.indexOf(parentType) != -1) {
       filtered[key] = TRACKER_TYPE[key].klass;
     }

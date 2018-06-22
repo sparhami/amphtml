@@ -46,7 +46,7 @@ function parseParams(data) {
     const params = JSON.parse(data);
     let queryParams = '';
     for (const p in params) {
-      if (params.hasOwnProperty(p)) {
+      if (params.hasOwnProperty(p/* touch */)) {
         queryParams += '&' + p + '=' + encodeURIComponent(params[p]);
       }
     }

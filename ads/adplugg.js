@@ -58,10 +58,10 @@ export function adplugg(global,data) {
         function(event) {
           // Create the opt_data object.
           const optData = {};
-          if (event.hasOwnProperty('width')) {
+          if (event.hasOwnProperty('width'/* touch */)) {
             optData.width = event.width;
           }
-          if (event.hasOwnProperty('height')) {
+          if (event.hasOwnProperty('height'/* touch */)) {
             optData.height = event.height;
           }
           global.context.renderStart(optData);

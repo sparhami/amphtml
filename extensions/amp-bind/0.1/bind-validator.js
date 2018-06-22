@@ -165,7 +165,7 @@ export class BindValidator {
       if (match !== null) {
         const protocol = match[1].toLowerCase().trim();
         // hasOwnProperty() needed since nested objects are not prototype-less.
-        if (!allowedProtocols.hasOwnProperty(protocol)) {
+        if (!allowedProtocols.hasOwnProperty(protocol/* touch */)) {
           return false;
         }
       }

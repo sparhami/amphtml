@@ -191,7 +191,7 @@ export class AmpStoryStoreService {
    * @return {*}
    */
   get(key) {
-    if (!this.state_.hasOwnProperty(key)) {
+    if (!this.state_.hasOwnProperty(key/* touch */)) {
       dev().error(TAG, `Unknown state ${key}.`);
       return;
     }
@@ -206,7 +206,7 @@ export class AmpStoryStoreService {
    *                                     triggered with current value.
    */
   subscribe(key, listener, callToInitialize = false) {
-    if (!this.state_.hasOwnProperty(key)) {
+    if (!this.state_.hasOwnProperty(key/* touch */)) {
       dev().error(TAG, `Can't subscribe to unknown state ${key}.`);
       return;
     }

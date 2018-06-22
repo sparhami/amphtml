@@ -897,7 +897,7 @@ export class UrlReplacements {
     const requestedReplacements = {};
     whitelist.trim().split(/\s+/).forEach(replacement => {
       if (!opt_supportedReplacement ||
-          opt_supportedReplacement.hasOwnProperty(replacement)) {
+          opt_supportedReplacement.hasOwnProperty(replacement/* touch */)) {
         requestedReplacements[replacement] = true;
       } else {
         user().warn('URL', 'Ignoring unsupported replacement', replacement);

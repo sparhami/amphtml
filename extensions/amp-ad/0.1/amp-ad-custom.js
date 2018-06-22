@@ -98,7 +98,8 @@ export class AmpAdCustom extends AMP.BaseElement {
       // We will get here when the data has been fetched from the server
       let templateData = data;
       if (this.slot_ !== null) {
-        templateData = data.hasOwnProperty(this.slot_) ? data[this.slot_] :
+        templateData = data.hasOwnProperty(
+            this.slot_/* touch */) ? data[this.slot_] :
           null;
       }
 

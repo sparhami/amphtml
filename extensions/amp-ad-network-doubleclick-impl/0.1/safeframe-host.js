@@ -185,11 +185,12 @@ export class SafeframeHostApi {
         this.baseInstance_.element.getAttribute(
             'data-safeframe-config')) || {});
     /** @private {boolean} */
-    this.expandByOverlay_ = sfConfig.hasOwnProperty('expandByOverlay') ?
+    this.expandByOverlay_ = sfConfig.hasOwnProperty(
+        'expandByOverlay'/* touch */) ?
       sfConfig['expandByOverlay'] : true;
 
     /** @private {boolean} */
-    this.expandByPush_ = sfConfig.hasOwnProperty('expandByPush') ?
+    this.expandByPush_ = sfConfig.hasOwnProperty('expandByPush'/* touch */) ?
       sfConfig['expandByPush'] : true;
 
     /** @private {?Function} */

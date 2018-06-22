@@ -335,7 +335,7 @@ export class PlatformStore {
   getAvailablePlatformsEntitlements_() {
     const entitlements = [];
     for (const platform in this.entitlements_) {
-      if (this.entitlements_.hasOwnProperty(platform)) {
+      if (this.entitlements_.hasOwnProperty(platform/* touch */)) {
         entitlements.push(this.entitlements_[platform]);
       }
     }

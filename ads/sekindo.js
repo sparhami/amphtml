@@ -29,7 +29,7 @@ export function sekindo(global, data) {
   global.context.startTime + '&';
   let getParam = '';
   for (const key in data) {
-    if (data.hasOwnProperty(key)) {
+    if (data.hasOwnProperty(key/* touch */)) {
       if (typeof excludesSet[key] == 'undefined') {
         getParam = (typeof customParamMap[key] == 'undefined') ?
           key : customParamMap[key];

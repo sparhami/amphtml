@@ -328,7 +328,7 @@ export class Activity {
    * @return {number}
    */
   getIncrementalEngagedTime(name, reset = true) {
-    if (!this.totalEngagedTimeByTrigger_.hasOwnProperty(name)) {
+    if (!this.totalEngagedTimeByTrigger_.hasOwnProperty(name/* touch */)) {
       if (reset) {
         this.totalEngagedTimeByTrigger_[name] = this.getTotalEngagedTime();
       }

@@ -36,7 +36,7 @@ export function spotx(global, data) {
 
   // Add data-* attribute for each data value passed in.
   for (const key in data) {
-    if (data.hasOwnProperty(key) && startsWith(key, 'spotx_')) {
+    if (data.hasOwnProperty(key/* touch */) && startsWith(key, 'spotx_')) {
       script.setAttribute(`data-${key}`, data[key]);
     }
   }

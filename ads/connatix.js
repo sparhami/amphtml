@@ -31,7 +31,7 @@ export function connatix(global, data) {
   const cnxData = Object.assign(Object(tryParseJson(data['connatix'])));
   global.cnxAmpAd = true;
   for (const key in cnxData) {
-    if (cnxData.hasOwnProperty(key)) {
+    if (cnxData.hasOwnProperty(key/* touch */)) {
       script.setAttribute(key, cnxData[key]);
     }
   }

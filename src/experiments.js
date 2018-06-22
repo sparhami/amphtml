@@ -297,10 +297,10 @@ export function randomlySelectUnsetExperiments(win, experiments) {
   for (const experimentName in experiments) {
     // Skip experimentName if it is not a key of experiments object or if it
     // has already been populated by some other property.
-    if (!experiments.hasOwnProperty(experimentName)) {
+    if (!experiments.hasOwnProperty(experimentName/* touch */)) {
       continue;
     }
-    if (win.experimentBranches.hasOwnProperty(experimentName)) {
+    if (win.experimentBranches.hasOwnProperty(experimentName/* touch */)) {
       selectedExperiments[experimentName] =
           win.experimentBranches[experimentName];
       continue;

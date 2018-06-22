@@ -100,7 +100,7 @@ const LOG_ID = 'GWD';
  */
 function getCounter(receiver, counterName) {
   if (receiver[GOTO_COUNTER_PROP] &&
-      receiver[GOTO_COUNTER_PROP].hasOwnProperty(counterName)) {
+      receiver[GOTO_COUNTER_PROP].hasOwnProperty(counterName/* touch */)) {
     return receiver[GOTO_COUNTER_PROP][counterName];
   }
   return 0;
@@ -118,7 +118,7 @@ function setCounter(receiver, counterName, counterValue) {
   if (!receiver[GOTO_COUNTER_PROP]) {
     receiver[GOTO_COUNTER_PROP] = {};
   }
-  if (!receiver[GOTO_COUNTER_PROP].hasOwnProperty(counterName)) {
+  if (!receiver[GOTO_COUNTER_PROP].hasOwnProperty(counterName/* touch */)) {
     receiver[GOTO_COUNTER_PROP][counterName] = 0;
   }
   receiver[GOTO_COUNTER_PROP][counterName] = counterValue;

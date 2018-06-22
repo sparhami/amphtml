@@ -69,7 +69,8 @@ export function imonomy(global, data) {
 
 function prepareData(data) {
   for (const attr in data) {
-    if (data.hasOwnProperty(attr) && imonomyData.indexOf(attr) >= 0) {
+    if (data.hasOwnProperty(
+        attr/* touch */) && imonomyData.indexOf(attr) >= 0) {
       delete data[attr];
     }
   }
