@@ -62,6 +62,9 @@ export const MessageType = {
 
   // For user-error-in-iframe
   USER_ERROR_IN_IFRAME: 'user-error-in-iframe',
+
+  // For handling loading states and progress indicators
+  READY_TO_REQUEST_CONTENT: 'ready-to-request-content',
 };
 
 /**

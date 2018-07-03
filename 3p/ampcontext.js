@@ -263,6 +263,14 @@ export class AbstractAmpContext {
   }
 
   /**
+   *  Notifies the parent document that the embed is ready to request content.
+   */
+  readyToRequestContent() {
+    this.client_.sendMessage(MessageType.READY_TO_REQUEST_CONTENT);
+  }
+
+
+  /**
    *  Parse the metadata attributes from the name and add them to
    *  the class instance.
    *  @param {!Object|string} data

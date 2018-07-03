@@ -59,6 +59,7 @@ export function twitter(global, data) {
   });
   global.document.getElementById('c').appendChild(tweet);
   getTwttr(global, function(twttr) {
+    global.context.readyToRequestContent();
     // Dimensions are given by the parent frame.
     delete data.width;
     delete data.height;

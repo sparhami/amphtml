@@ -178,7 +178,7 @@ declareExtension('amp-pan-zoom', '0.1', {hasCss: true});
 declareExtension('amp-slides', '0.1');
 declareExtension('amp-social-share', '0.1', {hasCss: true});
 declareExtension('amp-timeago', '0.1');
-declareExtension('amp-twitter', '0.1');
+declareExtension('amp-twitter', '0.1', {hasCss: true});
 declareExtension('amp-user-notification', '0.1', {hasCss: true});
 declareExtension('amp-vimeo', '0.1');
 declareExtension('amp-vine', '0.1');

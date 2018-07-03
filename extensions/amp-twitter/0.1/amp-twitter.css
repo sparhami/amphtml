@@ -1,0 +1,75 @@
+amp-twitter {
+  transition-property: height;
+  transition-duration: 250ms;
+}
+
+.i-amphtml-twitter-placeholder {
+  max-width: 500px;
+  min-width: 220px;
+  margin: auto;
+  border-radius: 5px;
+  border: 1px solid #e1e8ed;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/**
+ * Need a separate element for this so that we can have the pulse animation
+ * as well as the start/end transitions.
+ */
+.i-amphtml-twitter-placeholder-logo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  animation: amp-twitter-pulse 750ms infinite alternate-reverse ease-in-out;
+}
+
+.i-amphtml-twitter-placeholder-svg {
+  width: 100%;
+  height: 100%;
+  transition-property: transform, opacity;
+  transition-duration: 100ms;
+  transition-timing-function: ease-out;
+  /*
+   * The initial state. Rather than start straight from the fullsize pulsing
+   * state, we start off a bit smaller so there is some sense of progress.
+   */
+  transform: scale(0.4);
+  opacity: 0.6;
+}
+
+amp-twitter[loading="done"] .i-amphtml-twitter-placeholder {
+  border: none;
+}
+
+amp-twitter[loading="start"] .i-amphtml-twitter-placeholder-svg {
+  transition-duration: 250ms;
+  transform: scale(1);
+  opacity: 1;
+}
+
+/**
+ * We actually start the animation prior to the content being completely done.
+ * This makes it feel faster as something is happening sooner and the
+ * transition also does not feel as long.
+ */
+amp-twitter[loading="ready"] .i-amphtml-twitter-placeholder-svg,
+amp-twitter[loading="done"] .i-amphtml-twitter-placeholder-svg  {
+  transition-duration: 500ms;
+  transition-delay: 100ms;
+  transform: scale(12);
+  opacity: 0;
+}
+
+@keyframes amp-twitter-pulse {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
