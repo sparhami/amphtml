@@ -106,6 +106,9 @@ export class Xhr {
           if (init.responseType == 'document') {
             return fetchPolyfill(input, init);
           }
+          if (arguments.length && arguments[0].endsWith('/ww.js')) {
+            arguments[0] = 'http://localhost:8000/dist/ww.js';
+          }
           return (this.win.fetch || fetchPolyfill).apply(null, arguments);
         });
   }

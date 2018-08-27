@@ -571,6 +571,8 @@ export class Extensions {
     if (this.isExtensionScriptRequired_(extensionId, holder)) {
       const scriptElement =
           this.createExtensionScript_(extensionId, opt_extensionVersion);
+      scriptElement.src = scriptElement.src.replace(/https:\/\/cdn.ampproject.org\/rtv\/\d+\//, 'http://localhost:8000/dist/');
+      scriptElement.src = scriptElement.src.replace(/\.js$/, '.max.js');
       this.win.document.head.appendChild(scriptElement);
       holder.scriptPresent = true;
     }
