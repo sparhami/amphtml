@@ -1,0 +1,171 @@
+amp-carousel {
+  display: block;
+  overflow: hidden;
+}
+
+.scroll-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+
+  scroll-behavior: smooth;
+  /* Hide scrollbar */
+  box-sizing: content-box !important;
+  -webkit-overflow-scrolling: touch !important;
+
+  --snap-align: start;
+  --slide-margin: 0px;
+  --visible-count: 1;
+}
+
+.scroll-container[horizontal="true"] {
+  flex-direction: row;
+  scroll-snap-type-x: mandatory; /* Firefox, IE */
+  scroll-snap-type: x mandatory;
+  /* Hide scrollbar */
+  padding-bottom: 20px !important;
+  overflow-y: hidden;
+}
+
+.scroll-container[horizontal="false"] {
+  flex-direction: column;
+  scroll-snap-type-y: mandatory; /* Firefox, IE */
+  scroll-snap-type: y mandatory;
+  /* Hide scrollbar */
+  padding-right: 20px !important;
+  overflow-x: hidden;
+}
+
+.scroll-container[ready="false"] {
+  scroll-behavior: auto;
+}
+
+.scroll-container ::slotted(*),
+.scroll-container .slotted,
+.scroll-container .spacer {
+  box-sizing: border-box !important;
+  margin: var(--slide-margin) !important;
+  flex-shrink: 0  !important;
+  scroll-snap-coordinate: var(--snap-coordinate); /* Firefox, IE */
+  scroll-snap-align: var(--snap-align);
+  scroll-margin: var(--slide-margin);
+}
+
+.scroll-container[horizontal="true"][mixed-length="false"] ::slotted(*),
+.scroll-container[horizontal="true"][mixed-length="false"] .slotted,
+.scroll-container[horizontal="true"][mixed-length="false"] .spacer {
+  width: calc(100% / var(--visible-count) - 2 * var(--slide-margin)) !important;
+  min-width: auto !important;
+  max-width: none !important;
+}
+
+.scroll-container[horizontal="false"][mixed-length="false"] ::slotted(*),
+.scroll-container[horizontal="false"][mixed-length="false"] .slotted,
+.scroll-container[horizontal="false"][mixed-length="false"] .spacer {
+  height: calc(100% / var(--visible-count) - 2 * var(--slide-margin)) !important;
+  min-height: auto !important;
+  max-height: none !important;
+}
+
+.scroll-container[horizontal="true"][snap="true"][mixed-length="true"] ::slotted(*),
+.scroll-container[horizontal="true"][snap="true"][mixed-length="true"] .slotted,
+.scroll-container[horizontal="true"][snap="true"][mixed-length="true"] .spacer {
+  max-width: 100% !important;
+}
+
+.scroll-container[horizontal="false"][snap="true"][mixed-length="true"] ::slotted(*),
+.scroll-container[horizontal="false"][snap="true"][mixed-length="true"] .slotted,
+.scroll-container[horizontal="false"][snap="true"][mixed-length="true"] .spacer {
+  max-height: 100% !important;
+}
+
+/**
+ * TODO(sparhami) Try to figure out if we can still snap on first/last
+ * elements on the edge adjacent to the mask, but not on the other edge.
+ */
+.scroll-container[snap="false"] {
+  scroll-snap-type: none;
+}
+
+.scroll-container ::slotted(*),
+.scroll-container .slotted {
+  will-change: transform;
+  /*
+   * For Safari, the translateZ prevents sometimes glitchy rendering when
+   * changing the transform when moving slides.
+   */
+  transform: translateZ(0);
+}
+
+.scroll-container[horizontal="true"] .spacer {
+  height: 100%;
+}
+
+.scroll-container[horizontal="false"] .spacer {
+  width: 100%;
+}
+
+/** Mask Styles */
+.mask {
+  width: 100%;
+  height: 100%;
+  margin: var(--slide-margin);
+  flex-shrink: 0;
+  z-index: 1;
+  scroll-snap-align: none;
+}
+/*
+.start-mask {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(0, 0, 0, 0.03) 4px,
+      rgba(0, 0, 0, 0.03) 8px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.8),
+      rgba(0, 0, 0, 0.6)
+    );
+}
+
+.end-mask {
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(0, 0, 0, 0.03) 4px,
+      rgba(0, 0, 0, 0.03) 8px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.6),
+      rgba(0, 0, 0, 0.8)
+    );
+}
+*/
+.scroll-container[loop="false"][horizontal="true"] .mask {
+  width: var(--non-looping-mask-length, 0%);
+}
+
+.scroll-container[loop="false"][horizontal="false"] .mask {
+  height: var(--non-looping-mask-length, 0%);
+}
+
+.scroll-container[loop="false"][mixed-length="true"] .mask {
+  display: none;
+}
+
+/**
+ * Can remove once we can still snap on the first/last element.
+ */
+ .scroll-container[snap="false"] .mask {
+  display: none;
+}
