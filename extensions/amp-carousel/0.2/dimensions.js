@@ -75,17 +75,17 @@ export function getStart(axis, el) {
   return start;
 }
 
-export function overlaps(axis, el, pos, margin) {
+export function overlaps(axis, el, pos) {
   const {start, end} = getDimension(axis, el);
-  return start - margin <= pos && pos <= end + margin;
+  return start <= pos && pos <= end;
 }
 
-export function findOverlappingIndex(axis, alignment, container, children, margin, currentIndex) {
+export function findOverlappingIndex(axis, alignment, container, children, currentIndex) {
   const pos = alignment == Alignment.START ?
       getStart(axis, container) + 1 :
       getCenter(axis, container);
 
-  if (overlaps(axis, children[currentIndex], pos, margin)) {
+  if (overlaps(axis, children[currentIndex], pos)) {
     return currentIndex;
   }
 
@@ -93,11 +93,11 @@ export function findOverlappingIndex(axis, alignment, container, children, margi
     const nextIndex = mod(currentIndex + i, children.length);
     const prevIndex = mod(currentIndex - i, children.length);
 
-    if (overlaps(axis, children[nextIndex], pos, margin)) {
+    if (overlaps(axis, children[nextIndex], pos)) {
       return nextIndex;
     }
 
-    if (overlaps(axis, children[prevIndex], pos, margin)) {
+    if (overlaps(axis, children[prevIndex], pos)) {
       return prevIndex;
     }
   }

@@ -154,9 +154,6 @@ class AmpCarousel extends AMP.BaseElement {
       case 'mixed-length':
         this.carousel.updateMixedLength(newValue == 'true');
         break;
-      case 'slide-margin':
-        this.carousel.updateSlideMargin(Number(newValue) || 0);
-        break;
       case 'snap':
         this.carousel.updateSnap(newValue == 'true');
         break;

@@ -83,10 +83,6 @@ export class Carousel {
     this.scrollable.updateLoop(loop);
   }
 
-  updateSlideMargin(slideMargin) {
-    this.scrollable.updateSlideMargin(slideMargin);
-  }
-
   updateSnap(snap) {
     this.snapAlignment.updateSnap(snap);
   }

@@ -9,7 +9,6 @@ export class SnapAlignment {
     this.scrollContainer = scrollContainer;
 
     this.snapAlign = 'start';
-    this.slideMargin = 0;
     this.snap = true;
     this.snapBy = 1;
     this.visibleCount = 0;
@@ -24,7 +23,7 @@ export class SnapAlignment {
     this.scrollContainer.setAttribute('snap', this.snap);
     this.scrollContainer.setAttribute('snap-align', this.snapAlign);
     this.scrollContainer.style.setProperty('--snap-align', this.snapAlign);
-    this.scrollContainer.style.setProperty('--snap-coordinate', `calc(${this.snapAlign == 'start' ? '0%' : '50%'} - var(--slide-margin))`);
+    this.scrollContainer.style.setProperty('--snap-coordinate', `${this.snapAlign == 'start' ? '0%' : '50%'}`);
 
     this.updateDynamicStyle();
   }
@@ -93,17 +92,6 @@ export class SnapAlignment {
 
   updateSnapBy(snapBy) {
     this.snapBy = Math.max(1, snapBy);
-    this.updateAll();
-  }
-
-  /**
-   * TODO(sparhami) This should be done via CSS only. However: 1. we need to
-   * cache the value for performance and 2. we need to redo calculations when
-   * it changes. File a feature request for observing changings to CSS custom
-   * properties.
-   */
-  updateSlideMargin(slideMargin) {
-    this.slideMargin = slideMargin;
     this.updateAll();
   }
 }

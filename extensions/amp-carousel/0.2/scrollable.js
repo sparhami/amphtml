@@ -49,7 +49,6 @@ export class Scrollable {
     this.loop = false;
     this.restingIndex = NaN;
     this.slides = [];
-    this.slideMargin = 0;
     this.visibleCount = 1;
 
     this.boundResetWindow = () => this.resetWindow();
@@ -73,7 +72,6 @@ export class Scrollable {
       this.alignment,
       this.element,
       this.slides,
-      this.slideMargin,
       this.currentIndex
     );
   }
@@ -81,7 +79,6 @@ export class Scrollable {
   updateAll_() {
     this.scrollContainer.setAttribute('horizontal', this.axis == Axis.X);
     this.scrollContainer.setAttribute('loop', this.loop);
-    this.scrollContainer.style.setProperty('--slide-margin', `${this.slideMargin}px`);
     this.scrollContainer.style.setProperty('--visible-count', this.visibleCount);
 
     if (!this.slides.length) {
@@ -130,7 +127,6 @@ export class Scrollable {
       this.scrollContainer,
       this.axis,
       this.alignment,
-      this.slideMargin
     );
   }
 
@@ -257,7 +253,7 @@ export class Scrollable {
   }
 
   adjustElements(mutations, current, currentIndex, slides, count, isNext) {
-    const {axis, slideMargin} = this;
+    const {axis} = this;
     const dir = isNext ? 1 : -1;
     const slideCount = slides.length;
 
@@ -269,7 +265,7 @@ export class Scrollable {
       const {length} = isNext ? getDimension(axis, current) : getDimension(axis, el);
       const currentOffsetStart = getOffsetStart(axis, current);
       const elOffsetStart = getOffsetStart(axis, el);
-      const startDelta = currentDelta + currentOffsetStart - (elOffsetStart - (dir * (length + 2 * slideMargin)));
+      const startDelta = currentDelta + currentOffsetStart - (elOffsetStart - (dir * length));
 
       el._delta = startDelta;
       mutations.push([el, startDelta]);
@@ -338,18 +334,6 @@ export class Scrollable {
     this.initialIndex = initialIndex;
     this.updateAll();
   }
-
-  /**
-   * TODO(sparhami) This should be done via CSS only. However: 1. we need to
-   * cache the value for performance and 2. we need to redo calculations when
-   * it changes. File a feature request for observing changings to CSS custom
-   * properties.
-   */
-  updateSlideMargin(slideMargin) {
-    this.slideMargin = slideMargin;
-    this.updateAll();
-  }
-
 
   updateSlides(slides) {
     this.slides = slides;
