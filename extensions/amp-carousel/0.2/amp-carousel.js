@@ -90,6 +90,7 @@ class AmpCarousel extends AMP.BaseElement {
     });
 
     // Signal for runtime to check children for layout.
+    this.carousel.updateSlides(this.slides);
     return this.mutateElement(() => {});
   }
 
@@ -116,8 +117,13 @@ class AmpCarousel extends AMP.BaseElement {
   }
 
   /** @override */
+  isRelayoutNeeded() {
+    return true;
+  }
+
+  /** @override */
   layoutCallback() {
-    this.carousel.updateSlides(this.slides);
+    this.carousel.resetWindow();
   }
 
   slotChange() {

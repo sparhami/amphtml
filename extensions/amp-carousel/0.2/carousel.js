@@ -65,6 +65,10 @@ export class Carousel {
     this.scrollable.updateAll();
     this.snapAlignment.updateAll();
   }
+
+  resetWindow() {
+    this.scrollable.resetWindow(true);
+  }
   
   updateSlides(slides) {
     this.scrollable.updateSlides(slides);

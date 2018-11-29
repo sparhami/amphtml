@@ -41,6 +41,7 @@ export class Scrollable {
     this.beforeSpacers = [];
     this.afterSpacers = [];
     this.ignoreNextScroll = false;
+    this.currentElementOffset = 0;
 
     this.alignment = Alignment.START;
     this.currentIndex = 0;
@@ -184,12 +185,13 @@ export class Scrollable {
     this.debouncedResetWindow_();
   }
 
-  updateScrollStart(current, viewportStart) {
+  updateScrollStart() {
     // Need to handle non-snapping by preserving exact scroll position.
-    const {axis} = this;
+    const {axis, currentElementOffset} = this;
+    const currentElement = this.slides[this.currentIndex];
     const {length, start} = getDimension(axis, this.scrollContainer);
-    const currentElementStart = Math.abs(viewportStart) <= length ? viewportStart : 0;
-    const offsetStart = getOffsetStart(axis, current);
+    const currentElementStart = Math.abs(currentElementOffset) <= length ? currentElementOffset : 0;
+    const offsetStart = getOffsetStart(axis, currentElement);
     const pos = offsetStart - currentElementStart + start;
 
     this.ignoreNextScroll = true;
@@ -208,15 +210,18 @@ export class Scrollable {
   updateCurrent() {
     let totalWidth;
     let currentIndex;
+    let currentElement;
 
     this.runMeasure(() => {
       totalWidth = this.getTotalWidth();
       currentIndex = this.findOverlappingIndex();
+      currentElement = this.slides[currentIndex];
+
+      const dimension = getDimension(this.axis, currentElement);
+      this.currentElementOffset = dimension.start;
     });
 
     this.runMutate(() => {
-      const currentElement = this.slides[currentIndex];
-
       // Currently not over a slide (e.g. on top of overscroll area).
       if (!currentElement) {
         return;
@@ -245,17 +250,14 @@ export class Scrollable {
       return;
     }
 
-    const {axis, beforeSpacers, afterSpacers, slides} = this;
-    const current = slides[this.currentIndex];
+    const {beforeSpacers, afterSpacers, slides} = this;
     const numBeforeSpacers = slides.length <= 2 ? 0 : slides.length - this.currentIndex - 1;
     const numAfterSpacers = slides.length <= 2 ? 0 : this.currentIndex;
 
     let totalWidth;
-    let currentViewportStart;
 
     this.runMeasure(() => {
       totalWidth = this.getTotalWidth();
-      currentViewportStart= getDimension(axis, current).start;
     });
 
     this.runMutate(() => {
@@ -268,7 +270,7 @@ export class Scrollable {
   
       this.restingIndex = this.currentIndex;
       this.moveBufferElements(totalWidth);
-      this.updateScrollStart(current, currentViewportStart);
+      this.updateScrollStart();
     });
   }
 
