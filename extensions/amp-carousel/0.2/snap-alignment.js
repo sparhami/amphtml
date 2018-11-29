@@ -5,8 +5,10 @@ import {
 export class SnapAlignment {
   constructor({
     scrollContainer,
+    runMutate,
   }) {
     this.scrollContainer = scrollContainer;
+    this.runMutate = runMutate;
 
     this.snapAlign = 'start';
     this.snap = true;
@@ -20,12 +22,14 @@ export class SnapAlignment {
   }
 
   updateAll_() {
-    this.scrollContainer.setAttribute('snap', this.snap);
-    this.scrollContainer.setAttribute('snap-align', this.snapAlign);
-    this.scrollContainer.style.setProperty('--snap-align', this.snapAlign);
-    this.scrollContainer.style.setProperty('--snap-coordinate', `${this.snapAlign == 'start' ? '0%' : '50%'}`);
-
-    this.updateDynamicStyle();
+    this.runMutate(() => {
+      this.scrollContainer.setAttribute('snap', this.snap);
+      this.scrollContainer.setAttribute('snap-align', this.snapAlign);
+      this.scrollContainer.style.setProperty('--snap-align', this.snapAlign);
+      this.scrollContainer.style.setProperty('--snap-coordinate', `${this.snapAlign == 'start' ? '0%' : '50%'}`);
+  
+      this.updateDynamicStyle();
+    });
   }
 
   updateAll() {

@@ -2,8 +2,24 @@ import {AutoAdvance} from './auto-advance.js';
 import {Scrollable} from './scrollable.js';
 import {SnapAlignment} from './snap-alignment.js';
 
+const defaultCallbacks = {
+  currentIndexChanged: () => {},
+};
+
+function runImmediate(cb) {
+  cb();
+}
+
 export class Carousel {
-  constructor(element, root, callbacks) {
+  constructor({
+    element,
+    root,
+    callbacks,
+    runMeasure = runImmediate,
+    runMutate = runImmediate,
+  }) {
+    this.callbacks = Object.assign({}, defaultCallbacks, callbacks);
+    this.runMutate = runMutate;
     this.advanceCount = 1;
     this.mixedLength = false;
     this.slides = [];
@@ -17,7 +33,9 @@ export class Carousel {
       scrollContainer: this.scrollContainer,
       afterSpacersRef: this.afterSpacersRef,
       beforeSpacersRef: this.beforeSpacersRef,
-      callbacks,
+      callbacks: this.callbacks,
+      runMeasure,
+      runMutate,
     });
     this.autoAdvance = new AutoAdvance({
       element,
@@ -26,6 +44,7 @@ export class Carousel {
     });
     this.snapAlignment = new SnapAlignment({
       scrollContainer: this.scrollContainer,
+      runMutate,
     });
 
     this.updateAll_();
@@ -40,7 +59,9 @@ export class Carousel {
   }
 
   updateAll_() {
-    this.scrollContainer.setAttribute('mixed-length', this.mixedLength);
+    this.runMutate(() => {
+      this.scrollContainer.setAttribute('mixed-length', this.mixedLength);
+    });
     this.scrollable.updateAll();
     this.snapAlignment.updateAll();
   }

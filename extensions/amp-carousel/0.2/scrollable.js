@@ -20,9 +20,6 @@ import {
   scrollIntoView,
 } from './dom-util.js';
 
-const defaultCallbacks = {
-  currentIndexChanged: () => {},
-};
 
 export class Scrollable {
   constructor({
@@ -31,12 +28,16 @@ export class Scrollable {
     afterSpacersRef,
     beforeSpacersRef,
     callbacks,
+    runMeasure,
+    runMutate,
   }) {
     this.element = element;
     this.scrollContainer = scrollContainer;
     this.afterSpacersRef = afterSpacersRef;
     this.beforeSpacersRef = beforeSpacersRef;
-    this.callbacks = Object.assign({}, defaultCallbacks, callbacks);
+    this.callbacks = callbacks;
+    this.runMeasure = runMeasure;
+    this.runMutate = runMutate;
     this.beforeSpacers = [];
     this.afterSpacers = [];
     this.ignoreNextScroll = false;
@@ -77,18 +78,20 @@ export class Scrollable {
   }
 
   updateAll_() {
-    this.scrollContainer.setAttribute('horizontal', this.axis == Axis.X);
-    this.scrollContainer.setAttribute('loop', this.loop);
-    this.scrollContainer.style.setProperty('--visible-count', this.visibleCount);
-
-    if (!this.slides.length) {
-      return;
-    }
-
-    this.updateSpacers();
-    this.resetWindow(true);
-    this.ignoreNextScroll = true;
-    runDisablingSmoothScroll(this.scrollContainer, () => this.scrollCurrentIntoView());
+    this.runMutate(() => {
+      this.scrollContainer.setAttribute('horizontal', this.axis == Axis.X);
+      this.scrollContainer.setAttribute('loop', this.loop);
+      this.scrollContainer.style.setProperty('--visible-count', this.visibleCount);
+  
+      if (!this.slides.length) {
+        return;
+      }
+  
+      this.updateSpacers();
+      this.resetWindow(true);
+      this.ignoreNextScroll = true;
+      runDisablingSmoothScroll(this.scrollContainer, () => this.scrollCurrentIntoView());
+    });
   }
 
   updateAll() {
@@ -197,32 +200,40 @@ export class Scrollable {
     return !!element._delta;
   }
 
-  updateCurrent() {
-    const {slides} = this;
-    const currentIndex = this.findOverlappingIndex();
-    const currentElement = slides[currentIndex];
-
-    // Currently not over a slide (e.g. on top of overscroll area).
-    if (!currentElement) {
-      return;
-    }
-
-    if (currentIndex == this.currentIndex) {
-      return;
-    }
-
-    // Do not update the currentIndex if we have looped back.
-    if (currentIndex == this.restingIndex && this.isTransformed(currentElement)) {
-      return;
-    }
-
-    this.updateCurrentIndex(currentIndex);
-    this.moveBufferElements(slides);
-  }
-
   updateCurrentIndex(currentIndex) {
     this.currentIndex = currentIndex;
     this.callbacks.currentIndexChanged(currentIndex);
+  }
+
+  updateCurrent() {
+    let totalWidth;
+    let currentIndex;
+
+    this.runMeasure(() => {
+      totalWidth = this.getTotalWidth();
+      currentIndex = this.findOverlappingIndex();
+    });
+
+    this.runMutate(() => {
+      const currentElement = this.slides[currentIndex];
+
+      // Currently not over a slide (e.g. on top of overscroll area).
+      if (!currentElement) {
+        return;
+      }
+  
+      if (currentIndex == this.currentIndex) {
+        return;
+      }
+  
+      // Do not update the currentIndex if we have looped back.
+      if (currentIndex == this.restingIndex && this.isTransformed(currentElement)) {
+        return;
+      }
+
+      this.updateCurrentIndex(currentIndex);
+      this.moveBufferElements(totalWidth);
+    });
   }
 
   resetWindow(force = false) {
@@ -236,41 +247,50 @@ export class Scrollable {
 
     const {axis, beforeSpacers, afterSpacers, slides} = this;
     const current = slides[this.currentIndex];
-    const {start: currentViewportStart} = getDimension(axis, current);
     const numBeforeSpacers = slides.length <= 2 ? 0 : slides.length - this.currentIndex - 1;
     const numAfterSpacers = slides.length <= 2 ? 0 : this.currentIndex;
 
-    slides.forEach((slide) => {
-      slide.style.transform = '';
-      slide._delta = 0;
-    });
-    beforeSpacers.forEach((s, i) => s.hidden = i < slides.length - numBeforeSpacers);
-    afterSpacers.forEach((s, i) => s.hidden = i >= numAfterSpacers);
+    let totalWidth;
+    let currentViewportStart;
 
-    this.restingIndex = this.currentIndex;
-    this.moveBufferElements(slides);
-    this.updateScrollStart(current, currentViewportStart);
+    this.runMeasure(() => {
+      totalWidth = this.getTotalWidth();
+      currentViewportStart= getDimension(axis, current).start;
+    });
+
+    this.runMutate(() => {
+      slides.forEach((slide) => {
+        slide.style.transform = '';
+        slide._delta = 0;
+      });
+      beforeSpacers.forEach((s, i) => s.hidden = i < slides.length - numBeforeSpacers);
+      afterSpacers.forEach((s, i) => s.hidden = i >= numAfterSpacers);
+  
+      this.restingIndex = this.currentIndex;
+      this.moveBufferElements(totalWidth);
+      this.updateScrollStart(current, currentViewportStart);
+    });
   }
 
-  adjustElements(mutations, current, currentIndex, slides, count, isNext) {
-    const {axis} = this;
+  getTotalWidth() {
+    return this.slides.map(s => getDimension(this.axis, s).length)
+      .reduce((p, c) => p + c);
+  }
+
+  adjustElements(totalWidth, count, isNext) {
+    const {currentIndex, slides} = this;
+    const current = slides[currentIndex];
+    const currentDelta = (current._delta || 0);
     const dir = isNext ? 1 : -1;
-    const slideCount = slides.length;
 
     for (let i = 1; i <= count; i++) {
-      const elIndex = mod(currentIndex + (i * dir), slideCount);
+      const elIndex = mod(currentIndex + (i * dir), slides.length);
       const el = slides[elIndex];
-      const currentDelta = (current._delta || 0);
-      // Need to use getBoundingClientRect for fractional widths.
-      const {length} = isNext ? getDimension(axis, current) : getDimension(axis, el);
-      const currentOffsetStart = getOffsetStart(axis, current);
-      const elOffsetStart = getOffsetStart(axis, el);
-      const startDelta = currentDelta + currentOffsetStart - (elOffsetStart - (dir * length));
+      const needsMove = elIndex > currentIndex !== isNext;
+      const delta = needsMove ? currentDelta + dir : currentDelta;
 
-      el._delta = startDelta;
-      mutations.push([el, startDelta]);
-
-      current = el;
+      el._delta = delta;
+      updateTransformTranslateStyle(this.axis, el, delta * totalWidth);
 
       if (elIndex == this.restingIndex && currentIndex !== this.restingIndex) {
         break;
@@ -278,26 +298,19 @@ export class Scrollable {
     }
   }
 
-  moveBufferElements(slides) {
+  moveBufferElements(totalWidth) {
+    const count = (this.slides.length - 1) / 2;
+
     if (!this.loop) {
       return;
     }
 
-    if (slides.length <= 2) {
+    if (this.slides.length <= 2) {
       return;
     }
 
-    const mutations = [];
-    const {currentIndex} = this;
-    const current = slides[currentIndex];
-    const count = (slides.length - 1) / 2;
-
-    this.adjustElements(mutations, current, currentIndex, slides, Math.floor(count), false);
-    this.adjustElements(mutations, current, currentIndex, slides, Math.ceil(count), true);
-
-    mutations.forEach(([el, delta]) => {
-      updateTransformTranslateStyle(this.axis, el, delta);
-    });
+    this.adjustElements(totalWidth, Math.floor(count), false);
+    this.adjustElements(totalWidth, Math.ceil(count), true);
   }
 
   /**

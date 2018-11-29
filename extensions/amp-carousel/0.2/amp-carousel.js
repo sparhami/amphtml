@@ -56,8 +56,14 @@ class AmpCarousel extends AMP.BaseElement {
   }
 
   buildCommon(element, root) {
-    this.carousel = new Carousel(element, root, {
-      currentIndexChanged: (newIndex) => this.currentIndexChanged_(newIndex),
+    this.carousel = new Carousel({
+      element,
+      root,
+      callbacks: {
+        currentIndexChanged: (newIndex) => this.currentIndexChanged_(newIndex),
+      },
+      runMeasure: (cb) => this.measureElement(cb),
+      runMutate: (cb) => this.mutateElement(cb),
     });
 
     // Handle the initial set of attributes
