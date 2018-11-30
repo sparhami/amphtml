@@ -28,7 +28,6 @@ export class Scrollable {
     afterSpacersRef,
     beforeSpacersRef,
     callbacks,
-    runMeasure,
     runMutate,
   }) {
     this.element = element;
@@ -36,7 +35,6 @@ export class Scrollable {
     this.afterSpacersRef = afterSpacersRef;
     this.beforeSpacersRef = beforeSpacersRef;
     this.callbacks = callbacks;
-    this.runMeasure = runMeasure;
     this.runMutate = runMutate;
     this.beforeSpacers = [];
     this.afterSpacers = [];
@@ -208,39 +206,30 @@ export class Scrollable {
   }
 
   updateCurrent() {
-    let totalWidth;
-    let currentIndex;
-    let currentElement;
+    const totalWidth = this.getTotalWidth();
+    const currentIndex = this.findOverlappingIndex();
+    const currentElement = this.slides[currentIndex];
 
-    this.runMeasure(() => {
-      totalWidth = this.getTotalWidth();
-      currentIndex = this.findOverlappingIndex();
-      currentElement = this.slides[currentIndex];
+    // Currently not over a slide (e.g. on top of overscroll area).
+    if (!currentElement) {
+      return;
+    }
 
-      // Currently not over a slide (e.g. on top of overscroll area).
-      if (!currentElement) {
-        return;
-      }
+    // Update the current offset on each scroll so that we have it up to date
+    // in case of a resize.
+    const dimension = getDimension(this.axis, currentElement);
+    this.currentElementOffset = dimension.start;
 
-      const dimension = getDimension(this.axis, currentElement);
-      this.currentElementOffset = dimension.start;
-    });
+    if (currentIndex == this.currentIndex) {
+      return;
+    }
+
+    // Do not update the currentIndex if we have looped back.
+    if (currentIndex == this.restingIndex && this.isTransformed(currentElement)) {
+      return;
+    }
 
     this.runMutate(() => {
-      // Currently not over a slide (e.g. on top of overscroll area).
-      if (!currentElement) {
-        return;
-      }
-  
-      if (currentIndex == this.currentIndex) {
-        return;
-      }
-  
-      // Do not update the currentIndex if we have looped back.
-      if (currentIndex == this.restingIndex && this.isTransformed(currentElement)) {
-        return;
-      }
-
       this.updateCurrentIndex(currentIndex);
       this.moveBufferElements(totalWidth);
     });
@@ -258,12 +247,7 @@ export class Scrollable {
     const {beforeSpacers, afterSpacers, slides} = this;
     const numBeforeSpacers = slides.length <= 2 ? 0 : slides.length - this.currentIndex - 1;
     const numAfterSpacers = slides.length <= 2 ? 0 : this.currentIndex;
-
-    let totalWidth;
-
-    this.runMeasure(() => {
-      totalWidth = this.getTotalWidth();
-    });
+    const totalWidth = this.getTotalWidth();
 
     this.runMutate(() => {
       slides.forEach((slide) => {

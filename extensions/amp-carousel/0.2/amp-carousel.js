@@ -62,7 +62,6 @@ class AmpCarousel extends AMP.BaseElement {
       callbacks: {
         currentIndexChanged: (newIndex) => this.currentIndexChanged_(newIndex),
       },
-      runMeasure: (cb) => this.measureElement(cb),
       runMutate: (cb) => this.mutateElement(cb),
     });
 

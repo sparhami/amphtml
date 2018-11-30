@@ -15,7 +15,6 @@ export class Carousel {
     element,
     root,
     callbacks,
-    runMeasure = runImmediate,
     runMutate = runImmediate,
   }) {
     this.callbacks = Object.assign({}, defaultCallbacks, callbacks);
@@ -34,7 +33,6 @@ export class Carousel {
       afterSpacersRef: this.afterSpacersRef,
       beforeSpacersRef: this.beforeSpacersRef,
       callbacks: this.callbacks,
-      runMeasure,
       runMutate,
     });
     this.autoAdvance = new AutoAdvance({
