@@ -217,6 +217,11 @@ export class Scrollable {
       currentIndex = this.findOverlappingIndex();
       currentElement = this.slides[currentIndex];
 
+      // Currently not over a slide (e.g. on top of overscroll area).
+      if (!currentElement) {
+        return;
+      }
+
       const dimension = getDimension(this.axis, currentElement);
       this.currentElementOffset = dimension.start;
     });

@@ -43,7 +43,7 @@ amp-carousel {
   scroll-behavior: auto;
 }
 
-.scroll-container ::slotted(*),
+/** Keep in sync with ::slotted(*) version below */
 .scroll-container .slotted,
 .scroll-container .spacer {
   box-sizing: border-box !important;
@@ -53,7 +53,7 @@ amp-carousel {
   scroll-snap-align: var(--snap-align);
 }
 
-.scroll-container[horizontal="true"][mixed-length="false"] ::slotted(*),
+/** Keep in sync with ::slotted(*) version below */
 .scroll-container[horizontal="true"][mixed-length="false"] .slotted,
 .scroll-container[horizontal="true"][mixed-length="false"] .spacer {
   width: calc(100% / var(--visible-count)) !important;
@@ -61,7 +61,7 @@ amp-carousel {
   max-width: none !important;
 }
 
-.scroll-container[horizontal="false"][mixed-length="false"] ::slotted(*),
+/** Keep in sync with ::slotted(*) version below */
 .scroll-container[horizontal="false"][mixed-length="false"] .slotted,
 .scroll-container[horizontal="false"][mixed-length="false"] .spacer {
   height: calc(100% / var(--visible-count)) !important;
@@ -69,13 +69,13 @@ amp-carousel {
   max-height: none !important;
 }
 
-.scroll-container[horizontal="true"][snap="true"][mixed-length="true"] ::slotted(*),
+/** Keep in sync with ::slotted(*) version below */
 .scroll-container[horizontal="true"][snap="true"][mixed-length="true"] .slotted,
 .scroll-container[horizontal="true"][snap="true"][mixed-length="true"] .spacer {
   max-width: 100% !important;
 }
 
-.scroll-container[horizontal="false"][snap="true"][mixed-length="true"] ::slotted(*),
+/** Keep in sync with ::slotted(*) version below */
 .scroll-container[horizontal="false"][snap="true"][mixed-length="true"] .slotted,
 .scroll-container[horizontal="false"][snap="true"][mixed-length="true"] .spacer {
   max-height: 100% !important;
@@ -89,7 +89,7 @@ amp-carousel {
   scroll-snap-type: none;
 }
 
-.scroll-container ::slotted(*),
+/** Keep in sync with ::slotted(*) version below */
 .scroll-container .slotted {
   will-change: transform;
   /*
@@ -98,6 +98,7 @@ amp-carousel {
    */
   transform: translateZ(0);
 }
+
 
 .scroll-container[horizontal="true"] .spacer {
   height: 100%;
@@ -165,4 +166,55 @@ amp-carousel {
  */
  .scroll-container[snap="false"] .mask {
   display: none;
+}
+
+/**
+ * These rules need to be kept separate for browsers that do not understand
+ * ::slotted. If they are combined with the rules above, then the rules will not
+ * be applied, even if other selectors in the comma separated list match. These
+ * rules cannot be placed directly before/after the non-Shadow DOM rule as a
+ * build step will combine the CSS rules.
+ */
+
+/** Keep in sync with .slotted version above */
+.scroll-container ::slotted(*) {
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+  scroll-snap-coordinate: var(--snap-coordinate); /* Firefox, IE */
+  scroll-snap-align: var(--snap-align);
+}
+
+/** Keep in sync with .slotted version above */
+.scroll-container[horizontal="true"][mixed-length="false"] ::slotted(*) {
+  width: calc(100% / var(--visible-count)) !important;
+  min-width: auto !important;
+  max-width: none !important;
+}
+
+/** Keep in sync with .slotted version above */
+.scroll-container[horizontal="false"][mixed-length="false"] ::slotted(*) {
+  height: calc(100% / var(--visible-count)) !important;
+  min-height: auto !important;
+  max-height: none !important;
+}
+
+/** Keep in sync with .slotted version above */
+.scroll-container[horizontal="true"][snap="true"][mixed-length="true"] ::slotted(*) {
+  max-width: 100% !important;
+}
+
+/** Keep in sync with .slotted version above */
+.scroll-container[horizontal="false"][snap="true"][mixed-length="true"] ::slotted(*) {
+  max-height: 100% !important;
+}
+
+/** Keep in sync with .slotted version above */
+.scroll-container ::slotted(*)  {
+  will-change: transform;
+  /*
+   * For Safari, the translateZ prevents sometimes glitchy rendering when
+   * changing the transform when moving slides.
+   */
+  transform: translateZ(0);
 }
