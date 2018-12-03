@@ -106,6 +106,10 @@ export class Carousel {
     this.scrollable.updateLoop(loop);
   }
 
+  updateSideSlideCount(sideSlideCount) {
+    this.scrollable.updateSideSlideCount(sideSlideCount);
+  }
+
   updateSnap(snap) {
     this.snapAlignment.updateSnap(snap);
   }

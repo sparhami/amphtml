@@ -14,6 +14,9 @@ import {
   mod,
   debounce,
   debounceWithPromise,
+  wrappingDistance,
+  forwardWrappingDistance,
+  backwardWrappingDistance,
 } from './util.js';
 import {
   runDisablingSmoothScroll,
@@ -49,6 +52,7 @@ export class Scrollable {
     this.loop = false;
     this.restingIndex = NaN;
     this.slides = [];
+    this.sideSlideCount = Number.MAX_SAFE_INTEGER;
     this.visibleCount = 1;
 
     this.boundResetWindow = () => this.resetWindow();
@@ -87,6 +91,7 @@ export class Scrollable {
       }
   
       this.updateSpacers();
+      this.hideDistantSlides();
       this.resetWindow(true);
       this.ignoreNextScroll = true;
       runDisablingSmoothScroll(this.scrollContainer, () => this.scrollCurrentIntoView());
@@ -235,6 +240,53 @@ export class Scrollable {
     });
   }
 
+  getSideSlideCount() {
+    return Math.min(this.slides.length, this.sideSlideCount);
+  }
+
+  hideDistantSlides() {
+    const {currentIndex, slides} = this;
+    const sideSlideCount = Math.min(this.slides.length, this.sideSlideCount);
+
+    slides.forEach((s, i) => {
+      const distance = wrappingDistance(currentIndex, i, slides.length);
+      const tooFar = distance > sideSlideCount;
+      s.hidden = tooFar;
+    });
+  }
+
+  hideSpacers() {
+    const {
+      afterSpacers,
+      beforeSpacers,
+      currentIndex,
+      slides,
+    } = this;
+    const sideSlideCount = Math.min(this.slides.length, this.sideSlideCount);
+    const numBeforeSpacers = slides.length <= 2 ? 0 : slides.length - currentIndex - 1;
+    const numAfterSpacers = slides.length <= 2 ? 0 : currentIndex;
+
+    beforeSpacers.forEach((s, i) => {
+      const distance = backwardWrappingDistance(currentIndex, i, slides.length);
+      const tooFar = distance > sideSlideCount;
+      s.hidden = tooFar || i < slides.length - numBeforeSpacers;
+    });
+    afterSpacers.forEach((s, i) => {
+      const distance = forwardWrappingDistance(currentIndex, i, slides.length);
+      const tooFar = distance > sideSlideCount;
+      s.hidden = tooFar || i >= numAfterSpacers;
+    });
+  }
+
+  resetSlideTransforms() {
+    this.slides.forEach(slide => this.setSlideTransform(slide, 0, 0));
+  }
+
+  setSlideTransform(slide, delta, totalWidth) {
+    updateTransformTranslateStyle(this.axis, slide, delta * totalWidth);
+    slide._delta = delta;
+  }
+
   resetWindow(force = false) {
     if (this.restingIndex == this.currentIndex && !force) {
       return;
@@ -244,20 +296,14 @@ export class Scrollable {
       return;
     }
 
-    const {beforeSpacers, afterSpacers, slides} = this;
-    const numBeforeSpacers = slides.length <= 2 ? 0 : slides.length - this.currentIndex - 1;
-    const numAfterSpacers = slides.length <= 2 ? 0 : this.currentIndex;
     const totalWidth = this.getTotalWidth();
 
     this.runMutate(() => {
-      slides.forEach((slide) => {
-        slide.style.transform = '';
-        slide._delta = 0;
-      });
-      beforeSpacers.forEach((s, i) => s.hidden = i < slides.length - numBeforeSpacers);
-      afterSpacers.forEach((s, i) => s.hidden = i >= numAfterSpacers);
+      this.resetSlideTransforms();
+      this.hideDistantSlides();
+      this.hideSpacers();
   
-      this.restingIndex = this.currentIndex;
+      this.restingIndex = this.currentIndex;;
       this.moveBufferElements(totalWidth);
       this.updateScrollStart();
     });
@@ -280,12 +326,7 @@ export class Scrollable {
       const needsMove = elIndex > currentIndex !== isNext;
       const delta = needsMove ? currentDelta + dir : currentDelta;
 
-      el._delta = delta;
-      updateTransformTranslateStyle(this.axis, el, delta * totalWidth);
-
-      if (elIndex == this.restingIndex && currentIndex !== this.restingIndex) {
-        break;
-      }
+      this.setSlideTransform(el, delta, totalWidth);
     }
   }
 
@@ -336,6 +377,11 @@ export class Scrollable {
 
   updateInitialIndex(initialIndex) {
     this.initialIndex = initialIndex;
+    this.updateAll();
+  }
+
+  updateSideSlideCount(sideSlideCount) {
+    this.sideSlideCount = sideSlideCount > 0 ? sideSlideCount : Number.MAX_SAFE_INTEGER;
     this.updateAll();
   }
 
