@@ -14,6 +14,7 @@ import {
   mod,
   debounce,
   debounceWithPromise,
+  listenOnce,
   wrappingDistance,
   forwardWrappingDistance,
   backwardWrappingDistance,
@@ -43,6 +44,7 @@ export class Scrollable {
     this.afterSpacers = [];
     this.ignoreNextScroll = false;
     this.currentElementOffset = 0;
+    this.touching_ = false;
 
     this.alignment = Alignment.START;
     this.currentIndex = 0;
@@ -175,7 +177,12 @@ export class Scrollable {
   }
 
   handleTouchStart() {
-    this.debouncedResetWindow_();
+    this.touching_ = true;
+
+    listenOnce(window, 'touchend', () => {
+      this.touching_ = false;
+      this.debouncedResetWindow_();
+    }, true);
   }
 
   handleScroll() {
@@ -290,6 +297,10 @@ export class Scrollable {
   }
 
   resetWindow(force = false) {
+    if (this.touching_) {
+      return;
+    }
+
     if (this.restingIndex == this.currentIndex && !force) {
       return;
     }
