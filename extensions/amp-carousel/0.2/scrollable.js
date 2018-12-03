@@ -245,11 +245,13 @@ export class Scrollable {
   }
 
   hideDistantSlides() {
-    const {currentIndex, slides} = this;
+    const {currentIndex, loop, slides} = this;
     const sideSlideCount = Math.min(this.slides.length, this.sideSlideCount);
 
     slides.forEach((s, i) => {
-      const distance = wrappingDistance(currentIndex, i, slides.length);
+      const distance = loop ?
+          wrappingDistance(currentIndex, i, slides.length) :
+          Math.abs(currentIndex - i);
       const tooFar = distance > sideSlideCount;
       s.hidden = tooFar;
     });
@@ -292,18 +294,14 @@ export class Scrollable {
       return;
     }
 
-    if (!this.loop && !force) {
-      return;
-    }
-
     const totalWidth = this.getTotalWidth();
 
     this.runMutate(() => {
+      this.restingIndex = this.currentIndex;
+
       this.resetSlideTransforms();
       this.hideDistantSlides();
       this.hideSpacers();
-  
-      this.restingIndex = this.currentIndex;;
       this.moveBufferElements(totalWidth);
       this.updateScrollStart();
     });
