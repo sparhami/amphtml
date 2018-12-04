@@ -2,6 +2,9 @@ import {CSS} from '../../../build/amp-carousel-0.2.css';
 import {Carousel} from './carousel.js';
 import {isLayoutSizeDefined} from '../../../src/layout';
 import {htmlFor} from '../../../src/static-template';
+import {debounceToMicrotask} from "./debounce-to-microtask";
+import {debounce} from '../../../src/utils/rate-limit';
+import {listenOnce} from '../../../src/event-helper';
 
 function isSizer(el) {
   return el.tagName == 'I-AMPHTML-SIZER';
@@ -63,6 +66,9 @@ class AmpCarousel extends AMP.BaseElement {
         currentIndexChanged: (newIndex) => this.currentIndexChanged_(newIndex),
       },
       runMutate: (cb) => this.mutateElement(cb),
+      debounce,
+      debounceToMicrotask,
+      listenOnce,
     });
 
     // Handle the initial set of attributes

@@ -1,11 +1,8 @@
-import {
-  debounceWithPromise,
-} from './util.js';
-
 export class SnapAlignment {
   constructor({
     scrollContainer,
     runMutate,
+    debounceToMicrotask,
   }) {
     this.scrollContainer = scrollContainer;
     this.runMutate = runMutate;
@@ -16,7 +13,7 @@ export class SnapAlignment {
     this.visibleCount = 0;
     this.slides = [];
 
-    this.debouncedUpdateAll_ = debounceWithPromise(() => this.updateAll_());
+    this.debouncedUpdateAll_ = debounceToMicrotask(() => this.updateAll_());
 
     this.updateAll();
   }

@@ -1,15 +1,40 @@
-import {mod} from './util.js';
+import {mod} from "./mod";
 
-export function wrappingDistance(a, b, total) {
+/**
+ * Calculates the distance between two indicies in an Array, treating the first
+ * and last indicies as adjacent. In the array ['a', 'b', 'c'], the
+ * wrappingDistance between 'a' and 'c' is 1. Likewise, the wrappingDistance
+ * betweeb 'a' and 'b' is also 1.
+ * @param {number} a A start index.
+ * @param {number} b An end index.
+ * @param {!Array} arr An array.
+ */
+export function wrappingDistance(a, b, arr) {
   return Math.min(
-    forwardWrappingDistance(a, b, total),
-    backwardWrappingDistance(a, b, total));
+    forwardWrappingDistance(a, b, arr),
+    backwardWrappingDistance(a, b, arr));
 }
 
-export function forwardWrappingDistance(a, b, total) {
-  return mod(b - a, total);
+/**
+ * Calculates the forwards distance between two indicies in an Array, treating
+ * the first and last indicies as adjacent. In the array ['a', 'b', 'c'], the
+ * forwardWrappingDistance between 'b' and 'a' is 2.
+ * @param {number} a A start index.
+ * @param {number} b An end index.
+ * @param {!Array} arr An array.
+ */
+export function forwardWrappingDistance(a, b, {length}) {
+  return mod(b - a, length);
 }
 
-export function backwardWrappingDistance(a, b, total) {
-  return mod(a - b, total);
+/**
+ * Calculates the backwards distance between two indicies in an Array, treating
+ * the first and last indicies as adjacent. In the array ['a', 'b', 'c'], the
+ * backwardWrappingDistance between 'a' and 'b' is 2.
+ * @param {number} a A start index.
+ * @param {number} b An end index.
+ * @param {!Array} arr An array.
+ */
+export function backwardWrappingDistance(a, b, {length}) {
+  return mod(a - b, length);
 }

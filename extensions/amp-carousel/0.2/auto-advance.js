@@ -1,19 +1,18 @@
 const MIN_AUTO_ADVANCE_INTERVAL = 2000;
 
-import {
-  debounce,
-  listenOnce,
-} from './util.js';
-
 export class AutoAdvance {
   constructor({
     element,
     scrollContainer,
     advanceable,
+    debounce,
+    listenOnce,
   }) {
     this.element = element;
     this.scrollContainer = scrollContainer;
     this.advanceable = advanceable;
+    this.debounce = debounce;
+    this.listenOnce = listenOnce;
 
     this.autoAdvance = false;
     this.autoAdvanceCount = 1;
@@ -28,13 +27,13 @@ export class AutoAdvance {
   }
 
   createDebouncedAdvance(interval) {
-    this.debouncedAdvance = debounce(() => this.advance_(), interval);
+    this.debouncedAdvance = this.debounce(() => this.advance_(), interval);
   }
 
   handleTouchStart() {
     this.paused = true;
 
-    listenOnce(window, 'touchend', () => {
+    this.listenOnce(window, 'touchend', () => {
       this.paused = false;
       this.resetAutoAdvance();
     }, true);

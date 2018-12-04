@@ -16,6 +16,9 @@ export class Carousel {
     root,
     callbacks,
     runMutate = runImmediate,
+    debounce,
+    debounceToMicrotask,
+    listenOnce,
   }) {
     this.callbacks = Object.assign({}, defaultCallbacks, callbacks);
     this.runMutate = runMutate;
@@ -34,15 +37,21 @@ export class Carousel {
       beforeSpacersRef: this.beforeSpacersRef,
       callbacks: this.callbacks,
       runMutate,
+      debounce,
+      debounceToMicrotask,
+      listenOnce,
     });
     this.autoAdvance = new AutoAdvance({
       element,
       scrollContainer: this.scrollContainer,
       advanceable: this.scrollable,
+      debounce,
+      listenOnce,
     });
     this.snapAlignment = new SnapAlignment({
       scrollContainer: this.scrollContainer,
       runMutate,
+      debounceToMicrotask,
     });
 
     this.updateAll();

@@ -1,4 +1,4 @@
-import {mod} from './util.js';
+import {mod} from "./mod";
 
 export const Axis = {
   X: 0,

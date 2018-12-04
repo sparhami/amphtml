@@ -6,26 +6,20 @@ import {
   findOverlappingIndex,
   getDimension,
   getOffsetStart,
-  setScrollPos,
+  setScrollPosition,
   updateLengthStyle,
-  updateTransformTranslateStyle,
+  setTransformTranslateStyle,
 } from './dimensions.js';
-import {
-  mod,
-  debounce,
-  debounceWithPromise,
-  listenOnce,
-} from './util.js';
+import { mod } from "./mod";
 import {
   backwardWrappingDistance,
   forwardWrappingDistance,
   wrappingDistance,
 } from './array-util.js';
-import { forwardWrappingDistance } from "./forwardWrappingDistance";
 import {
   runDisablingSmoothScroll,
-  scrollIntoView,
-} from './dom-util.js';
+  scrollContainerToElement,
+} from './scrolling-util.js';
 
 
 export class Scrollable {
@@ -36,6 +30,9 @@ export class Scrollable {
     beforeSpacersRef,
     callbacks,
     runMutate,
+    debounce,
+    debounceToMicrotask,
+    listenOnce,
   }) {
     this.element = element;
     this.scrollContainer = scrollContainer;
@@ -43,6 +40,7 @@ export class Scrollable {
     this.beforeSpacersRef = beforeSpacersRef;
     this.callbacks = callbacks;
     this.runMutate = runMutate;
+    this.listenOnce = listenOnce;
     this.beforeSpacers = [];
     this.afterSpacers = [];
     this.ignoreNextScroll = false;
@@ -62,7 +60,7 @@ export class Scrollable {
 
     this.boundResetWindow = () => this.resetWindow();
     this.debouncedResetWindow_ = debounce(this.boundResetWindow, RESET_WINDOW_WAIT);
-    this.debouncedUpdateAll_ = debounceWithPromise(() => this.updateAll_());
+    this.debouncedUpdateAll_ = debounceToMicrotask(() => this.updateAll_());
 
     this.scrollContainer.addEventListener('scroll', (e) => this.handleScroll(e), true);
     this.scrollContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e), true);
@@ -134,7 +132,7 @@ export class Scrollable {
   }
 
   scrollCurrentIntoView() {
-    scrollIntoView(
+    scrollContainerToElement(
       this.slides[this.currentIndex],
       this.scrollContainer,
       this.axis,
@@ -182,7 +180,7 @@ export class Scrollable {
   handleTouchStart() {
     this.touching_ = true;
 
-    listenOnce(window, 'touchend', () => {
+    this.listenOnce(window, 'touchend', () => {
       this.touching_ = false;
       this.debouncedResetWindow_();
     }, true);
@@ -208,7 +206,7 @@ export class Scrollable {
     const pos = offsetStart - currentElementStart + start;
 
     this.ignoreNextScroll = true;
-    runDisablingSmoothScroll(this.scrollContainer, () => setScrollPos(axis, this.scrollContainer, pos));
+    runDisablingSmoothScroll(this.scrollContainer, () => setScrollPosition(axis, this.scrollContainer, pos));
   }
 
   isTransformed(element) {
@@ -260,7 +258,7 @@ export class Scrollable {
 
     slides.forEach((s, i) => {
       const distance = loop ?
-          wrappingDistance(currentIndex, i, slides.length) :
+          wrappingDistance(currentIndex, i, slides) :
           Math.abs(currentIndex - i);
       const tooFar = distance > sideSlideCount;
       s.hidden = tooFar;
@@ -279,12 +277,12 @@ export class Scrollable {
     const numAfterSpacers = slides.length <= 2 ? 0 : currentIndex;
 
     beforeSpacers.forEach((s, i) => {
-      const distance = backwardWrappingDistance(currentIndex, i, slides.length);
+      const distance = backwardWrappingDistance(currentIndex, i, slides);
       const tooFar = distance > sideSlideCount;
       s.hidden = tooFar || i < slides.length - numBeforeSpacers;
     });
     afterSpacers.forEach((s, i) => {
-      const distance = forwardWrappingDistance(currentIndex, i, slides.length);
+      const distance = forwardWrappingDistance(currentIndex, i, slides);
       const tooFar = distance > sideSlideCount;
       s.hidden = tooFar || i >= numAfterSpacers;
     });
@@ -295,7 +293,7 @@ export class Scrollable {
   }
 
   setSlideTransform(slide, delta, totalWidth) {
-    updateTransformTranslateStyle(this.axis, slide, delta * totalWidth);
+    setTransformTranslateStyle(this.axis, slide, delta * totalWidth);
     slide._delta = delta;
   }
 
