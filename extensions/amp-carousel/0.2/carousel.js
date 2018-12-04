@@ -45,7 +45,7 @@ export class Carousel {
       runMutate,
     });
 
-    this.updateAll_();
+    this.updateAll();
   }
 
   next() {
@@ -56,7 +56,7 @@ export class Carousel {
     this.scrollable.advance(-this.advanceCount);
   }
 
-  updateAll_() {
+  updateAll() {
     this.runMutate(() => {
       this.scrollContainer.setAttribute('mixed-length', this.mixedLength);
     });
@@ -75,7 +75,7 @@ export class Carousel {
 
   updateMixedLength(mixedLength) {
     this.mixedLength = mixedLength;
-    this.updateAll_();
+    this.updateAll();
   } 
 
   updateAdvanceCount(advanceCount) {
