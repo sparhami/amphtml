@@ -15,10 +15,13 @@ import {
   debounce,
   debounceWithPromise,
   listenOnce,
-  wrappingDistance,
-  forwardWrappingDistance,
-  backwardWrappingDistance,
 } from './util.js';
+import {
+  backwardWrappingDistance,
+  forwardWrappingDistance,
+  wrappingDistance,
+} from './array-util.js';
+import { forwardWrappingDistance } from "./forwardWrappingDistance";
 import {
   runDisablingSmoothScroll,
   scrollIntoView,

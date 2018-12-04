@@ -2,8 +2,6 @@ import {CSS} from '../../../build/amp-carousel-0.2.css';
 import {Carousel} from './carousel.js';
 import {isLayoutSizeDefined} from '../../../src/layout';
 import {htmlFor} from '../../../src/static-template';
-import {listenOnce} from './util.js';
-
 
 function isSizer(el) {
   return el.tagName == 'I-AMPHTML-SIZER';
