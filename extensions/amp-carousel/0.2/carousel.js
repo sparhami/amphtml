@@ -20,36 +20,36 @@ export class Carousel {
     debounceToMicrotask,
     listenOnce,
   }) {
-    this.callbacks = Object.assign({}, defaultCallbacks, callbacks);
-    this.runMutate = runMutate;
-    this.advanceCount = 1;
-    this.mixedLength = false;
-    this.slides = [];
+    this.callbacks_ = Object.assign({}, defaultCallbacks, callbacks);
+    this.runMutate_ = runMutate;
+    this.advanceCount_ = 1;
+    this.mixedLength_ = false;
+    this.slides_ = [];
 
-    this.scrollContainer = root.querySelector('.scroll-container');
-    this.afterSpacersRef = root.querySelector('.after-spacers-ref');
-    this.beforeSpacersRef = root.querySelector('.before-spacers-ref');
+    this.scrollContainer_ = root.querySelector('.scroll-container');
+    this.afterSpacersRef_ = root.querySelector('.after-spacers-ref');
+    this.beforeSpacersRef_ = root.querySelector('.before-spacers-ref');
 
-    this.scrollable = new Scrollable({
+    this.scrollable_ = new Scrollable({
       element,
-      scrollContainer: this.scrollContainer,
-      afterSpacersRef: this.afterSpacersRef,
-      beforeSpacersRef: this.beforeSpacersRef,
-      callbacks: this.callbacks,
+      scrollContainer: this.scrollContainer_,
+      afterSpacersRef: this.afterSpacersRef_,
+      beforeSpacersRef: this.beforeSpacersRef_,
+      callbacks: this.callbacks_,
       runMutate,
       debounce,
       debounceToMicrotask,
       listenOnce,
     });
-    this.autoAdvance = new AutoAdvance({
+    this.autoAdvance_ = new AutoAdvance({
       element,
-      scrollContainer: this.scrollContainer,
-      advanceable: this.scrollable,
+      scrollContainer: this.scrollContainer_,
+      advanceable: this.scrollable_,
       debounce,
       listenOnce,
     });
-    this.snapAlignment = new SnapAlignment({
-      scrollContainer: this.scrollContainer,
+    this.snapAlignment_ = new SnapAlignment({
+      scrollContainer: this.scrollContainer_,
       runMutate,
       debounceToMicrotask,
     });
@@ -58,84 +58,84 @@ export class Carousel {
   }
 
   next() {
-    this.scrollable.advance(this.advanceCount);
+    this.scrollable_.advance(this.advanceCount_);
   }
 
   prev() {
-    this.scrollable.advance(-this.advanceCount);
+    this.scrollable_.advance(-this.advanceCount_);
   }
 
   updateAll() {
-    this.runMutate(() => {
-      this.scrollContainer.setAttribute('mixed-length', this.mixedLength);
+    this.runMutate_(() => {
+      this.scrollContainer_.setAttribute('mixed-length', this.mixedLength_);
     });
-    this.scrollable.updateAll();
-    this.snapAlignment.updateAll();
+    this.scrollable_.updateAll();
+    this.snapAlignment_.updateAll();
   }
 
   resetWindow() {
-    this.scrollable.resetWindow(true);
+    this.scrollable_.resetWindow(true);
   }
   
   updateSlides(slides) {
-    this.scrollable.updateSlides(slides);
-    this.snapAlignment.updateSlides(slides);
+    this.scrollable_.updateSlides(slides);
+    this.snapAlignment_.updateSlides(slides);
   }
 
   updateMixedLength(mixedLength) {
-    this.mixedLength = mixedLength;
+    this.mixedLength_ = mixedLength;
     this.updateAll();
   } 
 
   updateAdvanceCount(advanceCount) {
-    this.scrollable.updateAdvanceCount(advanceCount);
+    this.scrollable_.updateAdvanceCount(advanceCount);
   }
 
   updateAutoAdvance(autoAdvance) {
-    this.autoAdvance.updateAutoAdvance(autoAdvance);
+    this.autoAdvance_.updateAutoAdvance(autoAdvance);
   }
 
   updateAutoAdvanceCount(autoAdvanceCount) {
-    this.autoAdvance.updateAutoAdvanceCount(autoAdvanceCount);
+    this.autoAdvance_.updateAutoAdvanceCount(autoAdvanceCount);
   }
 
   updateAutoAdvanceInterval(autoAdvanceInterval) {
-    this.autoAdvance.updateAutoAdvanceInterval(autoAdvanceInterval);
+    this.autoAdvance_.updateAutoAdvanceInterval(autoAdvanceInterval);
   }
 
   updateHorizontal(horizontal) {
-    this.scrollable.updateHorizontal(horizontal);
+    this.scrollable_.updateHorizontal(horizontal);
   }
 
   updateInitialIndex(initialIndex) {
-    this.scrollable.updateInitialIndex(initialIndex);
+    this.scrollable_.updateInitialIndex(initialIndex);
   }
 
   updateLoop(loop) {
-    this.scrollable.updateLoop(loop);
+    this.scrollable_.updateLoop(loop);
   }
 
   updateSideSlideCount(sideSlideCount) {
-    this.scrollable.updateSideSlideCount(sideSlideCount);
+    this.scrollable_.updateSideSlideCount(sideSlideCount);
   }
 
   updateSnap(snap) {
-    this.snapAlignment.updateSnap(snap);
+    this.snapAlignment_.updateSnap(snap);
   }
 
   updateSnapBy(snapBy) {
-    this.snapAlignment.updateSnapBy(snapBy);
+    this.snapAlignment_.updateSnapBy(snapBy);
   }
 
   updateAlignment(alignment) {
     // Update snapAlignment first, since snapping is needed prior to scroll.
-    this.snapAlignment.updateAlignment(alignment);
-    this.scrollable.updateAlignment(alignment);
+    this.snapAlignment_.updateAlignment(alignment);
+    this.scrollable_.updateAlignment(alignment);
   }
 
   updateVisibleCount(visibleCount) {
     // Update snapAlignment first, since snapping is needed prior to scroll.
-    this.snapAlignment.updateVisibleCount(visibleCount);
-    this.scrollable.updateVisibleCount(visibleCount);
+    this.snapAlignment_.updateVisibleCount(visibleCount);
+    this.scrollable_.updateVisibleCount(visibleCount);
   }
 }

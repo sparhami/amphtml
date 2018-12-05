@@ -10,7 +10,7 @@ import {
   updateLengthStyle,
   setTransformTranslateStyle,
 } from './dimensions.js';
-import { mod } from "./mod";
+import {mod} from "./mod";
 import {
   backwardWrappingDistance,
   forwardWrappingDistance,
@@ -34,70 +34,70 @@ export class Scrollable {
     debounceToMicrotask,
     listenOnce,
   }) {
-    this.element = element;
-    this.scrollContainer = scrollContainer;
-    this.afterSpacersRef = afterSpacersRef;
-    this.beforeSpacersRef = beforeSpacersRef;
-    this.callbacks = callbacks;
-    this.runMutate = runMutate;
-    this.listenOnce = listenOnce;
-    this.beforeSpacers = [];
-    this.afterSpacers = [];
-    this.ignoreNextScroll = false;
-    this.currentElementOffset = 0;
+    this.element_ = element;
+    this.scrollContainer_ = scrollContainer;
+    this.afterSpacersRef_ = afterSpacersRef;
+    this.beforeSpacersRef_ = beforeSpacersRef;
+    this.callbacks_ = callbacks;
+    this.runMutate_ = runMutate;
+    this.listenOnce_ = listenOnce;
+    this.beforeSpacers_ = [];
+    this.afterSpacers_ = [];
+    this.ignoreNextScroll_ = false;
+    this.currentElementOffset_ = 0;
     this.touching_ = false;
 
-    this.alignment = Alignment.START;
-    this.currentIndex = 0;
-    this.axis = Axis.X;
-    this.horizontal = true;
-    this.initialIndex = 0;
-    this.loop = false;
-    this.restingIndex = NaN;
-    this.slides = [];
-    this.sideSlideCount = Number.MAX_SAFE_INTEGER;
-    this.visibleCount = 1;
+    this.alignment_ = Alignment.START;
+    this.axis_ = Axis.X;
+    this.currentIndex_ = 0;
+    this.horizontal_ = true;
+    this.initialIndex_ = 0;
+    this.loop_ = false;
+    this.restingIndex_ = NaN;
+    this.slides_ = [];
+    this.sideSlideCount_ = Number.MAX_SAFE_INTEGER;
+    this.visibleCount_ = 1;
 
     this.boundResetWindow = () => this.resetWindow();
     this.debouncedResetWindow_ = debounce(this.boundResetWindow, RESET_WINDOW_WAIT);
     this.debouncedUpdateAll_ = debounceToMicrotask(() => this.updateAll_());
 
-    this.scrollContainer.addEventListener('scroll', (e) => this.handleScroll(e), true);
-    this.scrollContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e), true);
+    this.scrollContainer_.addEventListener('scroll', (e) => this.handleScroll(e), true);
+    this.scrollContainer_.addEventListener('touchstart', (e) => this.handleTouchStart(e), true);
 
     this.updateAll();
   }
 
   setSlides(slides) {
-    this.slides = slides;
+    this.slides_ = slides;
     this.updateSlides();
   }
 
   findOverlappingIndex() {
     return findOverlappingIndex(
-      this.axis,
-      this.alignment,
-      this.element,
-      this.slides,
-      this.currentIndex
+      this.axis_,
+      this.alignment_,
+      this.element_,
+      this.slides_,
+      this.currentIndex_
     );
   }
 
   updateAll_() {
-    this.runMutate(() => {
-      this.scrollContainer.setAttribute('horizontal', this.axis == Axis.X);
-      this.scrollContainer.setAttribute('loop', this.loop);
-      this.scrollContainer.style.setProperty('--visible-count', this.visibleCount);
+    this.runMutate_(() => {
+      this.scrollContainer_.setAttribute('horizontal', this.axis_ == Axis.X);
+      this.scrollContainer_.setAttribute('loop', this.loop_);
+      this.scrollContainer_.style.setProperty('--visible-count', this.visibleCount_);
   
-      if (!this.slides.length) {
+      if (!this.slides_.length) {
         return;
       }
   
       this.updateSpacers();
       this.hideDistantSlides();
       this.resetWindow(true);
-      this.ignoreNextScroll = true;
-      runDisablingSmoothScroll(this.scrollContainer, () => this.scrollCurrentIntoView());
+      this.ignoreNextScroll_ = true;
+      runDisablingSmoothScroll(this.scrollContainer_, () => this.scrollCurrentIntoView());
     });
   }
 
@@ -112,55 +112,55 @@ export class Scrollable {
   }
 
   updateSpacers() {
-    const {axis, slides} = this;
-    const lengths = slides.map(slide => getDimension(axis, slide).length);
-    const count = this.loop ? slides.length : 0;
+    const {axis_, slides_} = this;
+    const lengths = slides_.map(slide => getDimension(axis_, slide).length);
+    const count = this.loop_ ? slides_.length : 0;
 
-    this.beforeSpacers.forEach(spacer => this.scrollContainer.removeChild(spacer));
-    this.afterSpacers.forEach(spacer => this.scrollContainer.removeChild(spacer));
+    this.beforeSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
+    this.afterSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
 
-    this.beforeSpacers = new Array(count).fill(0)
+    this.beforeSpacers_ = new Array(count).fill(0)
         .map(() => this.createSpacer())
-        .map(spacer => this.scrollContainer.insertBefore(spacer, this.beforeSpacersRef));
-    this.afterSpacers = new Array(count).fill(0)
+        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.beforeSpacersRef_));
+    this.afterSpacers_ = new Array(count).fill(0)
         .map(() => this.createSpacer())
-        .map(spacer => this.scrollContainer.insertBefore(spacer, this.afterSpacersRef))
+        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_))
         .reverse();
 
-    this.beforeSpacers.forEach((spacer, i) => updateLengthStyle(axis, spacer, lengths[i]));
-    this.afterSpacers.forEach((spacer, i) => updateLengthStyle(axis, spacer, lengths[i]));
+    this.beforeSpacers_.forEach((spacer, i) => updateLengthStyle(axis_, spacer, lengths[i]));
+    this.afterSpacers_.forEach((spacer, i) => updateLengthStyle(axis_, spacer, lengths[i]));
   }
 
   scrollCurrentIntoView() {
     scrollContainerToElement(
-      this.slides[this.currentIndex],
-      this.scrollContainer,
-      this.axis,
-      this.alignment,
+      this.slides_[this.currentIndex_],
+      this.scrollContainer_,
+      this.axis_,
+      this.alignment_,
     );
   }
 
   inLastWindow(index) {
-    const {alignment, slides, visibleCount} = this;
-    const startAligned = alignment == Alignment.START;
-    const lastWindowSize = startAligned ? visibleCount : visibleCount / 2;
+    const {alignment_, slides_, visibleCount_} = this;
+    const startAligned = alignment_ == Alignment.START;
+    const lastWindowSize = startAligned ? visibleCount_ : visibleCount_ / 2;
 
-    return index >= slides.length - lastWindowSize;
+    return index >= slides_.length - lastWindowSize;
   }
 
   advance(delta) {
-    const slides = this.slides;
-    const {currentIndex} = this;
-    const newIndex = currentIndex + delta;
+    const slides = this.slides_;
+    const {currentIndex_} = this;
+    const newIndex = currentIndex_ + delta;
     const endIndex = slides.length - 1;
-    const atStart = currentIndex === 0;
-    const atEnd = currentIndex === endIndex;
+    const atStart = currentIndex_ === 0;
+    const atEnd = currentIndex_ === endIndex;
     const passingStart = newIndex < 0;
     const passingEnd = newIndex > endIndex;
 
-    if (this.loop) {
+    if (this.loop_) {
       this.updateCurrentIndex(mod(newIndex, endIndex + 1));
-    } else if (delta > 0 && this.inLastWindow(currentIndex) && this.inLastWindow(newIndex)) {
+    } else if (delta > 0 && this.inLastWindow(currentIndex_) && this.inLastWindow(newIndex)) {
       this.updateCurrentIndex(0);
     } else if (passingStart && atStart || passingEnd && !atEnd) {
       this.updateCurrentIndex(endIndex);
@@ -174,21 +174,21 @@ export class Scrollable {
   }
 
   getSpacers() {
-    return [...this.scrollContainer.children].filter(e => e.className == 'spacer');
+    return [...this.scrollContainer_.children].filter(e => e.className == 'spacer');
   }
 
   handleTouchStart() {
     this.touching_ = true;
 
-    this.listenOnce(window, 'touchend', () => {
+    this.listenOnce_(window, 'touchend', () => {
       this.touching_ = false;
       this.debouncedResetWindow_();
     }, true);
   }
 
   handleScroll() {
-    if (this.ignoreNextScroll) {
-      this.ignoreNextScroll = false;
+    if (this.ignoreNextScroll_) {
+      this.ignoreNextScroll_ = false;
       return;
     }
 
@@ -198,15 +198,15 @@ export class Scrollable {
 
   updateScrollStart() {
     // Need to handle non-snapping by preserving exact scroll position.
-    const {axis, currentElementOffset} = this;
-    const currentElement = this.slides[this.currentIndex];
-    const {length, start} = getDimension(axis, this.scrollContainer);
-    const currentElementStart = Math.abs(currentElementOffset) <= length ? currentElementOffset : 0;
-    const offsetStart = getOffsetStart(axis, currentElement);
+    const {axis_, currentElementOffset_} = this;
+    const currentElement = this.slides_[this.currentIndex_];
+    const {length, start} = getDimension(axis_, this.scrollContainer_);
+    const currentElementStart = Math.abs(currentElementOffset_) <= length ? currentElementOffset_ : 0;
+    const offsetStart = getOffsetStart(axis_, currentElement);
     const pos = offsetStart - currentElementStart + start;
 
-    this.ignoreNextScroll = true;
-    runDisablingSmoothScroll(this.scrollContainer, () => setScrollPosition(axis, this.scrollContainer, pos));
+    this.ignoreNextScroll_ = true;
+    runDisablingSmoothScroll(this.scrollContainer_, () => setScrollPosition(axis_, this.scrollContainer_, pos));
   }
 
   isTransformed(element) {
@@ -214,14 +214,14 @@ export class Scrollable {
   }
 
   updateCurrentIndex(currentIndex) {
-    this.currentIndex = currentIndex;
-    this.callbacks.currentIndexChanged(currentIndex);
+    this.currentIndex_ = currentIndex;
+    this.callbacks_.currentIndexChanged(currentIndex);
   }
 
   updateCurrent() {
     const totalWidth = this.getTotalWidth();
     const currentIndex = this.findOverlappingIndex();
-    const currentElement = this.slides[currentIndex];
+    const currentElement = this.slides_[currentIndex];
 
     // Currently not over a slide (e.g. on top of overscroll area).
     if (!currentElement) {
@@ -230,36 +230,36 @@ export class Scrollable {
 
     // Update the current offset on each scroll so that we have it up to date
     // in case of a resize.
-    const dimension = getDimension(this.axis, currentElement);
-    this.currentElementOffset = dimension.start;
+    const dimension = getDimension(this.axis_, currentElement);
+    this.currentElementOffset_ = dimension.start;
 
-    if (currentIndex == this.currentIndex) {
+    if (currentIndex == this.currentIndex_) {
       return;
     }
 
     // Do not update the currentIndex if we have looped back.
-    if (currentIndex == this.restingIndex && this.isTransformed(currentElement)) {
+    if (currentIndex == this.restingIndex_ && this.isTransformed(currentElement)) {
       return;
     }
 
-    this.runMutate(() => {
+    this.runMutate_(() => {
       this.updateCurrentIndex(currentIndex);
       this.moveBufferElements(totalWidth);
     });
   }
 
   getSideSlideCount() {
-    return Math.min(this.slides.length, this.sideSlideCount);
+    return Math.min(this.slides_.length, this.sideSlideCount_);
   }
 
   hideDistantSlides() {
-    const {currentIndex, loop, slides} = this;
-    const sideSlideCount = Math.min(this.slides.length, this.sideSlideCount);
+    const {currentIndex_, loop_, slides_} = this;
+    const sideSlideCount = Math.min(this.slides_.length, this.sideSlideCount_);
 
-    slides.forEach((s, i) => {
-      const distance = loop ?
-          wrappingDistance(currentIndex, i, slides) :
-          Math.abs(currentIndex - i);
+    slides_.forEach((s, i) => {
+      const distance = loop_ ?
+          wrappingDistance(currentIndex_, i, slides_) :
+          Math.abs(currentIndex_ - i);
       const tooFar = distance > sideSlideCount;
       s.hidden = tooFar;
     });
@@ -267,33 +267,33 @@ export class Scrollable {
 
   hideSpacers() {
     const {
-      afterSpacers,
-      beforeSpacers,
-      currentIndex,
-      slides,
+      afterSpacers_,
+      beforeSpacers_,
+      currentIndex_,
+      slides_,
     } = this;
-    const sideSlideCount = Math.min(this.slides.length, this.sideSlideCount);
-    const numBeforeSpacers = slides.length <= 2 ? 0 : slides.length - currentIndex - 1;
-    const numAfterSpacers = slides.length <= 2 ? 0 : currentIndex;
+    const sideSlideCount = Math.min(this.slides_.length, this.sideSlideCount_);
+    const numBeforeSpacers = slides_.length <= 2 ? 0 : slides_.length - currentIndex_ - 1;
+    const numAfterSpacers = slides_.length <= 2 ? 0 : currentIndex_;
 
-    beforeSpacers.forEach((s, i) => {
-      const distance = backwardWrappingDistance(currentIndex, i, slides);
+    beforeSpacers_.forEach((s, i) => {
+      const distance = backwardWrappingDistance(currentIndex_, i, slides_);
       const tooFar = distance > sideSlideCount;
-      s.hidden = tooFar || i < slides.length - numBeforeSpacers;
+      s.hidden = tooFar || i < slides_.length - numBeforeSpacers;
     });
-    afterSpacers.forEach((s, i) => {
-      const distance = forwardWrappingDistance(currentIndex, i, slides);
+    afterSpacers_.forEach((s, i) => {
+      const distance = forwardWrappingDistance(currentIndex_, i, slides_);
       const tooFar = distance > sideSlideCount;
       s.hidden = tooFar || i >= numAfterSpacers;
     });
   }
 
   resetSlideTransforms() {
-    this.slides.forEach(slide => this.setSlideTransform(slide, 0, 0));
+    this.slides_.forEach(slide => this.setSlideTransform(slide, 0, 0));
   }
 
   setSlideTransform(slide, delta, totalWidth) {
-    setTransformTranslateStyle(this.axis, slide, delta * totalWidth);
+    setTransformTranslateStyle(this.axis_, slide, delta * totalWidth);
     slide._delta = delta;
   }
 
@@ -302,14 +302,14 @@ export class Scrollable {
       return;
     }
 
-    if (this.restingIndex == this.currentIndex && !force) {
+    if (this.restingIndex_ == this.currentIndex_ && !force) {
       return;
     }
 
     const totalWidth = this.getTotalWidth();
 
-    this.runMutate(() => {
-      this.restingIndex = this.currentIndex;
+    this.runMutate_(() => {
+      this.restingIndex_ = this.currentIndex_;
 
       this.resetSlideTransforms();
       this.hideDistantSlides();
@@ -320,20 +320,20 @@ export class Scrollable {
   }
 
   getTotalWidth() {
-    return this.slides.map(s => getDimension(this.axis, s).length)
+    return this.slides_.map(s => getDimension(this.axis_, s).length)
       .reduce((p, c) => p + c);
   }
 
   adjustElements(totalWidth, count, isNext) {
-    const {currentIndex, slides} = this;
-    const current = slides[currentIndex];
+    const {currentIndex_, slides_} = this;
+    const current = slides_[currentIndex_];
     const currentDelta = (current._delta || 0);
     const dir = isNext ? 1 : -1;
 
     for (let i = 1; i <= count; i++) {
-      const elIndex = mod(currentIndex + (i * dir), slides.length);
-      const el = slides[elIndex];
-      const needsMove = elIndex > currentIndex !== isNext;
+      const elIndex = mod(currentIndex_ + (i * dir), slides_.length);
+      const el = slides_[elIndex];
+      const needsMove = elIndex > currentIndex_ !== isNext;
       const delta = needsMove ? currentDelta + dir : currentDelta;
 
       this.setSlideTransform(el, delta, totalWidth);
@@ -341,13 +341,13 @@ export class Scrollable {
   }
 
   moveBufferElements(totalWidth) {
-    const count = (this.slides.length - 1) / 2;
+    const count = (this.slides_.length - 1) / 2;
 
-    if (!this.loop) {
+    if (!this.loop_) {
       return;
     }
 
-    if (this.slides.length <= 2) {
+    if (this.slides_.length <= 2) {
       return;
     }
 
@@ -360,17 +360,17 @@ export class Scrollable {
    * snap to end instead.
    */
   updateVisibleCount(visibleCount) {
-    this.visibleCount = Math.max(1, visibleCount);
+    this.visibleCount_ = Math.max(1, visibleCount);
     this.updateAll();
   }
 
   updateLoop(loop) {
-    this.loop = loop;
+    this.loop_ = loop;
     this.updateAll();
   }
   
   updateHorizontal(horizontal) {
-    this.axis = horizontal ? Axis.X : Axis.Y;
+    this.axis_ = horizontal ? Axis.X : Axis.Y;
     this.updateAll();
   }
 
@@ -381,23 +381,23 @@ export class Scrollable {
    * the middle.
    */
   updateAlignment(alignment) {
-    this.alignment = alignment == Alignment.START ? 'start' : 'center';
+    this.alignment_ = alignment == Alignment.START ? 'start' : 'center';
     this.updateAll();
   }
 
   updateInitialIndex(initialIndex) {
-    this.initialIndex = initialIndex;
+    this.initialIndex_ = initialIndex;
     this.updateAll();
   }
 
   updateSideSlideCount(sideSlideCount) {
-    this.sideSlideCount = sideSlideCount > 0 ? sideSlideCount : Number.MAX_SAFE_INTEGER;
+    this.sideSlideCount_ = sideSlideCount > 0 ? sideSlideCount : Number.MAX_SAFE_INTEGER;
     this.updateAll();
   }
 
   updateSlides(slides) {
-    this.slides = slides;
-    this.updateCurrentIndex(Math.max(0, Math.min(this.initialIndex, this.slides.length - 1)));
+    this.slides_ = slides;
+    this.updateCurrentIndex(Math.max(0, Math.min(this.initialIndex_, this.slides_.length - 1)));
     this.updateAll();
   }
 }

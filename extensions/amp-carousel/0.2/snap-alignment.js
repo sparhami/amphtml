@@ -4,14 +4,14 @@ export class SnapAlignment {
     runMutate,
     debounceToMicrotask,
   }) {
-    this.scrollContainer = scrollContainer;
-    this.runMutate = runMutate;
+    this.scrollContainer_ = scrollContainer;
+    this.runMutate_ = runMutate;
 
-    this.snapAlign = 'start';
-    this.snap = true;
-    this.snapBy = 1;
-    this.visibleCount = 0;
-    this.slides = [];
+    this.snapAlign_ = 'start';
+    this.snap_ = true;
+    this.snapBy_ = 1;
+    this.visibleCount_ = 0;
+    this.slides_ = [];
 
     this.debouncedUpdateAll_ = debounceToMicrotask(() => this.updateAll_());
 
@@ -19,11 +19,11 @@ export class SnapAlignment {
   }
 
   updateAll_() {
-    this.runMutate(() => {
-      this.scrollContainer.setAttribute('snap', this.snap);
-      this.scrollContainer.setAttribute('snap-align', this.snapAlign);
-      this.scrollContainer.style.setProperty('--snap-align', this.snapAlign);
-      this.scrollContainer.style.setProperty('--snap-coordinate', `${this.snapAlign == 'start' ? '0%' : '50%'}`);
+    this.runMutate_(() => {
+      this.scrollContainer_.setAttribute('snap', this.snap_);
+      this.scrollContainer_.setAttribute('snap-align', this.snapAlign_);
+      this.scrollContainer_.style.setProperty('--snap-align', this.snapAlign_);
+      this.scrollContainer_.style.setProperty('--snap-coordinate', `${this.snapAlign_ == 'start' ? '0%' : '50%'}`);
   
       this.updateDynamicStyle();
     });
@@ -37,7 +37,7 @@ export class SnapAlignment {
     // Update the snap-align for each child slide. Since the slides can exist
     // in a parent mixed with non-slides and do not share a common tag, we
     // cannot rely on nth-of-type or nth-child.
-    this.slides.forEach((slide, index) => {
+    this.slides_.forEach((slide, index) => {
       const snapAlign = this.getScrollSnapAlign(index);
       slide.style.setProperty('scroll-snap-align', snapAlign);
     })
@@ -46,23 +46,23 @@ export class SnapAlignment {
   getScrollSnapAlign(index) {
     // Make sure when using fractional visibile counts, the last item always
     // snaps on the ending edge.
-    if (this.snapAlign == 'start' && this.slides.length - 1 == index) {
+    if (this.snapAlign_ == 'start' && this.slides_.length - 1 == index) {
       return 'end';
     }
 
-    if (this.snapAlign == 'start' && this.slides.length - index < this.visibleCount) {
+    if (this.snapAlign_ == 'start' && this.slides_.length - index < this.visibleCount_) {
       return 'none';
     }
 
-    if (index % this.snapBy == 0) {
-      return this.snapAlign;
+    if (index % this.snapBy_ == 0) {
+      return this.snapAlign_;
     }
 
     return 'none';
   }
 
   updateSlides(slides) {
-    this.slides = slides;
+    this.slides_ = slides;
     this.updateAll();
   }
 
@@ -71,12 +71,12 @@ export class SnapAlignment {
    * snap to end instead.
    */
   updateVisibleCount(visibleCount) {
-    this.visibleCount = Math.max(1, visibleCount);
+    this.visibleCount_ = Math.max(1, visibleCount);
     this.updateAll();
   }
 
   updateSnap(snap) {
-    this.snap = snap;
+    this.snap_ = snap;
     this.updateAll();
   }
   
@@ -87,12 +87,12 @@ export class SnapAlignment {
    * the middle.
    */
   updateAlignment(snapAlign) {
-    this.snapAlign = snapAlign == 'start' ? 'start' : 'center';
+    this.snapAlign_ = snapAlign == 'start' ? 'start' : 'center';
     this.updateAll();
   }
 
   updateSnapBy(snapBy) {
-    this.snapBy = Math.max(1, snapBy);
+    this.snapBy_ = Math.max(1, snapBy);
     this.updateAll();
   }
 }

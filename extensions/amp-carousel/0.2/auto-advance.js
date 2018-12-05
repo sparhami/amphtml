@@ -8,33 +8,33 @@ export class AutoAdvance {
     debounce,
     listenOnce,
   }) {
-    this.element = element;
-    this.scrollContainer = scrollContainer;
-    this.advanceable = advanceable;
-    this.debounce = debounce;
-    this.listenOnce = listenOnce;
+    this.element_ = element;
+    this.scrollContainer_ = scrollContainer;
+    this.advanceable_ = advanceable;
+    this.debounce_ = debounce;
+    this.listenOnce_ = listenOnce;
 
-    this.autoAdvance = false;
-    this.autoAdvanceCount = 1;
-    this.autoAdvanceInterval = MIN_AUTO_ADVANCE_INTERVAL;
-    this.paused = false;
+    this.autoAdvance_ = false;
+    this.autoAdvanceCount_ = 1;
+    this.autoAdvanceInterval_ = MIN_AUTO_ADVANCE_INTERVAL;
+    this.paused_ = false;
 
-    this.debouncedAdvance = null;
-    this.createDebouncedAdvance(this.autoAdvanceInterval);
+    this.debouncedAdvance_ = null;
+    this.createDebouncedAdvance(this.autoAdvanceInterval_);
 
-    this.scrollContainer.addEventListener('scroll', (e) => this.handleScroll(e), true);
-    this.scrollContainer.addEventListener('touchstart', (e) => this.handleTouchStart(e), true);
+    this.scrollContainer_.addEventListener('scroll', (e) => this.handleScroll(e), true);
+    this.scrollContainer_.addEventListener('touchstart', (e) => this.handleTouchStart(e), true);
   }
 
   createDebouncedAdvance(interval) {
-    this.debouncedAdvance = this.debounce(() => this.advance_(), interval);
+    this.debouncedAdvance_ = this.debounce_(() => this.advance_(), interval);
   }
 
   handleTouchStart() {
-    this.paused = true;
+    this.paused_ = true;
 
-    this.listenOnce(window, 'touchend', () => {
-      this.paused = false;
+    this.listenOnce_(window, 'touchend', () => {
+      this.paused_ = false;
       this.resetAutoAdvance();
     }, true);
   }
@@ -44,15 +44,15 @@ export class AutoAdvance {
   }
 
   advance_() {
-    if (!this.autoAdvance || this.paused) {
+    if (!this.autoAdvance_ || this.paused_) {
       return;
     }
 
-    this.advanceable.advance(this.autoAdvanceCount);
+    this.advanceable_.advance(this.autoAdvanceCount_);
   }
 
   resetAutoAdvance() {
-    if (!this.autoAdvance) {
+    if (!this.autoAdvance_) {
       return;
     }
 
@@ -60,11 +60,11 @@ export class AutoAdvance {
     // scrolling stops, we will get called again. This makes sure we do not
     // advance while the user is scrolling (either by touching, mousewheel or
     // momentum).
-    this.debouncedAdvance();
+    this.debouncedAdvance_();
   }
 
   updateAutoAdvance(autoAdvance) {
-    this.autoAdvance = autoAdvance;
+    this.autoAdvance_ = autoAdvance;
     this.resetAutoAdvance();
   }
 
@@ -73,14 +73,14 @@ export class AutoAdvance {
    *    number advances backwards.
    */
   updateAutoAdvanceCount(autoAdvanceCount) {
-    this.autoAdvanceCount = autoAdvanceCount;
+    this.autoAdvanceCount_ = autoAdvanceCount;
     this.resetAutoAdvance();
   }
 
   updateAutoAdvanceInterval(autoAdvanceInterval) {
-    this.autoAdvanceInterval = Math.max(
+    this.autoAdvanceInterval_ = Math.max(
         autoAdvanceInterval, MIN_AUTO_ADVANCE_INTERVAL);
-    this.createDebouncedAdvance(this.autoAdvanceInterval);
+    this.createDebouncedAdvance(this.autoAdvanceInterval_);
     this.resetAutoAdvance();
   }
 }
