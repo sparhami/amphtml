@@ -38,7 +38,7 @@ class AmpCarousel extends AMP.BaseElement {
 
   /** @override */
   layoutCallback() {
-    this.carousel.updateAll();
+    this.carousel.updateUi();
   }
 
   /** @override */

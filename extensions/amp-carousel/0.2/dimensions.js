@@ -30,7 +30,6 @@ export function getOffsetStart(axis, el) {
 }
 
 /**
- * 
  * @param {!Axis} axis The Axis to get the Dimension for.
  * @param {*} el The Element to get the Dimension For.
  * @return {!Dimension} The dimension for the Element along the given Axis.

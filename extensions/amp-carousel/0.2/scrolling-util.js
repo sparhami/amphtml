@@ -22,8 +22,9 @@ export function runDisablingSmoothScroll(el, cb) {
 }
 
 /**
- * Unlike `scrollIntoView`, this function does not scroll the container itself
- * into view. 
+ * Scrolls the position within a scrolling container to an Element. Unlike
+ * `scrollIntoView`, this function does not scroll the container itself into
+ * view. 
  * @param {!Element} el The Element to scroll to.
  * @param {!Element} container The scrolling container.
  * @param {!Axis} axis The axis to scroll along.
