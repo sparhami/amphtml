@@ -102,10 +102,6 @@ export class Scrollable {
     this.updateSlides();
   }
 
-  /**
-   * TODO(sparhami) when snap = start, want to set the last `visibleCount` to
-   * snap to end instead.
-   */
   updateVisibleCount(visibleCount) {
     this.visibleCount_ = Math.max(1, visibleCount);
     this.updateAll();
@@ -147,7 +143,7 @@ export class Scrollable {
     this.updateCurrentIndex_(Math.max(0, Math.min(this.initialIndex_, this.slides_.length - 1)));
     this.updateAll();
   }
-  
+
   findOverlappingIndex_() {
     return findOverlappingIndex(
       this.axis_,
@@ -175,8 +171,6 @@ export class Scrollable {
       runDisablingSmoothScroll(this.scrollContainer_, () => this.scrollCurrentIntoView_());
     });
   }
-
-
 
   createSpacer_() {
     const spacer = document.createElement('div');

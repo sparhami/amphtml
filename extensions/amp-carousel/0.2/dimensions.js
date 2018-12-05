@@ -48,7 +48,7 @@ export function getDimension(axis, el) {
   return {
     start: axis == Axis.X ? left : top,
     end: axis == Axis.X ? right : bottom,
-    length: axis == Axis.X ? width: height,
+    length: axis == Axis.X ? width : height,
   };
 }
 
@@ -77,6 +77,12 @@ export function setTransformTranslateStyle(axis, el, delta) {
   el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 }
 
+/**
+ * Gets the current scroll position for an element along a given axis.
+ * @param {!Axis} axis The axis to set the scroll position for.
+ * @param {!Element} el The Element to set the scroll position for.
+ * @return {number} The scroll position.
+ */
 export function getScrollPosition(axis, el) {
   if (axis == Axis.X) {
     return el.scrollLeft;
@@ -84,7 +90,6 @@ export function getScrollPosition(axis, el) {
 
   return el.scrollTop;
 }
-
 
 /**
  * Sets the scroll position for an element along a given axis.
