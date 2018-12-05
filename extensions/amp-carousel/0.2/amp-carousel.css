@@ -39,10 +39,6 @@ amp-carousel {
   overflow-x: hidden;
 }
 
-.scroll-container[ready="false"] {
-  scroll-behavior: auto;
-}
-
 /** Keep in sync with ::slotted(*) version below */
 .scroll-container .slotted,
 .scroll-container .spacer {
@@ -92,11 +88,6 @@ amp-carousel {
 /** Keep in sync with ::slotted(*) version below */
 .scroll-container .slotted {
   will-change: transform;
-  /*
-   * For Safari, the translateZ prevents sometimes glitchy rendering when
-   * changing the transform when moving slides.
-   */
-  transform: translateZ(0);
 }
 
 
@@ -214,9 +205,4 @@ amp-carousel {
 /** Keep in sync with .slotted version above */
 .scroll-container ::slotted(*)  {
   will-change: transform;
-  /*
-   * For Safari, the translateZ prevents sometimes glitchy rendering when
-   * changing the transform when moving slides.
-   */
-  transform: translateZ(0);
 }

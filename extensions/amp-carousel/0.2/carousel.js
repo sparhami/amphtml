@@ -70,7 +70,6 @@ export class Carousel {
       this.scrollContainer_.setAttribute('mixed-length', this.mixedLength_);
     });
     this.scrollable_.updateAll();
-    this.snapAlignment_.updateAll();
   }
 
   resetWindow() {
