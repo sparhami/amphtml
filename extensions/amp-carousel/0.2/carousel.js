@@ -133,25 +133,24 @@ export class Carousel {
   }
 
   /**
-   * @param {boolean} autoAdvance Whether or not the carousel should auto
-   *    advance.
+   * @param {boolean} autoAdvance Whether or not to autoadvance. Changing this
+   *    will start or stop autoadvance.
    */
   updateAutoAdvance(autoAdvance) {
     this.autoAdvance_.updateAutoAdvance(autoAdvance);
   }
 
   /**
-   * @param {number} autoAdvanceCount How many items to advance by on each auto
-   *    advancement.
+   * @param {number} autoAdvanceCount How many items to advance by. A positive
+   *    number advances forwards, a negative number advances backwards.
    */
   updateAutoAdvanceCount(autoAdvanceCount) {
     this.autoAdvance_.updateAutoAdvanceCount(autoAdvanceCount);
   }
 
   /**
-   * @param {number} autoAdvanceInterval The duration, in milliseconds, before
-   *    auto advancing. The duration is counted from when scrolling for the
-   *    previous auto advance has finished.
+   * @param {number} autoAdvanceInterval How much time between auto advances.
+   *    This time starts counting from when scrolling has stopped.
    */
   updateAutoAdvanceInterval(autoAdvanceInterval) {
     this.autoAdvance_.updateAutoAdvanceInterval(autoAdvanceInterval);
