@@ -1,16 +1,34 @@
 const MIN_AUTO_ADVANCE_INTERVAL = 2000;
 
+/**
+ * @typedef {{
+ *   advance: function(number),
+ * }}
+ */
+let Advanceable;
+
+/**
+ * Handles auto advance for a carousel. This pauses autoadvance whenever a
+ * scroll / touch  occurs and resumes it when it ends.
+ * 
+ * When the auto advance timer expires, it tells the provided Advanceable to
+ * advance by the configured auto advance count.
+ */
 export class AutoAdvance {
+  /**
+   * @param {{
+   *   element: !Element,
+   *   advanceable: !Advanceable,
+   *   debounce: function(function(), number),
+   *   listenOnce: function(Element, string, EventListenerOptions),
+   * }} config 
+   */
   constructor({
-    element,
     scrollContainer,
     advanceable,
     debounce,
     listenOnce,
   }) {
-    /** @private @const */
-    this.element_ = element;
-
     /** @private @const */
     this.scrollContainer_ = scrollContainer;
 

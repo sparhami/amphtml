@@ -83,7 +83,9 @@ class AmpCarousel extends AMP.BaseElement {
   buildCommon_(element, root) {
     this.carousel = new Carousel({
       element,
-      root,
+      scrollContainer: root.querySelector('.scroll-container'),
+      afterSpacersRef: root.querySelector('.after-spacers-ref'),
+      beforeSpacersRef: root.querySelector('.before-spacers-ref'),
       callbacks: {
         currentIndexChanged: (newIndex) => this.currentIndexChanged_(newIndex),
       },

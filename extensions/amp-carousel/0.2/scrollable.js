@@ -60,12 +60,12 @@ export class Scrollable {
 
     this.boundResetWindow = () => this.resetWindow_();
     this.debouncedResetWindow_ = debounce(this.boundResetWindow, RESET_WINDOW_WAIT);
-    this.debouncedUpdateAll_ = debounceToMicrotask(() => this.updateAll_());
+    this.debouncedUpdateUi_ = debounceToMicrotask(() => this.updateUi_());
 
     this.scrollContainer_.addEventListener('scroll', (e) => this.handleScroll_(e), true);
     this.scrollContainer_.addEventListener('touchstart', (e) => this.handleTouchStart_(e), true);
 
-    this.updateAll();
+    this.updateUi();
   }
 
   advance(delta) {
@@ -93,8 +93,8 @@ export class Scrollable {
     this.scrollCurrentIntoView_();
   }
 
-  updateAll() {
-    this.debouncedUpdateAll_();
+  updateUi() {
+    this.debouncedUpdateUi_();
   }
 
   updateSlides(slides) {
@@ -104,17 +104,17 @@ export class Scrollable {
 
   updateVisibleCount(visibleCount) {
     this.visibleCount_ = Math.max(1, visibleCount);
-    this.updateAll();
+    this.updateUi();
   }
 
   updateLoop(loop) {
     this.loop_ = loop;
-    this.updateAll();
+    this.updateUi();
   }
   
   updateHorizontal(horizontal) {
     this.axis_ = horizontal ? Axis.X : Axis.Y;
-    this.updateAll();
+    this.updateUi();
   }
 
   /**
@@ -125,23 +125,23 @@ export class Scrollable {
    */
   updateAlignment(alignment) {
     this.alignment_ = alignment == Alignment.START ? 'start' : 'center';
-    this.updateAll();
+    this.updateUi();
   }
 
   updateInitialIndex(initialIndex) {
     this.initialIndex_ = initialIndex;
-    this.updateAll();
+    this.updateUi();
   }
 
   updateSideSlideCount(sideSlideCount) {
     this.sideSlideCount_ = sideSlideCount > 0 ? sideSlideCount : Number.MAX_SAFE_INTEGER;
-    this.updateAll();
+    this.updateUi();
   }
 
   updateSlides(slides) {
     this.slides_ = slides;
     this.updateCurrentIndex_(Math.max(0, Math.min(this.initialIndex_, this.slides_.length - 1)));
-    this.updateAll();
+    this.updateUi();
   }
 
   findOverlappingIndex_() {
@@ -154,7 +154,7 @@ export class Scrollable {
     );
   }
 
-  updateAll_() {
+  updateUi_() {
     this.runMutate_(() => {
       this.scrollContainer_.setAttribute('horizontal', this.axis_ == Axis.X);
       this.scrollContainer_.setAttribute('loop', this.loop_);
