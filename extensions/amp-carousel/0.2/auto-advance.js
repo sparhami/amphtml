@@ -20,27 +20,48 @@ export class AutoAdvance {
     this.paused_ = false;
 
     this.debouncedAdvance_ = null;
-    this.createDebouncedAdvance(this.autoAdvanceInterval_);
+    this.createDebouncedAdvance_(this.autoAdvanceInterval_);
 
-    this.scrollContainer_.addEventListener('scroll', (e) => this.handleScroll(e), true);
-    this.scrollContainer_.addEventListener('touchstart', (e) => this.handleTouchStart(e), true);
+    this.scrollContainer_.addEventListener('scroll', (e) => this.handleScroll_(e), true);
+    this.scrollContainer_.addEventListener('touchstart', (e) => this.handleTouchStart_(e), true);
   }
 
-  createDebouncedAdvance(interval) {
+  updateAutoAdvance(autoAdvance) {
+    this.autoAdvance_ = autoAdvance;
+    this.resetAutoAdvance_();
+  }
+
+  /**
+   * @param autoAdvanceCount A positive number advances forwards, a negative
+   *    number advances backwards.
+   */
+  updateAutoAdvanceCount(autoAdvanceCount) {
+    this.autoAdvanceCount_ = autoAdvanceCount;
+    this.resetAutoAdvance_();
+  }
+
+  updateAutoAdvanceInterval(autoAdvanceInterval) {
+    this.autoAdvanceInterval_ = Math.max(
+        autoAdvanceInterval, MIN_AUTO_ADVANCE_INTERVAL);
+    this.createDebouncedAdvance_(this.autoAdvanceInterval_);
+    this.resetAutoAdvance_();
+  }
+  
+  createDebouncedAdvance_(interval) {
     this.debouncedAdvance_ = this.debounce_(() => this.advance_(), interval);
   }
 
-  handleTouchStart() {
+  handleTouchStart_() {
     this.paused_ = true;
 
     this.listenOnce_(window, 'touchend', () => {
       this.paused_ = false;
-      this.resetAutoAdvance();
+      this.resetAutoAdvance_();
     }, true);
   }
 
-  handleScroll() {
-    this.resetAutoAdvance();
+  handleScroll_() {
+    this.resetAutoAdvance_();
   }
 
   advance_() {
@@ -51,7 +72,7 @@ export class AutoAdvance {
     this.advanceable_.advance(this.autoAdvanceCount_);
   }
 
-  resetAutoAdvance() {
+  resetAutoAdvance_() {
     if (!this.autoAdvance_) {
       return;
     }
@@ -61,26 +82,5 @@ export class AutoAdvance {
     // advance while the user is scrolling (either by touching, mousewheel or
     // momentum).
     this.debouncedAdvance_();
-  }
-
-  updateAutoAdvance(autoAdvance) {
-    this.autoAdvance_ = autoAdvance;
-    this.resetAutoAdvance();
-  }
-
-  /**
-   * @param autoAdvanceCount A positive number advances forwards, a negative
-   *    number advances backwards.
-   */
-  updateAutoAdvanceCount(autoAdvanceCount) {
-    this.autoAdvanceCount_ = autoAdvanceCount;
-    this.resetAutoAdvance();
-  }
-
-  updateAutoAdvanceInterval(autoAdvanceInterval) {
-    this.autoAdvanceInterval_ = Math.max(
-        autoAdvanceInterval, MIN_AUTO_ADVANCE_INTERVAL);
-    this.createDebouncedAdvance(this.autoAdvanceInterval_);
-    this.resetAutoAdvance();
   }
 }

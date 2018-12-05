@@ -3,7 +3,7 @@ import {
   Axis,
   getCenter,
   getStart,
-  updateScrollPos,
+  updateScrollPosition,
 } from './dimensions.js';
 
 /**
@@ -34,5 +34,5 @@ export function scrollContainerToElement(el, container, axis, alignment) {
   const snapOffset = startAligned ? getStart(axis, el) : getCenter(axis, el);
   const pos = getStart(axis, container) - snapOffset;
 
-  updateScrollPos(axis, container, -pos);
+  updateScrollPosition(axis, container, -pos);
 }

@@ -44,14 +44,63 @@ export class SnapAlignment {
   }
 
   /**
+   * @param {!Array<Element>} slides The slides to manage snapping for.
+   */
+  updateSlides(slides) {
+    this.slides_ = slides;
+    this.debouncedUpdateAll_();
+  }
+
+  /**
+   * @param {number} visibleCount How many slides are visible at a time.
+   */
+  updateVisibleCount(visibleCount) {
+    this.visibleCount_ = Math.max(1, visibleCount);
+    this.debouncedUpdateAll_();
+  }
+
+  /**
+   * @param {boolean} snap Whether or not to snap.
+   */
+  updateSnap(snap) {
+    this.snap_ = snap;
+    this.debouncedUpdateAll_();
+  }
+  
+  /**
+   * @param {string} snapAlign How to align when snapping. Currently only start
+   *    and center are supported.
+   */
+  updateAlignment(snapAlign) {
+    this.snapAlign_ = snapAlign == 'start' ? 'start' : 'center';
+    this.debouncedUpdateAll_();
+  }
+
+  /**
+   * @param {number} snapBy Snaps on every nth slide, including the zeroth
+   *    slide.
+   */
+  updateSnapBy(snapBy) {
+    this.snapBy_ = Math.max(1, snapBy);
+    this.debouncedUpdateAll_();
+  }
+
+  /**
    * Updates the DOM for all configuration options.
    * @private
    */
   updateAll_() {
     this.runMutate_(() => {
+      const startAligned = this.snapAlign_ == 'start';
+      const oddVisibleCount = this.visibleCount_ % 2 == 1;
+      // When center aligning with an odd count, actually use a start
+      // coordinate. Otherwise it will snap to the center of the slides
+      // near the edge of the container.
+      const coordinate = startAligned || oddVisibleCount ? '0%' : '50%';
+
       this.scrollContainer_.setAttribute('snap', this.snap_);
       this.scrollContainer_.style.setProperty('--snap-align', this.snapAlign_);
-      this.scrollContainer_.style.setProperty('--snap-coordinate', `${this.snapAlign_ == 'start' ? '0%' : '50%'}`);
+      this.scrollContainer_.style.setProperty('--snap-coordinate', coordinate);
   
       this.setSlidesSnapAlign_();
     });
@@ -96,51 +145,5 @@ export class SnapAlignment {
 
     // Remaining items (in the middle of a group) do not get aligned.
     return 'none';
-  }
-
-  /**
-   * @param {!Array<Element>} slides The slides to manage snapping for.
-   */
-  updateSlides(slides) {
-    this.slides_ = slides;
-    this.updateAll();
-  }
-
-  /**
-   * @param {number} visibleCount How many slides are visible at a time.
-   */
-  updateVisibleCount(visibleCount) {
-    this.visibleCount_ = Math.max(1, visibleCount);
-    this.updateAll();
-  }
-
-  /**
-   * @param {boolean} snap Whether or not to snap.
-   */
-  updateSnap(snap) {
-    this.snap_ = snap;
-    this.updateAll();
-  }
-  
-  /**
-   * TODO(sparhami): Document that center works differently for Firefox when
-   * the visible count is odd as it prefers snapping on the center of the
-   * items at the edges rather than snapping on the center of the items near
-   * the middle.
-   * @param {string} snapAlign How to align when snapping. Currently only start
-   *    and center are supported.
-   */
-  updateAlignment(snapAlign) {
-    this.snapAlign_ = snapAlign == 'start' ? 'start' : 'center';
-    this.updateAll();
-  }
-
-  /**
-   * @param {number} snapBy Snaps on every nth slide, including the zeroth
-   *    slide.
-   */
-  updateSnapBy(snapBy) {
-    this.snapBy_ = Math.max(1, snapBy);
-    this.updateAll();
   }
 }

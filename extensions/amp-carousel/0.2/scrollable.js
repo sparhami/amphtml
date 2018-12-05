@@ -58,94 +58,14 @@ export class Scrollable {
     this.sideSlideCount_ = Number.MAX_SAFE_INTEGER;
     this.visibleCount_ = 1;
 
-    this.boundResetWindow = () => this.resetWindow();
+    this.boundResetWindow = () => this.resetWindow_();
     this.debouncedResetWindow_ = debounce(this.boundResetWindow, RESET_WINDOW_WAIT);
     this.debouncedUpdateAll_ = debounceToMicrotask(() => this.updateAll_());
 
-    this.scrollContainer_.addEventListener('scroll', (e) => this.handleScroll(e), true);
-    this.scrollContainer_.addEventListener('touchstart', (e) => this.handleTouchStart(e), true);
+    this.scrollContainer_.addEventListener('scroll', (e) => this.handleScroll_(e), true);
+    this.scrollContainer_.addEventListener('touchstart', (e) => this.handleTouchStart_(e), true);
 
     this.updateAll();
-  }
-
-  setSlides(slides) {
-    this.slides_ = slides;
-    this.updateSlides();
-  }
-
-  findOverlappingIndex() {
-    return findOverlappingIndex(
-      this.axis_,
-      this.alignment_,
-      this.element_,
-      this.slides_,
-      this.currentIndex_
-    );
-  }
-
-  updateAll_() {
-    this.runMutate_(() => {
-      this.scrollContainer_.setAttribute('horizontal', this.axis_ == Axis.X);
-      this.scrollContainer_.setAttribute('loop', this.loop_);
-      this.scrollContainer_.style.setProperty('--visible-count', this.visibleCount_);
-  
-      if (!this.slides_.length) {
-        return;
-      }
-  
-      this.updateSpacers();
-      this.hideDistantSlides();
-      this.resetWindow(true);
-      this.ignoreNextScroll_ = true;
-      runDisablingSmoothScroll(this.scrollContainer_, () => this.scrollCurrentIntoView());
-    });
-  }
-
-  updateAll() {
-    this.debouncedUpdateAll_();
-  }
-
-  createSpacer() {
-    const spacer = document.createElement('div');
-    spacer.className = 'spacer';
-    return spacer;
-  }
-
-  updateSpacers() {
-    const {axis_, slides_} = this;
-    const lengths = slides_.map(slide => getDimension(axis_, slide).length);
-    const count = this.loop_ ? slides_.length : 0;
-
-    this.beforeSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
-    this.afterSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
-
-    this.beforeSpacers_ = new Array(count).fill(0)
-        .map(() => this.createSpacer())
-        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.beforeSpacersRef_));
-    this.afterSpacers_ = new Array(count).fill(0)
-        .map(() => this.createSpacer())
-        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_))
-        .reverse();
-
-    this.beforeSpacers_.forEach((spacer, i) => updateLengthStyle(axis_, spacer, lengths[i]));
-    this.afterSpacers_.forEach((spacer, i) => updateLengthStyle(axis_, spacer, lengths[i]));
-  }
-
-  scrollCurrentIntoView() {
-    scrollContainerToElement(
-      this.slides_[this.currentIndex_],
-      this.scrollContainer_,
-      this.axis_,
-      this.alignment_,
-    );
-  }
-
-  inLastWindow(index) {
-    const {alignment_, slides_, visibleCount_} = this;
-    const startAligned = alignment_ == Alignment.START;
-    const lastWindowSize = startAligned ? visibleCount_ : visibleCount_ / 2;
-
-    return index >= slides_.length - lastWindowSize;
   }
 
   advance(delta) {
@@ -159,200 +79,27 @@ export class Scrollable {
     const passingEnd = newIndex > endIndex;
 
     if (this.loop_) {
-      this.updateCurrentIndex(mod(newIndex, endIndex + 1));
-    } else if (delta > 0 && this.inLastWindow(currentIndex_) && this.inLastWindow(newIndex)) {
-      this.updateCurrentIndex(0);
+      this.updateCurrentIndex_(mod(newIndex, endIndex + 1));
+    } else if (delta > 0 && this.inLastWindow_(currentIndex_) && this.inLastWindow_(newIndex)) {
+      this.updateCurrentIndex_(0);
     } else if (passingStart && atStart || passingEnd && !atEnd) {
-      this.updateCurrentIndex(endIndex);
+      this.updateCurrentIndex_(endIndex);
     } else if (passingStart && !atStart || passingEnd && atEnd) {
-      this.updateCurrentIndex(0);
+      this.updateCurrentIndex_(0);
     } else {
-      this.updateCurrentIndex(newIndex);
+      this.updateCurrentIndex_(newIndex);
     }
 
-    this.scrollCurrentIntoView();
+    this.scrollCurrentIntoView_();
   }
 
-  getSpacers() {
-    return [...this.scrollContainer_.children].filter(e => e.className == 'spacer');
+  updateAll() {
+    this.debouncedUpdateAll_();
   }
 
-  handleTouchStart() {
-    this.touching_ = true;
-
-    this.listenOnce_(window, 'touchend', () => {
-      this.touching_ = false;
-      this.debouncedResetWindow_();
-    }, true);
-  }
-
-  handleScroll() {
-    if (this.ignoreNextScroll_) {
-      this.ignoreNextScroll_ = false;
-      return;
-    }
-
-    this.updateCurrent();
-    this.debouncedResetWindow_();
-  }
-
-  updateScrollStart() {
-    // Need to handle non-snapping by preserving exact scroll position.
-    const {axis_, currentElementOffset_} = this;
-    const currentElement = this.slides_[this.currentIndex_];
-    const {length, start} = getDimension(axis_, this.scrollContainer_);
-    const currentElementStart = Math.abs(currentElementOffset_) <= length ? currentElementOffset_ : 0;
-    const offsetStart = getOffsetStart(axis_, currentElement);
-    const pos = offsetStart - currentElementStart + start;
-
-    this.ignoreNextScroll_ = true;
-    runDisablingSmoothScroll(this.scrollContainer_, () => setScrollPosition(axis_, this.scrollContainer_, pos));
-  }
-
-  isTransformed(element) {
-    return !!element._delta;
-  }
-
-  updateCurrentIndex(currentIndex) {
-    this.currentIndex_ = currentIndex;
-    this.callbacks_.currentIndexChanged(currentIndex);
-  }
-
-  updateCurrent() {
-    const totalWidth = this.getTotalWidth();
-    const currentIndex = this.findOverlappingIndex();
-    const currentElement = this.slides_[currentIndex];
-
-    // Currently not over a slide (e.g. on top of overscroll area).
-    if (!currentElement) {
-      return;
-    }
-
-    // Update the current offset on each scroll so that we have it up to date
-    // in case of a resize.
-    const dimension = getDimension(this.axis_, currentElement);
-    this.currentElementOffset_ = dimension.start;
-
-    if (currentIndex == this.currentIndex_) {
-      return;
-    }
-
-    // Do not update the currentIndex if we have looped back.
-    if (currentIndex == this.restingIndex_ && this.isTransformed(currentElement)) {
-      return;
-    }
-
-    this.runMutate_(() => {
-      this.updateCurrentIndex(currentIndex);
-      this.moveBufferElements(totalWidth);
-    });
-  }
-
-  getSideSlideCount() {
-    return Math.min(this.slides_.length, this.sideSlideCount_);
-  }
-
-  hideDistantSlides() {
-    const {currentIndex_, loop_, slides_} = this;
-    const sideSlideCount = Math.min(this.slides_.length, this.sideSlideCount_);
-
-    slides_.forEach((s, i) => {
-      const distance = loop_ ?
-          wrappingDistance(currentIndex_, i, slides_) :
-          Math.abs(currentIndex_ - i);
-      const tooFar = distance > sideSlideCount;
-      s.hidden = tooFar;
-    });
-  }
-
-  hideSpacers() {
-    const {
-      afterSpacers_,
-      beforeSpacers_,
-      currentIndex_,
-      slides_,
-    } = this;
-    const sideSlideCount = Math.min(this.slides_.length, this.sideSlideCount_);
-    const numBeforeSpacers = slides_.length <= 2 ? 0 : slides_.length - currentIndex_ - 1;
-    const numAfterSpacers = slides_.length <= 2 ? 0 : currentIndex_;
-
-    beforeSpacers_.forEach((s, i) => {
-      const distance = backwardWrappingDistance(currentIndex_, i, slides_);
-      const tooFar = distance > sideSlideCount;
-      s.hidden = tooFar || i < slides_.length - numBeforeSpacers;
-    });
-    afterSpacers_.forEach((s, i) => {
-      const distance = forwardWrappingDistance(currentIndex_, i, slides_);
-      const tooFar = distance > sideSlideCount;
-      s.hidden = tooFar || i >= numAfterSpacers;
-    });
-  }
-
-  resetSlideTransforms() {
-    this.slides_.forEach(slide => this.setSlideTransform(slide, 0, 0));
-  }
-
-  setSlideTransform(slide, delta, totalWidth) {
-    setTransformTranslateStyle(this.axis_, slide, delta * totalWidth);
-    slide._delta = delta;
-  }
-
-  resetWindow(force = false) {
-    if (this.touching_) {
-      return;
-    }
-
-    if (this.restingIndex_ == this.currentIndex_ && !force) {
-      return;
-    }
-
-    const totalWidth = this.getTotalWidth();
-
-    this.runMutate_(() => {
-      this.restingIndex_ = this.currentIndex_;
-
-      this.resetSlideTransforms();
-      this.hideDistantSlides();
-      this.hideSpacers();
-      this.moveBufferElements(totalWidth);
-      this.updateScrollStart();
-    });
-  }
-
-  getTotalWidth() {
-    return this.slides_.map(s => getDimension(this.axis_, s).length)
-      .reduce((p, c) => p + c);
-  }
-
-  adjustElements(totalWidth, count, isNext) {
-    const {currentIndex_, slides_} = this;
-    const current = slides_[currentIndex_];
-    const currentDelta = (current._delta || 0);
-    const dir = isNext ? 1 : -1;
-
-    for (let i = 1; i <= count; i++) {
-      const elIndex = mod(currentIndex_ + (i * dir), slides_.length);
-      const el = slides_[elIndex];
-      const needsMove = elIndex > currentIndex_ !== isNext;
-      const delta = needsMove ? currentDelta + dir : currentDelta;
-
-      this.setSlideTransform(el, delta, totalWidth);
-    }
-  }
-
-  moveBufferElements(totalWidth) {
-    const count = (this.slides_.length - 1) / 2;
-
-    if (!this.loop_) {
-      return;
-    }
-
-    if (this.slides_.length <= 2) {
-      return;
-    }
-
-    this.adjustElements(totalWidth, Math.floor(count), false);
-    this.adjustElements(totalWidth, Math.ceil(count), true);
+  updateSlides(slides) {
+    this.slides_ = slides;
+    this.updateSlides();
   }
 
   /**
@@ -397,7 +144,255 @@ export class Scrollable {
 
   updateSlides(slides) {
     this.slides_ = slides;
-    this.updateCurrentIndex(Math.max(0, Math.min(this.initialIndex_, this.slides_.length - 1)));
+    this.updateCurrentIndex_(Math.max(0, Math.min(this.initialIndex_, this.slides_.length - 1)));
     this.updateAll();
+  }
+  
+  findOverlappingIndex_() {
+    return findOverlappingIndex(
+      this.axis_,
+      this.alignment_,
+      this.element_,
+      this.slides_,
+      this.currentIndex_
+    );
+  }
+
+  updateAll_() {
+    this.runMutate_(() => {
+      this.scrollContainer_.setAttribute('horizontal', this.axis_ == Axis.X);
+      this.scrollContainer_.setAttribute('loop', this.loop_);
+      this.scrollContainer_.style.setProperty('--visible-count', this.visibleCount_);
+  
+      if (!this.slides_.length) {
+        return;
+      }
+  
+      this.updateSpacers_();
+      this.hideDistantSlides_();
+      this.resetWindow_(true);
+      this.ignoreNextScroll_ = true;
+      runDisablingSmoothScroll(this.scrollContainer_, () => this.scrollCurrentIntoView_());
+    });
+  }
+
+
+
+  createSpacer_() {
+    const spacer = document.createElement('div');
+    spacer.className = 'spacer';
+    return spacer;
+  }
+
+  updateSpacers_() {
+    const {axis_, slides_} = this;
+    const lengths = slides_.map(slide => getDimension(axis_, slide).length);
+    const count = this.loop_ ? slides_.length : 0;
+
+    this.beforeSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
+    this.afterSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
+
+    this.beforeSpacers_ = new Array(count).fill(0)
+        .map(() => this.createSpacer_())
+        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.beforeSpacersRef_));
+    this.afterSpacers_ = new Array(count).fill(0)
+        .map(() => this.createSpacer_())
+        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_))
+        .reverse();
+
+    this.beforeSpacers_.forEach((spacer, i) => updateLengthStyle(axis_, spacer, lengths[i]));
+    this.afterSpacers_.forEach((spacer, i) => updateLengthStyle(axis_, spacer, lengths[i]));
+  }
+
+  scrollCurrentIntoView_() {
+    scrollContainerToElement(
+      this.slides_[this.currentIndex_],
+      this.scrollContainer_,
+      this.axis_,
+      this.alignment_,
+    );
+  }
+
+  inLastWindow_(index) {
+    const {alignment_, slides_, visibleCount_} = this;
+    const startAligned = alignment_ == Alignment.START;
+    const lastWindowSize = startAligned ? visibleCount_ : visibleCount_ / 2;
+
+    return index >= slides_.length - lastWindowSize;
+  }
+
+
+  handleTouchStart_() {
+    this.touching_ = true;
+
+    this.listenOnce_(window, 'touchend', () => {
+      this.touching_ = false;
+      this.debouncedResetWindow_();
+    }, true);
+  }
+
+  handleScroll_() {
+    if (this.ignoreNextScroll_) {
+      this.ignoreNextScroll_ = false;
+      return;
+    }
+
+    this.updateCurrent_();
+    this.debouncedResetWindow_();
+  }
+
+  updateScrollStart_() {
+    // Need to handle non-snapping by preserving exact scroll position.
+    const {axis_, currentElementOffset_} = this;
+    const currentElement = this.slides_[this.currentIndex_];
+    const {length, start} = getDimension(axis_, this.scrollContainer_);
+    const currentElementStart = Math.abs(currentElementOffset_) <= length ? currentElementOffset_ : 0;
+    const offsetStart = getOffsetStart(axis_, currentElement);
+    const pos = offsetStart - currentElementStart + start;
+
+    this.ignoreNextScroll_ = true;
+    runDisablingSmoothScroll(this.scrollContainer_, () => setScrollPosition(axis_, this.scrollContainer_, pos));
+  }
+
+  isTransformed_(element) {
+    return !!element._delta;
+  }
+
+  updateCurrentIndex_(currentIndex) {
+    this.currentIndex_ = currentIndex;
+    this.callbacks_.currentIndexChanged(currentIndex);
+  }
+
+  updateCurrent_() {
+    const totalWidth = this.getTotalWidth_();
+    const currentIndex = this.findOverlappingIndex_();
+    const currentElement = this.slides_[currentIndex];
+
+    // Currently not over a slide (e.g. on top of overscroll area).
+    if (!currentElement) {
+      return;
+    }
+
+    // Update the current offset on each scroll so that we have it up to date
+    // in case of a resize.
+    const dimension = getDimension(this.axis_, currentElement);
+    this.currentElementOffset_ = dimension.start;
+
+    if (currentIndex == this.currentIndex_) {
+      return;
+    }
+
+    // Do not update the currentIndex if we have looped back.
+    if (currentIndex == this.restingIndex_ && this.isTransformed_(currentElement)) {
+      return;
+    }
+
+    this.runMutate_(() => {
+      this.updateCurrentIndex_(currentIndex);
+      this.moveBufferElements_(totalWidth);
+    });
+  }
+
+  hideDistantSlides_() {
+    const {currentIndex_, loop_, slides_} = this;
+    const sideSlideCount = Math.min(this.slides_.length, this.sideSlideCount_);
+
+    slides_.forEach((s, i) => {
+      const distance = loop_ ?
+          wrappingDistance(currentIndex_, i, slides_) :
+          Math.abs(currentIndex_ - i);
+      const tooFar = distance > sideSlideCount;
+      s.hidden = tooFar;
+    });
+  }
+
+  hideSpacers_() {
+    const {
+      afterSpacers_,
+      beforeSpacers_,
+      currentIndex_,
+      slides_,
+    } = this;
+    const sideSlideCount = Math.min(this.slides_.length, this.sideSlideCount_);
+    const numBeforeSpacers = slides_.length <= 2 ? 0 : slides_.length - currentIndex_ - 1;
+    const numAfterSpacers = slides_.length <= 2 ? 0 : currentIndex_;
+
+    beforeSpacers_.forEach((s, i) => {
+      const distance = backwardWrappingDistance(currentIndex_, i, slides_);
+      const tooFar = distance > sideSlideCount;
+      s.hidden = tooFar || i < slides_.length - numBeforeSpacers;
+    });
+    afterSpacers_.forEach((s, i) => {
+      const distance = forwardWrappingDistance(currentIndex_, i, slides_);
+      const tooFar = distance > sideSlideCount;
+      s.hidden = tooFar || i >= numAfterSpacers;
+    });
+  }
+
+  resetSlideTransforms_() {
+    this.slides_.forEach(slide => this.setSlideTransform_(slide, 0, 0));
+  }
+
+  setSlideTransform_(slide, delta, totalWidth) {
+    setTransformTranslateStyle(this.axis_, slide, delta * totalWidth);
+    slide._delta = delta;
+  }
+
+  resetWindow_(force = false) {
+    if (this.touching_) {
+      return;
+    }
+
+    if (this.restingIndex_ == this.currentIndex_ && !force) {
+      return;
+    }
+
+    const totalWidth = this.getTotalWidth_();
+
+    this.runMutate_(() => {
+      this.restingIndex_ = this.currentIndex_;
+
+      this.resetSlideTransforms_();
+      this.hideDistantSlides_();
+      this.hideSpacers_();
+      this.moveBufferElements_(totalWidth);
+      this.updateScrollStart_();
+    });
+  }
+
+  getTotalWidth_() {
+    return this.slides_.map(s => getDimension(this.axis_, s).length)
+      .reduce((p, c) => p + c);
+  }
+
+  adjustElements_(totalWidth, count, isNext) {
+    const {currentIndex_, slides_} = this;
+    const current = slides_[currentIndex_];
+    const currentDelta = (current._delta || 0);
+    const dir = isNext ? 1 : -1;
+
+    for (let i = 1; i <= count; i++) {
+      const elIndex = mod(currentIndex_ + (i * dir), slides_.length);
+      const el = slides_[elIndex];
+      const needsMove = elIndex > currentIndex_ !== isNext;
+      const delta = needsMove ? currentDelta + dir : currentDelta;
+
+      this.setSlideTransform_(el, delta, totalWidth);
+    }
+  }
+
+  moveBufferElements_(totalWidth) {
+    const count = (this.slides_.length - 1) / 2;
+
+    if (!this.loop_) {
+      return;
+    }
+
+    if (this.slides_.length <= 2) {
+      return;
+    }
+
+    this.adjustElements_(totalWidth, Math.floor(count), false);
+    this.adjustElements_(totalWidth, Math.ceil(count), true);
   }
 }

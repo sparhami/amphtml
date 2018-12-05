@@ -15,10 +15,10 @@ class AmpCarousel extends AMP.BaseElement {
   constructor(element) {
     super(element);
 
-    this.advanceCount = 1;
-    this.slides = [];
-    this.slidesSlot = null;
+    this.advanceCount_ = 1;
     this.carousel = null;
+    this.slides_ = [];
+    this.slidesSlot_ = null;
   }
 
   /** @override */
@@ -26,14 +26,36 @@ class AmpCarousel extends AMP.BaseElement {
     return isLayoutSizeDefined(layout);
   }
 
-  tagSizerForSlot() {
+  /** @override */
+  buildCallback() {
+    return this.buildForNonShadow_();
+  }
+
+  /** @override */
+  isRelayoutNeeded() {
+    return true;
+  }
+
+  /** @override */
+  layoutCallback() {
+    this.carousel.updateAll();
+  }
+
+  /** @override */
+  mutatedAttributesCallback(mutations) {
+    for (const key in mutations) {
+      this.attributeChanged_(key, mutations[key]);
+    }
+  }
+
+  tagSizerForSlot_() {
     // Make sure sizer (if present) gets put in the correct spot.
     Array.from(this.element.children)
         .filter(c => isSizer(c))
         .forEach(c => c.setAttribute('slot', 'sizer'));
   }
 
-  createNonShadowDom() {
+  createNonShadowDom_() {
     return htmlFor(this.element)`
       <div class="scroll-container">
         <div class="mask start-mask"></div>
@@ -44,7 +66,7 @@ class AmpCarousel extends AMP.BaseElement {
     `;
   }
 
-  createShadowDom() {
+  createShadowDom_() {
     return htmlFor(this.element)`
       <div>
         <style></style>
@@ -58,7 +80,7 @@ class AmpCarousel extends AMP.BaseElement {
     `;
   }
 
-  buildCommon(element, root) {
+  buildCommon_(element, root) {
     this.carousel = new Carousel({
       element,
       root,
@@ -66,86 +88,64 @@ class AmpCarousel extends AMP.BaseElement {
         currentIndexChanged: (newIndex) => this.currentIndexChanged_(newIndex),
       },
       runMutate: (cb) => this.mutateElement(cb),
-      debounce,
+      debounce: (cb, delay) => debounce(this.win, cb, delay),
       debounceToMicrotask,
       listenOnce,
     });
 
     // Handle the initial set of attributes
     Array.from(this.element.attributes).forEach(attr => {
-      this.attributeChanged(attr.name, attr.value);
+      this.attributeChanged_(attr.name, attr.value);
     });
   }
 
-  buildForNonShadow() {
+  buildForNonShadow_() {
     const {element} = this;
     // Grab the slides up front so we can place them later.
-    this.slides = Array.from(element.children).filter(c => !isSizer(c));
+    this.slides_ = Array.from(element.children).filter(c => !isSizer(c));
     // Create the "Shadow DOM"
-    element.appendChild(this.createNonShadowDom());
+    element.appendChild(this.createNonShadowDom_());
 
-    this.buildCommon(element, element);
+    this.buildCommon_(element, element);
 
     // Do some manual "slot" distribution
     const scrollContainer = element.querySelector('.scroll-container');
     const afterSpacersRef = element.querySelector('.after-spacers-ref');
-    this.slides.forEach(slide => {
+    this.slides_.forEach(slide => {
       slide.classList.add('slotted');
       scrollContainer.insertBefore(slide, afterSpacersRef);
     });
 
     // Signal for runtime to check children for layout.
-    this.carousel.updateSlides(this.slides);
+    this.carousel.updateSlides(this.slides_);
     return this.mutateElement(() => {});
   }
 
-  buildForShadow() {
+  buildForShadow_() {
     // Create the Shadow DOM
     this.sr = this.element.attachShadow({mode: 'open'});
-    this.sr.appendChild(this.createShadowDom());
+    this.sr.appendChild(this.createShadowDom_());
     this.sr.querySelector('style').textContent = CSS;
-    this.slidesSlot = this.sr.querySelector('#slides-slot');
+    this.slidesSlot_ = this.sr.querySelector('#slides-slot');
 
-    this.buildCommon(this.element, this.sr);
+    this.buildCommon_(this.element, this.sr);
 
-    this.tagSizerForSlot();
-    this.slotChange(); // For Safari
-    this.slidesSlot.addEventListener('slotchange', () => this.slotChange());
+    this.tagSizerForSlot_();
+    this.slotChanged_(); // For Safari
+    this.slidesSlot_.addEventListener('slotchange', () => this.slotChanged_());
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
   }
 
-  /** @override */
-  buildCallback() {
-    return this.buildForNonShadow();
-  }
-
-  /** @override */
-  isRelayoutNeeded() {
-    return true;
-  }
-
-  /** @override */
-  layoutCallback() {
-    this.carousel.updateAll();
-  }
-
-  slotChange() {
-    const slides = this.slidesSlot.assignedNodes()
+  slotChanged_() {
+    const slides = this.slidesSlot_.assignedNodes()
         .filter(s => s.nodeType == Node.ELEMENT_NODE);
-    this.slides = slides;
-    this.carousel.updateSlides(this.slides);
+    this.slides_ = slides;
+    this.carousel.updateSlides(this.slides_);
   }
 
-  /** @override */
-  mutatedAttributesCallback(mutations) {
-    for (const key in mutations) {
-      this.attributeChanged(key, mutations[key]);
-    }
-  }
-
-  attributeChanged(name, newValue) {
+  attributeChanged_(name, newValue) {
     switch (name) {
       case 'advance-count':
         this.carousel.updateAdvanceCount(Number(newValue) || 0);

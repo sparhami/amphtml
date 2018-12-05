@@ -65,6 +65,10 @@ export class Carousel {
     this.scrollable_.advance(-this.advanceCount_);
   }
 
+  resetWindow_() {
+    this.scrollable_.resetWindow_(true);
+  }
+  
   updateAll() {
     this.runMutate_(() => {
       this.scrollContainer_.setAttribute('mixed-length', this.mixedLength_);
@@ -72,10 +76,6 @@ export class Carousel {
     this.scrollable_.updateAll();
   }
 
-  resetWindow() {
-    this.scrollable_.resetWindow(true);
-  }
-  
   updateSlides(slides) {
     this.scrollable_.updateSlides(slides);
     this.snapAlignment_.updateSlides(slides);

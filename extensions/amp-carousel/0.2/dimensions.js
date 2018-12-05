@@ -77,6 +77,15 @@ export function setTransformTranslateStyle(axis, el, delta) {
   el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 }
 
+export function getScrollPosition(axis, el) {
+  if (axis == Axis.X) {
+    return el.scrollLeft;
+  }
+
+  return el.scrollTop;
+}
+
+
 /**
  * Sets the scroll position for an element along a given axis.
  * @param {!Axis} axis The axis to set the scroll position for.
@@ -89,6 +98,16 @@ export function setScrollPosition(axis, el, position) {
   } else {
     el.scrollTop = position;
   }
+}
+
+/**
+ * Updates the scroll position for an element along a given axis.
+ * @param {!Axis} axis The axis to set the scroll position for.
+ * @param {!Element} el The Element to set the scroll position for.
+ * @param {number} delta The scroll delta.
+ */
+export function updateScrollPosition(axis, el, delta) {
+  setScrollPosition(axis, el, getScrollPosition(axis, el) + delta);
 }
 
 /**
