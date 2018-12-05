@@ -113,37 +113,6 @@ export class Carousel {
   prev() {
     this.scrollable_.advance(-this.advanceCount_);
   }
-  
-  /**
-   * Updates the UI of the carousel. Since screen rotation can change scroll
-   * position, this should be called to restore the scroll position (i.e. which
-   * slide is at the start / center of the carousel, depending on alignment).
-   */
-  updateUi() {
-    this.runMutate_(() => {
-      this.scrollContainer_.setAttribute('mixed-length', this.mixedLength_);
-    });
-    this.scrollable_.updateUi();
-  }
-
-  /**
-   * Lets the carousel know that the slides have changed. This is needed for
-   * various internal calculations.
-   * @param {!Array<!Element>} slides 
-   */
-  updateSlides(slides) {
-    this.scrollable_.updateSlides(slides);
-    this.snapAlignment_.updateSlides(slides);
-  }
-
-  /**
-   * @param {boolean} mixedLength Whether the slides used mixed lengths or they
-   *    should be have a length assigned in accordance to the visible count.
-   */
-  updateMixedLength(mixedLength) {
-    this.mixedLength_ = mixedLength;
-    this.updateUi();
-  } 
 
   /**
    * @param {number} advanceCount How many slides to advance by. This is the
@@ -151,6 +120,16 @@ export class Carousel {
    */
   updateAdvanceCount(advanceCount) {
     this.scrollable_.updateAdvanceCount(advanceCount);
+  }
+
+  /**
+   * @param {string} alignment How to align slides when snapping or scrolling
+   *    to the propgramatticaly (auto advance or next/prev).
+   */
+  updateAlignment(alignment) {
+    // Update snapAlignment first, since snapping is needed prior to scroll.
+    this.snapAlignment_.updateAlignment(alignment);
+    this.scrollable_.updateAlignment(alignment);
   }
 
   /**
@@ -202,12 +181,31 @@ export class Carousel {
   }
 
   /**
+   * @param {boolean} mixedLength Whether the slides used mixed lengths or they
+   *    should be have a length assigned in accordance to the visible count.
+   */
+  updateMixedLength(mixedLength) {
+    this.mixedLength_ = mixedLength;
+    this.updateUi();
+  } 
+
+  /**
    * @param {number} sideSlideCount The number of slides to show on either side
    *    of the current slide. This can be used to limit how far the user can
    *    swipe at a time.
    */
   updateSideSlideCount(sideSlideCount) {
     this.scrollable_.updateSideSlideCount(sideSlideCount);
+  }
+
+  /**
+   * Lets the carousel know that the slides have changed. This is needed for
+   * various internal calculations.
+   * @param {!Array<!Element>} slides 
+   */
+  updateSlides(slides) {
+    this.scrollable_.updateSlides(slides);
+    this.snapAlignment_.updateSlides(slides);
   }
 
   /**
@@ -225,15 +223,17 @@ export class Carousel {
   updateSnapBy(snapBy) {
     this.snapAlignment_.updateSnapBy(snapBy);
   }
-
+    
   /**
-   * @param {string} alignment How to align slides when snapping or scrolling
-   *    to the propgramatticaly (auto advance or next/prev).
+   * Updates the UI of the carousel. Since screen rotation can change scroll
+   * position, this should be called to restore the scroll position (i.e. which
+   * slide is at the start / center of the carousel, depending on alignment).
    */
-  updateAlignment(alignment) {
-    // Update snapAlignment first, since snapping is needed prior to scroll.
-    this.snapAlignment_.updateAlignment(alignment);
-    this.scrollable_.updateAlignment(alignment);
+  updateUi() {
+    this.runMutate_(() => {
+      this.scrollContainer_.setAttribute('mixed-length', this.mixedLength_);
+    });
+    this.scrollable_.updateUi();
   }
 
   /**

@@ -23,7 +23,7 @@ export class SnapAlignment {
     this.runMutate_ = runMutate;
 
     /** @private @const */
-    this.debouncedUpdateAll_ = debounceToMicrotask(() => this.updateAll_());
+    this.debouncedUpdateAll_ = debounceToMicrotask(() => this.updateUi_());
 
     /** @private {!Array<Element>} */
     this.slides_ = [];
@@ -89,7 +89,7 @@ export class SnapAlignment {
    * Updates the DOM for all configuration options.
    * @private
    */
-  updateAll_() {
+  updateUi_() {
     this.runMutate_(() => {
       const startAligned = this.snapAlign_ == 'start';
       const oddVisibleCount = this.visibleCount_ % 2 == 1;
