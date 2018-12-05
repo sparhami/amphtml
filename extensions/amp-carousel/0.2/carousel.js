@@ -1,13 +1,6 @@
 import {AutoAdvance} from './auto-advance.js';
-import {Scrollable} from './scrollable.js';
+import {Callbacks, Scrollable} from './scrollable.js';
 import {SnapAlignment} from './snap-alignment.js';
-
-/**
- * @typedef {{
- *   currentIndexChanged: function(),
- * }}
- */
-let Callbacks;
 
 const defaultCallbacks = {
   currentIndexChanged: () => {},
@@ -26,7 +19,7 @@ function runImmediate(cb) {
  *   scrollContainer: !Element,
  *   beforeSpacersRef: !Element,
  *   afterSpacersRef: !Element,
- *   callbacks: Callbacks,
+ *   callbacks: !Callbacks=,
  *   runMutate: ?function(function()),
  *   debounce: function(function(), number),
  *   debounceToMicrotask: function(function()),

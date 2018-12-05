@@ -1,5 +1,3 @@
-const RESET_WINDOW_WAIT = 200;
-
 import {
   Alignment,
   Axis,
@@ -21,8 +19,36 @@ import {
   scrollContainerToElement,
 } from './scrolling-util.js';
 
+/**
+ * How long to wait prior to resetting the scrolling window after the last
+ * scroll event. Ideally this should be low, so that once the user stops
+ * scrolling, things are immediately centered again. Since there can be some
+ * delay between scroll events, and we do not want to move things during a
+ * scroll, it cannot be too small.
+ */
+const RESET_WINDOW_WAIT = 200;
+
+/**
+ * @typedef {{
+ *   currentIndexChanged: function(),
+ * }}
+ */
+export let Callbacks;
 
 export class Scrollable {
+  /**
+   * @param {{
+   *   element: !Element,
+   *   scrollContainer: !Element,
+   *   beforeSpacersRef: !Element,
+   *   afterSpacersRef: !Element,
+   *   callbacks: !Callbacks,
+   *   runMutate: ?function(function()),
+   *   debounce: function(function(), number),
+   *   debounceToMicrotask: function(function()),
+   *   listenOnce: function(Element, string, EventListenerOptions),
+   * }} config 
+   */
   constructor({
     element,
     scrollContainer,
@@ -34,40 +60,126 @@ export class Scrollable {
     debounceToMicrotask,
     listenOnce,
   }) {
+    /** @private @const */
     this.element_ = element;
+
+    /** @private @const */
     this.scrollContainer_ = scrollContainer;
+
+    /** @private @const */
     this.afterSpacersRef_ = afterSpacersRef;
+
+    /** @private @const */
     this.beforeSpacersRef_ = beforeSpacersRef;
+
+    /** @private @const */
     this.callbacks_ = callbacks;
+
+    /** @private @const */
     this.runMutate_ = runMutate;
+
+    /** @private @const */
     this.listenOnce_ = listenOnce;
+
+    /** @private @const */
+    this.debouncedResetWindow_ = debounce(
+      () => this.resetWindow_(), RESET_WINDOW_WAIT);
+
+    /** @private @const */
+    this.debouncedUpdateUi_ = debounceToMicrotask(() => this.updateUi_());
+
+    /** @private {!Array<Element>} */
     this.beforeSpacers_ = [];
+
+    /** @private {!Array<Element>} */
     this.afterSpacers_ = [];
+
+    /**
+     * Set from sources of programmatic scrolls to avoid doing work associated
+     * with regular scrolling.
+     * @private {boolean}
+     */
     this.ignoreNextScroll_ = false;
+
+    /**
+     * The offset from the start edge for the element at the current index.
+     * This is used to preserve relative scroll position when updating the UI
+     * after things have moved (e.g. on rotate).
+     * @private {number}
+     */
     this.currentElementOffset_ = 0;
+
+    /**
+     * The reference index where the the scrollable area last stopped
+     * scrolling. This slide is not translated and other slides are translated
+     * to move before  or after as needed. This is also used when looping to
+     * prevent a single swipe from wrapping past the starting point.
+     * @private {number}
+     */
+    this.restingIndex_ = NaN;
+
+    /**
+     * Whether or not the user is currently touching the scrollable area. This
+     * is used to avoid resetting the resting point while the user is touching
+     * (e.g. they have dragged part way to the next slide, but have not yet
+     * released their finger).
+     * @private {boolean}
+     */
     this.touching_ = false;
 
+    /** @private {!Alignment} */
     this.alignment_ = Alignment.START;
-    this.axis_ = Axis.X;
-    this.currentIndex_ = 0;
-    this.horizontal_ = true;
-    this.initialIndex_ = 0;
-    this.loop_ = false;
-    this.restingIndex_ = NaN;
-    this.slides_ = [];
-    this.sideSlideCount_ = Number.MAX_SAFE_INTEGER;
-    this.visibleCount_ = 1;
 
-    this.boundResetWindow = () => this.resetWindow_();
-    this.debouncedResetWindow_ = debounce(this.boundResetWindow, RESET_WINDOW_WAIT);
-    this.debouncedUpdateUi_ = debounceToMicrotask(() => this.updateUi_());
+    /** @private {!Axis} */
+    this.axis_ = Axis.X;
+
+    /** @private {number} */
+    this.currentIndex_ = 0;
+
+    /** @private {boolean} */
+    this.horizontal_ = true;
+
+    /** @private {number} */
+    this.initialIndex_ = 0;
+
+    /** @private {boolean} */
+    this.loop_ = false;
+
+    /** @private {!Array<!Element>} */
+    this.slides_ = [];
+
+    /** @private {number} */
+    this.sideSlideCount_ = Number.MAX_SAFE_INTEGER;
+    
+    /** @private {number} */
+    this.visibleCount_ = 1;
 
     this.scrollContainer_.addEventListener('scroll', (e) => this.handleScroll_(e), true);
     this.scrollContainer_.addEventListener('touchstart', (e) => this.handleTouchStart_(e), true);
-
     this.updateUi();
   }
 
+  /**
+   * Moves the current index forward/backwards by a given delta and scrolls
+   * the new index into view. There are a few cases where this behaves
+   * differently than might be expected when not looping:
+   * 
+   * 1. The current index is in the last group, then the new index will be the
+   * zeroth index. For example, say you have four slides, 'a', 'b', 'c' and 'd',
+   * you are showing two at a time, start aligning slides and are advancing one
+   * slide at a time. If you are on slide 'c', advancing will move back to 'a'
+   * instead of moving to 'd', which would cause no scrolling since 'd' is
+   * already visible and cannot start align itself.
+   * 2. The delta would go past the start or the end and the the current index
+   * is not at the start or end, then the advancement is capped to the start
+   * or end respectively.
+   * 3. The delta would go past the start or the end and the current index is
+   * at the start or end, then the next index will be the opposite end of the
+   * carousel.
+   * 
+   * TODO(sparhami) How can we make this work well for accessibility?
+   * @param {number} delta 
+   */
   advance(delta) {
     const slides = this.slides_;
     const {currentIndex_} = this;
@@ -93,54 +205,76 @@ export class Scrollable {
     this.scrollCurrentIntoView_();
   }
 
+  /**
+   * Updates the UI of the scrollable. Since screen rotation can change scroll
+   * position, this should be called to restore the scroll position (i.e. which
+   * slide is at the start / center of the scrollable, depending on alignment).
+   */
   updateUi() {
     this.debouncedUpdateUi_();
   }
-
-  updateSlides(slides) {
-    this.slides_ = slides;
-    this.updateSlides();
-  }
-
-  updateVisibleCount(visibleCount) {
-    this.visibleCount_ = Math.max(1, visibleCount);
-    this.updateUi();
-  }
-
-  updateLoop(loop) {
-    this.loop_ = loop;
-    this.updateUi();
-  }
   
-  updateHorizontal(horizontal) {
-    this.axis_ = horizontal ? Axis.X : Axis.Y;
-    this.updateUi();
-  }
-
   /**
-   * TODO(sparhami): Document that center works differently for Firefox when
-   * the visible count is odd as it prefers snapping on the center of the
-   * items at the edges rather than snapping on the center of the items near
-   * the middle.
+   * @param {string} alignment How to align slides when snapping or scrolling
+   *    to the propgramatticaly (auto advance or next/prev).
    */
   updateAlignment(alignment) {
     this.alignment_ = alignment == Alignment.START ? 'start' : 'center';
     this.updateUi();
   }
 
+  /**
+   * @param {boolean} horizontal Whether the scrollable should lay out
+   *    horizontally or vertically.
+   */
+  updateHorizontal(horizontal) {
+    this.axis_ = horizontal ? Axis.X : Axis.Y;
+    this.updateUi();
+  }
+
+  /**
+   * @param {number} initialIndex The initial index that should be shown.
+   */
   updateInitialIndex(initialIndex) {
     this.initialIndex_ = initialIndex;
     this.updateUi();
   }
 
+  /**
+   * @param {boolean} loop Whether or not the scrollable should loop when
+   *    reaching the last slide.
+   */
+  updateLoop(loop) {
+    this.loop_ = loop;
+    this.updateUi();
+  }
+  
+  /**
+   * @param {number} sideSlideCount The number of slides to show on either side
+   *    of the current slide. This can be used to limit how far the user can
+   *    swipe at a time.
+   */
   updateSideSlideCount(sideSlideCount) {
     this.sideSlideCount_ = sideSlideCount > 0 ? sideSlideCount : Number.MAX_SAFE_INTEGER;
     this.updateUi();
   }
 
+  /**
+   * Lets the scrollable know that the slides have changed. This is needed for
+   * various internal calculations.
+   * @param {!Array<!Element>} slides 
+   */
   updateSlides(slides) {
     this.slides_ = slides;
-    this.updateCurrentIndex_(Math.max(0, Math.min(this.initialIndex_, this.slides_.length - 1)));
+    this.updateUi();
+  }
+
+  /**
+   * @param {number} visibleCount How many slides to show at a time within the
+   *    scrollable. This option is ignored if mixed lengths is set.
+   */
+  updateVisibleCount(visibleCount) {
+    this.visibleCount_ = Math.max(1, visibleCount);
     this.updateUi();
   }
 

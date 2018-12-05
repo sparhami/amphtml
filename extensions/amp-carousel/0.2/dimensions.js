@@ -1,10 +1,16 @@
 import {mod} from "./mod";
 
+/**
+ * @enum
+ */
 export const Axis = {
   X: 0,
   Y: 1,
 };
 
+/**
+ * @enum
+ */
 export const Alignment = {
   START: 0,
   CENTER: 1,
