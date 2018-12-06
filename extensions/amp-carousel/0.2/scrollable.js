@@ -92,6 +92,9 @@ export class Scrollable {
     this.beforeSpacers_ = [];
 
     /** @private {!Array<Element>} */
+    this.replacementSpacers_ = [];
+
+    /** @private {!Array<Element>} */
     this.afterSpacers_ = [];
 
     /**
@@ -314,22 +317,36 @@ export class Scrollable {
 
   updateSpacers_() {
     const {axis_, slides_} = this;
-    const lengths = slides_.map(slide => getDimension(axis_, slide).length);
+    const lengths = this.getSlideLengths_();
+    const totalLength = this.getTotalLength_();
     const count = this.loop_ ? slides_.length : 0;
 
     this.beforeSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
+    this.replacementSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
     this.afterSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
 
     this.beforeSpacers_ = new Array(count).fill(0)
         .map(() => this.createSpacer_())
         .map(spacer => this.scrollContainer_.insertBefore(spacer, this.beforeSpacersRef_));
+    this.replacementSpacers_ = new Array(count).fill(0)
+        .map(() => this.createSpacer_())
+        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_));
     this.afterSpacers_ = new Array(count).fill(0)
         .map(() => this.createSpacer_())
-        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_.nextSibling))
-        .reverse();
+        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_));
 
-    this.beforeSpacers_.forEach((spacer, i) => updateLengthStyle(axis_, spacer, lengths[i]));
-    this.afterSpacers_.forEach((spacer, i) => updateLengthStyle(axis_, spacer, lengths[i]));
+    this.beforeSpacers_.forEach((spacer, i) => {
+      updateLengthStyle(axis_, spacer, lengths[i]);
+    });
+    this.replacementSpacers_.forEach((spacer, i) => {
+      updateLengthStyle(axis_, spacer, lengths[i]);
+      this.setSlideTransform_(spacer, -1, totalLength);
+    });
+    this.afterSpacers_.forEach((spacer, i) => {
+      updateLengthStyle(axis_, spacer, lengths[i]);
+      this.setSlideTransform_(spacer, -1, totalLength);
+    });
+    
   }
 
   scrollCurrentIntoView_() {
@@ -437,11 +454,12 @@ export class Scrollable {
   hideSpacers_() {
     const {
       afterSpacers_,
+      replacementSpacers_,
       beforeSpacers_,
       currentIndex_,
       slides_,
     } = this;
-    const sideSlideCount = Math.min(this.slides_.length, this.sideSlideCount_);
+    const sideSlideCount = Math.min(this.slides_.length - 1, this.sideSlideCount_);
     const numBeforeSpacers = slides_.length <= 2 ? 0 : slides_.length - currentIndex_;
     const numAfterSpacers = slides_.length <= 2 ? 0 : currentIndex_ - 1;
 
@@ -449,6 +467,9 @@ export class Scrollable {
       const distance = backwardWrappingDistance(currentIndex_, i, slides_);
       const tooFar = distance > sideSlideCount;
       s.hidden = tooFar || i <= slides_.length - numBeforeSpacers;
+    });
+    replacementSpacers_.forEach((s, i) => {
+      s.hidden = sideSlideCount < this.slides_.length - 1;
     });
     afterSpacers_.forEach((s, i) => {
       const distance = forwardWrappingDistance(currentIndex_, i, slides_);
@@ -512,8 +533,14 @@ export class Scrollable {
    * @return {number} The total length, in pixels.
    */
   getTotalLength_() {
-    return this.slides_.map(s => getDimension(this.axis_, s).length)
-      .reduce((p, c) => p + c);
+    return this.getSlideLengths_().reduce((p, c) => p + c);
+  }
+
+  /**
+   * @return {!Array{number}} An array of the lengths of the slides.
+   */
+  getSlideLengths_() {
+    return this.slides_.map(s => getDimension(this.axis_, s).length);
   }
 
   /**

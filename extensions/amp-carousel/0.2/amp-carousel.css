@@ -213,12 +213,3 @@ amp-carousel {
 .scroll-container ::slotted(*)  {
   will-change: transform;
 }
-
-.after-spacers-ref,
-.before-spacers-ref {
-  flex-shrink: 0;
-  width: 100px;
-  height: 100px;
-  margin-right: -100px;
-  margin-bottom: -100px;
-}
