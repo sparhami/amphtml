@@ -441,8 +441,8 @@ export class Scrollable {
       slides_,
     } = this;
     const sideSlideCount = Math.min(this.slides_.length, this.sideSlideCount_);
-    const numBeforeSpacers = slides_.length <= 2 ? 0 : slides_.length - currentIndex_ - 1;
-    const numAfterSpacers = slides_.length <= 2 ? 0 : currentIndex_;
+    const numBeforeSpacers = slides_.length <= 2 ? 0 : slides_.length - currentIndex_;
+    const numAfterSpacers = slides_.length <= 2 ? 0 : currentIndex_ - 1;
 
     beforeSpacers_.forEach((s, i) => {
       const distance = backwardWrappingDistance(currentIndex_, i, slides_);
@@ -523,13 +523,18 @@ export class Scrollable {
    * @param {boolean} isAfter Whether the slides should move after or before.
    */
   moveSlidesBeforeOrAfter__(totalLength, count, isAfter) {
-    const {currentIndex_, slides_} = this;
+    const {currentIndex_, restingIndex_, slides_} = this;
     const current = slides_[currentIndex_];
     const currentRevolutions = (current._revolutions || 0);
     const dir = isAfter ? 1 : -1;
 
     for (let i = 1; i <= count; i++) {
       const elIndex = mod(currentIndex_ + (i * dir), slides_.length);
+
+      if (elIndex === restingIndex_ && currentIndex_ !== restingIndex_) {
+        break;
+      }
+
       const el = slides_[elIndex];
       const needsMove = elIndex > currentIndex_ !== isAfter;
       const revolutions = needsMove ? currentRevolutions + dir :
