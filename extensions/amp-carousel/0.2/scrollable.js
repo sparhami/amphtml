@@ -383,7 +383,7 @@ export class Scrollable {
   }
 
   isTransformed_(element) {
-    return !!element._delta;
+    return !!element._revolutions;
   }
 
   updateCurrentIndex_(currentIndex) {
@@ -392,7 +392,7 @@ export class Scrollable {
   }
 
   updateCurrent_() {
-    const totalWidth = this.getTotalWidth_();
+    const totalLength = this.getTotalLength_();
     const currentIndex = this.findOverlappingIndex_();
     const currentElement = this.slides_[currentIndex];
 
@@ -417,7 +417,7 @@ export class Scrollable {
 
     this.runMutate_(() => {
       this.updateCurrentIndex_(currentIndex);
-      this.moveBufferElements_(totalWidth);
+      this.moveSlides_(totalLength);
     });
   }
 
@@ -461,21 +461,38 @@ export class Scrollable {
     this.slides_.forEach(slide => this.setSlideTransform_(slide, 0, 0));
   }
 
-  setSlideTransform_(slide, delta, totalWidth) {
-    setTransformTranslateStyle(this.axis_, slide, delta * totalWidth);
-    slide._delta = delta;
+  /**
+   * @param {!Element} slide The slide to move.
+   * @param {number} revolutions How many revolutions forwards (or backwards)
+   *    the slide should move.
+   * @param {number} revolutionLength The length of a single revolution around
+   *    the scrollable area.
+   */
+  setSlideTransform_(slide, revolutions, revolutionLength) {
+    setTransformTranslateStyle(
+        this.axis_, slide, revolutions * revolutionLength);
+    slide._revolutions = revolutions;
   }
 
+  /**
+   * Resets the frame of reference for scrolling, centering things around the
+   * current index and moving things as appropriate.
+   * @param {boolean} force Whether or not to force the window reset, ignoring
+   *    whether or not the resting index has changed.
+   */
   resetWindow_(force = false) {
+    // Make sure if the user is in the middle of a drag, we do not move
+    // anything.
     if (this.touching_) {
       return;
     }
 
+    // We are still on the same slide, so nothing needs to move.
     if (this.restingIndex_ == this.currentIndex_ && !force) {
       return;
     }
 
-    const totalWidth = this.getTotalWidth_();
+    const totalLength = this.getTotalLength_();
 
     this.runMutate_(() => {
       this.restingIndex_ = this.currentIndex_;
@@ -483,33 +500,52 @@ export class Scrollable {
       this.resetSlideTransforms_();
       this.hideDistantSlides_();
       this.hideSpacers_();
-      this.moveBufferElements_(totalWidth);
+      this.moveSlides_(totalLength);
       this.updateScrollStart_();
     });
   }
 
-  getTotalWidth_() {
+  /**
+   * Gets the total length of all the slides. This is used to determine how far
+   * slides need to be translated when moving them to be before/after the
+   * current slide.
+   * @return {number} The total length, in pixels.
+   */
+  getTotalLength_() {
     return this.slides_.map(s => getDimension(this.axis_, s).length)
       .reduce((p, c) => p + c);
   }
 
-  adjustElements_(totalWidth, count, isNext) {
+  /**
+   * Moves slides before or after the current index by setting setting a
+   * translate.
+   * @param {number} totalLength The total length of all the slides.
+   * @param {number} count How many slides to move.
+   * @param {boolean} isAfter Whether the slides should move after or before.
+   */
+  moveSlidesBeforeOrAfter__(totalLength, count, isAfter) {
     const {currentIndex_, slides_} = this;
     const current = slides_[currentIndex_];
-    const currentDelta = (current._delta || 0);
-    const dir = isNext ? 1 : -1;
+    const currentRevolutions = (current._revolutions || 0);
+    const dir = isAfter ? 1 : -1;
 
     for (let i = 1; i <= count; i++) {
       const elIndex = mod(currentIndex_ + (i * dir), slides_.length);
       const el = slides_[elIndex];
-      const needsMove = elIndex > currentIndex_ !== isNext;
-      const delta = needsMove ? currentDelta + dir : currentDelta;
+      const needsMove = elIndex > currentIndex_ !== isAfter;
+      const revolutions = needsMove ? currentRevolutions + dir :
+          currentRevolutions;
 
-      this.setSlideTransform_(el, delta, totalWidth);
+      this.setSlideTransform_(el, revolutions, totalLength);
     }
   }
 
-  moveBufferElements_(totalWidth) {
+  /**
+   * Moves slides that are not at the current index before or after by
+   * translating them if necessary.
+   * @param {number} totalLength The total length of all the slides.
+   */
+  moveSlides_(totalLength) {
     const count = (this.slides_.length - 1) / 2;
 
     if (!this.loop_) {
@@ -520,7 +556,7 @@ export class Scrollable {
       return;
     }
 
-    this.adjustElements_(totalWidth, Math.floor(count), false);
-    this.adjustElements_(totalWidth, Math.ceil(count), true);
+    this.moveSlidesBeforeOrAfter__(totalLength, Math.floor(count), false);
+    this.moveSlidesBeforeOrAfter__(totalLength, Math.ceil(count), true);
   }
 }
