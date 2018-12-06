@@ -108,6 +108,7 @@ export function setScrollPosition(axis, el, position) {
   } else {
     el.scrollTop = position;
   }
+
 }
 
 /**

@@ -58,10 +58,8 @@ class AmpCarousel extends AMP.BaseElement {
   createNonShadowDom_() {
     return htmlFor(this.element)`
       <div class="scroll-container">
-        <div class="mask start-mask"></div>
         <div class="before-spacers-ref"></div>
         <div class="after-spacers-ref"></div>
-        <div class="mask end-mask"></div>
       </div>
     `;
   }
@@ -72,9 +70,9 @@ class AmpCarousel extends AMP.BaseElement {
         <style></style>
         <slot name="sizer"></slot>
         <div class="scroll-container">
-          <div class="mask start-mask"></div>
-          <slot class="before-spacers-ref" id="slides-slot"></slot>
-          <div class="mask end-mask after-spacers-ref"></div>
+          <div class="before-spacers-ref"></div>
+          <slot id="slides-slot"></slot>
+          <div class="after-spacers-ref"></div>
         </div>
       </div>
     `;
