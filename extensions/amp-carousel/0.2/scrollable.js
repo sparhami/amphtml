@@ -296,7 +296,7 @@ export class Scrollable {
       }
   
       this.updateSpacers_();
-      this.hideDistantSlides_();
+      this.hideSpacersAndSlides_();
       this.resetWindow_(true);
       this.ignoreNextScroll_ = true;
       runDisablingSmoothScroll(this.scrollContainer_, () => this.scrollCurrentIntoView_());
@@ -336,11 +336,11 @@ export class Scrollable {
     });
     this.replacementSpacers_.forEach((spacer, i) => {
       updateLengthStyle(axis_, spacer, lengths[i]);
-      this.setSlideTransform_(spacer, -1, totalLength);
+      this.setElementTransform_(spacer, -1, totalLength);
     });
     this.afterSpacers_.forEach((spacer, i) => {
       updateLengthStyle(axis_, spacer, lengths[i]);
-      this.setSlideTransform_(spacer, -1, totalLength);
+      this.setElementTransform_(spacer, -1, totalLength);
     });
     
   }
@@ -372,6 +372,10 @@ export class Scrollable {
     }, true);
   }
 
+  /**
+   * Handles a scroll event, updating the the current index as well as moving
+   * slides around as needed.
+   */
   handleScroll_() {
     if (this.ignoreNextScroll_) {
       this.ignoreNextScroll_ = false;
@@ -382,28 +386,84 @@ export class Scrollable {
     this.debouncedResetWindow_();
   }
 
-  updateScrollStart_() {
-    // Need to handle non-snapping by preserving exact scroll position.
-    const {axis_, currentElementOffset_} = this;
-    const currentElement = this.slides_[this.currentIndex_];
-    const {length, start} = getDimension(axis_, this.scrollContainer_);
-    const currentElementStart = Math.abs(currentElementOffset_) <= length ? currentElementOffset_ : 0;
-    const offsetStart = getOffsetStart(axis_, currentElement);
-    const pos = offsetStart - currentElementStart + start;
-
-    this.ignoreNextScroll_ = true;
-    runDisablingSmoothScroll(this.scrollContainer_, () => setScrollPosition(axis_, this.scrollContainer_, pos));
-  }
-
-  isTransformed_(element) {
-    return !!element._revolutions;
-  }
-
+  /**
+   * Updates the current index as well as calling the specified callback for
+   * the current index changing.
+   * @param {number} currentIndex The new current index.
+   * @private
+   */
   updateCurrentIndex_(currentIndex) {
     this.currentIndex_ = currentIndex;
     this.callbacks_.currentIndexChanged(currentIndex);
   }
 
+  /**
+   * Resets the transforms for all the slides, putting them back in their
+   * natural position.
+   * @private
+   */
+  resetSlideTransforms_() {
+    this.slides_.forEach(slide => this.setElementTransform_(slide, 0, 0));
+  }
+
+  /**
+   * @param {!Element} el The slide or spacer to move.
+   * @param {number} revolutions How many revolutions forwards (or backwards)
+   *    the slide or spacer should move.
+   * @param {number} revolutionLength The length of a single revolution around
+   *    the scrollable area.
+   * @private
+   */
+  setElementTransform_(el, revolutions, revolutionLength) {
+    setTransformTranslateStyle(
+        this.axis_, el, revolutions * revolutionLength);
+    el._revolutions = revolutions;
+  }
+
+  /**
+   * Gets the total length of all the slides. This is used to determine how far
+   * slides need to be translated when moving them to be before/after the
+   * current slide.
+   * @return {number} The total length, in pixels.
+   * @private
+   */
+  getTotalLength_() {
+    return this.getSlideLengths_().reduce((p, c) => p + c);
+  }
+
+  /**
+   * @return {!Array{number}} An array of the lengths of the slides.
+   * @private
+   */
+  getSlideLengths_() {
+    return this.slides_.map(s => getDimension(this.axis_, s).length);
+  }
+
+
+  updateScrollStart_() {
+    const {
+      axis_,
+      currentElementOffset_,
+      currentIndex_,
+      scrollContainer_,
+      slides_,
+    } = this;
+    const currentElement = slides_[currentIndex_];
+    const {length, start} = getDimension(axis_, scrollContainer_);
+    const currentElementStart = Math.abs(currentElementOffset_) <= length ?
+        currentElementOffset_ : 0;
+    const offsetStart = getOffsetStart(axis_, currentElement);
+    const pos = offsetStart - currentElementStart + start;
+
+    this.ignoreNextScroll_ = true;
+    runDisablingSmoothScroll(scrollContainer_, () => {
+      setScrollPosition(axis_, scrollContainer_, pos);
+    });
+  }
+
+  /**
+   * @private
+   */
   updateCurrent_() {
     const totalLength = this.getTotalLength_();
     const currentIndex = findOverlappingIndex(
@@ -421,12 +481,8 @@ export class Scrollable {
     const dimension = getDimension(this.axis_, currentElement);
     this.currentElementOffset_ = dimension.start;
 
+    // We did not move at all.
     if (currentIndex == this.currentIndex_) {
-      return;
-    }
-
-    // Do not update the currentIndex if we have looped back.
-    if (currentIndex == this.restingIndex_ && this.isTransformed_(currentElement)) {
       return;
     }
 
@@ -436,9 +492,21 @@ export class Scrollable {
     });
   }
 
-  hideDistantSlides_() {
-    const {currentIndex_, loop_, slides_} = this;
-    const sideSlideCount = Math.min(this.slides_.length, this.sideSlideCount_);
+  /**
+   * @private
+   */
+  hideSpacersAndSlides_() {
+    const {
+      afterSpacers_,
+      replacementSpacers_,
+      beforeSpacers_,
+      currentIndex_,
+      loop_,
+      slides_,
+    } = this;
+    const sideSlideCount = Math.min(slides_.length - 1, this.sideSlideCount_);
+    const numBeforeSpacers = slides_.length <= 2 ? 0 : slides_.length - currentIndex_;
+    const numAfterSpacers = slides_.length <= 2 ? 0 : currentIndex_ - 1;
 
     slides_.forEach((s, i) => {
       const distance = loop_ ?
@@ -447,28 +515,17 @@ export class Scrollable {
       const tooFar = distance > sideSlideCount;
       s.hidden = tooFar;
     });
-  }
-
-  hideSpacers_() {
-    const {
-      afterSpacers_,
-      replacementSpacers_,
-      beforeSpacers_,
-      currentIndex_,
-      slides_,
-    } = this;
-    const sideSlideCount = Math.min(this.slides_.length - 1, this.sideSlideCount_);
-    const numBeforeSpacers = slides_.length <= 2 ? 0 : slides_.length - currentIndex_;
-    const numAfterSpacers = slides_.length <= 2 ? 0 : currentIndex_ - 1;
 
     beforeSpacers_.forEach((s, i) => {
       const distance = backwardWrappingDistance(currentIndex_, i, slides_);
       const tooFar = distance > sideSlideCount;
       s.hidden = tooFar || i <= slides_.length - numBeforeSpacers;
     });
+
     replacementSpacers_.forEach((s, i) => {
-      s.hidden = sideSlideCount < this.slides_.length - 1;
+      s.hidden = sideSlideCount < slides_.length - 1;
     });
+
     afterSpacers_.forEach((s, i) => {
       const distance = forwardWrappingDistance(currentIndex_, i, slides_);
       const tooFar = distance > sideSlideCount;
@@ -476,28 +533,13 @@ export class Scrollable {
     });
   }
 
-  resetSlideTransforms_() {
-    this.slides_.forEach(slide => this.setSlideTransform_(slide, 0, 0));
-  }
-
-  /**
-   * @param {!Element} slide The slide to move.
-   * @param {number} revolutions How many revolutions forwards (or backwards)
-   *    the slide should move.
-   * @param {number} revolutionLength The length of a single revolution around
-   *    the scrollable area.
-   */
-  setSlideTransform_(slide, revolutions, revolutionLength) {
-    setTransformTranslateStyle(
-        this.axis_, slide, revolutions * revolutionLength);
-    slide._revolutions = revolutions;
-  }
 
   /**
    * Resets the frame of reference for scrolling, centering things around the
    * current index and moving things as appropriate.
    * @param {boolean} force Whether or not to force the window reset, ignoring
    *    whether or not the resting index has changed.
+   * @private
    */
   resetWindow_(force = false) {
     // Make sure if the user is in the middle of a drag, we do not move
@@ -517,28 +559,10 @@ export class Scrollable {
       this.restingIndex_ = this.currentIndex_;
 
       this.resetSlideTransforms_();
-      this.hideDistantSlides_();
-      this.hideSpacers_();
+      this.hideSpacersAndSlides_();
       this.moveSlides_(totalLength);
       this.updateScrollStart_();
     });
-  }
-
-  /**
-   * Gets the total length of all the slides. This is used to determine how far
-   * slides need to be translated when moving them to be before/after the
-   * current slide.
-   * @return {number} The total length, in pixels.
-   */
-  getTotalLength_() {
-    return this.getSlideLengths_().reduce((p, c) => p + c);
-  }
-
-  /**
-   * @return {!Array{number}} An array of the lengths of the slides.
-   */
-  getSlideLengths_() {
-    return this.slides_.map(s => getDimension(this.axis_, s).length);
   }
 
   /**
@@ -547,6 +571,7 @@ export class Scrollable {
    * @param {number} totalLength The total length of all the slides.
    * @param {number} count How many slides to move.
    * @param {boolean} isAfter Whether the slides should move after or before.
+   * @private
    */
   moveSlidesBeforeOrAfter__(totalLength, count, isAfter) {
     const {currentIndex_, restingIndex_, slides_} = this;
@@ -557,6 +582,7 @@ export class Scrollable {
     for (let i = 1; i <= count; i++) {
       const elIndex = mod(currentIndex_ + (i * dir), slides_.length);
 
+      // We do not want to move the slide that we started at.
       if (elIndex === restingIndex_ && currentIndex_ !== restingIndex_) {
         break;
       }
@@ -566,7 +592,7 @@ export class Scrollable {
       const revolutions = needsMove ? currentRevolutions + dir :
           currentRevolutions;
 
-      this.setSlideTransform_(el, revolutions, totalLength);
+      this.setElementTransform_(el, revolutions, totalLength);
     }
   }
 
@@ -574,6 +600,7 @@ export class Scrollable {
    * Moves slides that are not at the current index before or after by
    * translating them if necessary.
    * @param {number} totalLength The total length of all the slides.
+   * @private
    */
   moveSlides_(totalLength) {
     const count = (this.slides_.length - 1) / 2;
