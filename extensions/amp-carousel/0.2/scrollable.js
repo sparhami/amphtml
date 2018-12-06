@@ -325,8 +325,7 @@ export class Scrollable {
         .map(spacer => this.scrollContainer_.insertBefore(spacer, this.beforeSpacersRef_));
     this.afterSpacers_ = new Array(count).fill(0)
         .map(() => this.createSpacer_())
-        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_))
-        .reverse();
+        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_));
 
     this.beforeSpacers_.forEach((spacer, i) => updateLengthStyle(axis_, spacer, lengths[i]));
     this.afterSpacers_.forEach((spacer, i) => updateLengthStyle(axis_, spacer, lengths[i]));
