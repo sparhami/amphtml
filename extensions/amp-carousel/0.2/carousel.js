@@ -48,17 +48,11 @@ export class Carousel {
     this.scrollContainer_ = scrollContainer;
 
     /** @private @const */
-    this.afterSpacersRef_ = beforeSpacersRef;
-
-    /** @private @const */
-    this.beforeSpacersRef_ = afterSpacersRef;
-
-    /** @private @const */
     this.scrollable_ = new Scrollable({
       element,
       scrollContainer: this.scrollContainer_,
-      afterSpacersRef: this.afterSpacersRef_,
-      beforeSpacersRef: this.beforeSpacersRef_,
+      afterSpacersRef: afterSpacersRef,
+      beforeSpacersRef: beforeSpacersRef,
       callbacks: this.callbacks_,
       runMutate,
       debounce,

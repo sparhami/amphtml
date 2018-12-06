@@ -10,7 +10,7 @@ import {mod} from "./mod";
  * @param {!Array} arr An array.
  */
 export function wrappingDistance(a, b, arr) {
-  return Math.min(
+  return a === b ? 0 : Math.min(
     forwardWrappingDistance(a, b, arr),
     backwardWrappingDistance(a, b, arr));
 }
@@ -24,7 +24,7 @@ export function wrappingDistance(a, b, arr) {
  * @param {!Array} arr An array.
  */
 export function forwardWrappingDistance(a, b, {length}) {
-  return mod(b - a, length);
+  return a === b ? length : mod(b - a, length);
 }
 
 /**
@@ -36,5 +36,5 @@ export function forwardWrappingDistance(a, b, {length}) {
  * @param {!Array} arr An array.
  */
 export function backwardWrappingDistance(a, b, {length}) {
-  return mod(a - b, length);
+  return a === b ? length : mod(a - b, length);
 }

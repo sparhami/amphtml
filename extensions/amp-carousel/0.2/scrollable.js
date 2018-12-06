@@ -448,12 +448,12 @@ export class Scrollable {
     beforeSpacers_.forEach((s, i) => {
       const distance = backwardWrappingDistance(currentIndex_, i, slides_);
       const tooFar = distance > sideSlideCount;
-      s.hidden = tooFar || i < slides_.length - numBeforeSpacers;
+      s.hidden = tooFar || i <= slides_.length - numBeforeSpacers;
     });
     afterSpacers_.forEach((s, i) => {
       const distance = forwardWrappingDistance(currentIndex_, i, slides_);
       const tooFar = distance > sideSlideCount;
-      s.hidden = tooFar || i >= numAfterSpacers;
+      s.hidden = tooFar || i > numAfterSpacers;
     });
   }
 
