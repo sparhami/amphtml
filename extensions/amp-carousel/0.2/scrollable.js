@@ -6,6 +6,7 @@ import {
   getOffsetStart,
   setScrollPosition,
   updateLengthStyle,
+  scrollContainerToElement,
   setTransformTranslateStyle,
 } from './dimensions.js';
 import {mod} from "./mod";
@@ -14,10 +15,7 @@ import {
   forwardWrappingDistance,
   wrappingDistance,
 } from './array-util.js';
-import {
-  runDisablingSmoothScroll,
-  scrollContainerToElement,
-} from './scrolling-util.js';
+import {runDisablingSmoothScroll} from './scrolling-util.js';
 
 /**
  * How long to wait prior to resetting the scrolling window after the last
@@ -281,16 +279,12 @@ export class Scrollable {
     this.updateUi();
   }
 
-  findOverlappingIndex_() {
-    return findOverlappingIndex(
-      this.axis_,
-      this.alignment_,
-      this.element_,
-      this.slides_,
-      this.currentIndex_
-    );
-  }
-
+  /**
+   * Updates the UI for all different combinations of configuration options.
+   * This should not be called directly, but rather through the debounced
+   * version.
+   * @private
+   */
   updateUi_() {
     this.runMutate_(() => {
       this.scrollContainer_.setAttribute('horizontal', this.axis_ == Axis.X);
@@ -314,6 +308,8 @@ export class Scrollable {
     spacer.className = 'spacer';
     return spacer;
   }
+
+  
 
   updateSpacers_() {
     const {axis_, slides_} = this;
@@ -410,7 +406,9 @@ export class Scrollable {
 
   updateCurrent_() {
     const totalLength = this.getTotalLength_();
-    const currentIndex = this.findOverlappingIndex_();
+    const currentIndex = findOverlappingIndex(
+      this.axis_, this.alignment_, this.element_, this.slides_,
+      this.currentIndex_);
     const currentElement = this.slides_[currentIndex];
 
     // Currently not over a slide (e.g. on top of overscroll area).
