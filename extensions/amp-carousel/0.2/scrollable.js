@@ -86,7 +86,7 @@ export class Scrollable {
     /** @private @const */
     this.debouncedUpdateUi_ = debounceToMicrotask(() => this.updateUi_());
 
-    /** @private {!Array<Element>} */
+    /**@private {!Array<Element>} */
     this.beforeSpacers_ = [];
 
     /** @private {!Array<Element>} */
@@ -207,15 +207,6 @@ export class Scrollable {
   }
 
   /**
-   * Updates the UI of the scrollable. Since screen rotation can change scroll
-   * position, this should be called to restore the scroll position (i.e. which
-   * slide is at the start / center of the scrollable, depending on alignment).
-   */
-  updateUi() {
-    this.debouncedUpdateUi_();
-  }
-  
-  /**
    * @param {string} alignment How to align slides when snapping or scrolling
    *    to the propgramatticaly (auto advance or next/prev).
    */
@@ -271,6 +262,15 @@ export class Scrollable {
   }
 
   /**
+   * Updates the UI of the scrollable. Since screen rotation can change scroll
+   * position, this should be called to restore the scroll position (i.e. which
+   * slide is at the start / center of the scrollable, depending on alignment).
+   */
+  updateUi() {
+    this.debouncedUpdateUi_();
+  }
+
+  /**
    * @param {number} visibleCount How many slides to show at a time within the
    *    scrollable. This option is ignored if mixed lengths is set.
    */
@@ -299,18 +299,30 @@ export class Scrollable {
       this.hideSpacersAndSlides_();
       this.resetWindow_(true);
       this.ignoreNextScroll_ = true;
-      runDisablingSmoothScroll(this.scrollContainer_, () => this.scrollCurrentIntoView_());
+      runDisablingSmoothScroll(this.scrollContainer_, () => {
+        this.scrollCurrentIntoView_();
+      });
     });
   }
 
-  createSpacer_() {
-    const spacer = document.createElement('div');
-    spacer.className = 'spacer';
-    return spacer;
+  /**
+   * @param {number} count The number of spacers to create
+   * @return {!Array<!Element>} An array of spacers.
+   * @private
+   */
+  createSpacers_(count) {
+    return new Array(count).fill(0)
+        .map(() => {
+          const spacer = document.createElement('div');
+          spacer.className = 'spacer';
+          return spacer;
+        })
   }
 
-  
-
+  /**
+   * Updates the spacers, removing the old ones and creating new ones.
+   * @private
+   */
   updateSpacers_() {
     const {axis_, slides_} = this;
     const lengths = this.getSlideLengths_();
@@ -321,14 +333,11 @@ export class Scrollable {
     this.replacementSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
     this.afterSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
 
-    this.beforeSpacers_ = new Array(count).fill(0)
-        .map(() => this.createSpacer_())
+    this.beforeSpacers_ = this.createSpacers_(count)
         .map(spacer => this.scrollContainer_.insertBefore(spacer, this.beforeSpacersRef_));
-    this.replacementSpacers_ = new Array(count).fill(0)
-        .map(() => this.createSpacer_())
+    this.replacementSpacers_ = this.createSpacers_(count)
         .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_));
-    this.afterSpacers_ = new Array(count).fill(0)
-        .map(() => this.createSpacer_())
+    this.afterSpacers_ = this.createSpacers_(count)
         .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_));
 
     this.beforeSpacers_.forEach((spacer, i) => {
@@ -342,9 +351,12 @@ export class Scrollable {
       updateLengthStyle(axis_, spacer, lengths[i]);
       this.setElementTransform_(spacer, -1, totalLength);
     });
-    
   }
 
+  /**
+   * Scrolls the current element into view based on its alignment,
+   * @private
+   */
   scrollCurrentIntoView_() {
     scrollContainerToElement(
       this.slides_[this.currentIndex_],
@@ -354,6 +366,14 @@ export class Scrollable {
     );
   }
 
+  /**
+   * Checks if a given index is in the last window of items. For example, if
+   * showing two slides at a time with the slides [a, b, c, d], both slide
+   * b and c are in the last window.
+   * @param {number} index The index to check.
+   * @return {boolean} True if the slide is in the last window, false
+   *    otherwise.
+   */
   inLastWindow_(index) {
     const {alignment_, slides_, visibleCount_} = this;
     const startAligned = alignment_ == Alignment.START;
@@ -362,7 +382,11 @@ export class Scrollable {
     return index >= slides_.length - lastWindowSize;
   }
 
-
+  /**
+   * Handles a touch start, preventing the restWindow_ from running until the
+   * user stops touching.
+   * @private
+   */
   handleTouchStart_() {
     this.touching_ = true;
 
@@ -375,6 +399,7 @@ export class Scrollable {
   /**
    * Handles a scroll event, updating the the current index as well as moving
    * slides around as needed.
+   * @private
    */
   handleScroll_() {
     if (this.ignoreNextScroll_) {
@@ -439,8 +464,14 @@ export class Scrollable {
     return this.slides_.map(s => getDimension(this.axis_, s).length);
   }
 
-
-  updateScrollStart_() {
+  /**
+   * Updates the scroll start of the scrolling element. This restores the
+   * scroll position to the same offset within the currentElement as before.
+   * This is useful when some layout has occured that may change the existing
+   * scroll position.
+   * @private
+   */
+  restoreScrollStart_() {
     const {
       axis_,
       currentElementOffset_,
@@ -462,6 +493,8 @@ export class Scrollable {
   }
 
   /**
+   * Updates the current element. If the current element has changed, then
+   * slides are moved around as necessary before/after the current slide.
    * @private
    */
   updateCurrent_() {
@@ -493,6 +526,10 @@ export class Scrollable {
   }
 
   /**
+   * Hides any spacers or slides that are not currently necessary. Slides may
+   * be hidden if sideSlideCount is specified. Enough spacers are shown to
+   * allow 1 revolution of scrolling (not including the current slide) before
+   * / after the current slide. The rest of the spacers are hidden.
    * @private
    */
   hideSpacersAndSlides_() {
@@ -561,7 +598,7 @@ export class Scrollable {
       this.resetSlideTransforms_();
       this.hideSpacersAndSlides_();
       this.moveSlides_(totalLength);
-      this.updateScrollStart_();
+      this.restoreScrollStart_();
     });
   }
 
