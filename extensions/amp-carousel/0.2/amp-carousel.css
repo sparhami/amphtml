@@ -45,6 +45,10 @@ amp-carousel {
   overflow-x: hidden;
 }
 
+.spacer {
+  z-index: -1;  
+}
+
 /** Keep in sync with ::slotted(*) version below */
 .scroll-container .slotted,
 .scroll-container .spacer {
