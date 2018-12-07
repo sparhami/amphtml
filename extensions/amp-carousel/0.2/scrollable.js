@@ -38,8 +38,6 @@ export class Scrollable {
    * @param {{
    *   element: !Element,
    *   scrollContainer: !Element,
-   *   beforeSpacersRef: !Element,
-   *   afterSpacersRef: !Element,
    *   callbacks: !Callbacks,
    *   runMutate: ?function(function()),
    *   debounce: function(function(), number),
@@ -50,8 +48,6 @@ export class Scrollable {
   constructor({
     element,
     scrollContainer,
-    afterSpacersRef,
-    beforeSpacersRef,
     callbacks,
     runMutate,
     debounce,
@@ -63,12 +59,6 @@ export class Scrollable {
 
     /** @private @const */
     this.scrollContainer_ = scrollContainer;
-
-    /** @private @const */
-    this.afterSpacersRef_ = afterSpacersRef;
-
-    /** @private @const */
-    this.beforeSpacersRef_ = beforeSpacersRef;
 
     /** @private @const */
     this.callbacks_ = callbacks;
@@ -334,11 +324,11 @@ export class Scrollable {
     this.afterSpacers_.forEach(spacer => this.scrollContainer_.removeChild(spacer));
 
     this.beforeSpacers_ = this.createSpacers_(count)
-        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.beforeSpacersRef_));
+        .map(spacer => this.scrollContainer_.insertBefore(spacer, slides_[0]));
     this.replacementSpacers_ = this.createSpacers_(count)
-        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_));
+        .map(spacer => this.scrollContainer_.appendChild(spacer));
     this.afterSpacers_ = this.createSpacers_(count)
-        .map(spacer => this.scrollContainer_.insertBefore(spacer, this.afterSpacersRef_));
+        .map(spacer => this.scrollContainer_.appendChild(spacer));
 
     this.beforeSpacers_.forEach((spacer, i) => {
       updateLengthStyle(axis_, spacer, lengths[i]);

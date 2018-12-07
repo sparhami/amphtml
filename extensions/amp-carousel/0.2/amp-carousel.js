@@ -58,8 +58,6 @@ class AmpCarousel extends AMP.BaseElement {
   createNonShadowDom_() {
     return htmlFor(this.element)`
       <div class="scroll-container">
-        <div class="before-spacers-ref"></div>
-        <div class="after-spacers-ref"></div>
       </div>
     `;
   }
@@ -70,9 +68,7 @@ class AmpCarousel extends AMP.BaseElement {
         <style></style>
         <slot name="sizer"></slot>
         <div class="scroll-container">
-          <div class="before-spacers-ref"></div>
           <slot id="slides-slot"></slot>
-          <div class="after-spacers-ref"></div>
         </div>
       </div>
     `;
@@ -82,8 +78,6 @@ class AmpCarousel extends AMP.BaseElement {
     this.carousel = new Carousel({
       element,
       scrollContainer: root.querySelector('.scroll-container'),
-      afterSpacersRef: root.querySelector('.after-spacers-ref'),
-      beforeSpacersRef: root.querySelector('.before-spacers-ref'),
       callbacks: {
         currentIndexChanged: (newIndex) => this.currentIndexChanged_(newIndex),
       },
