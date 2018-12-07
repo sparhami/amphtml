@@ -120,24 +120,12 @@ export class SnapAlignment {
   }
 
   /**
-   * Determines how to snap on a given item. This function handles grouping
-   * using the snapBy option as well as edge cases on the ending few slides.
+   * Determines how to snap on a given item.
    * @param {number} index The index of an item.
    * @return {string} How to snap on the given item.
    * @private
    */
   getScrollSnapAlign_(index) {
-    // Make sure when using fractional visible counts, the last item always
-    // snaps on the ending edge.
-    if (this.snapAlign_ == 'start' && this.slides_.length - 1 == index) {
-      return 'end';
-    }
-
-    // Do not snap on items at the tail end of the group.
-    if (this.snapAlign_ == 'start' && this.slides_.length - index < this.visibleCount_) {
-      return 'none';
-    }
-
     // If an item is at the start of the group, it gets an aligned.
     if (index % this.snapBy_ == 0) {
       return this.snapAlign_;
