@@ -5,10 +5,13 @@ import {htmlFor} from '../../../src/static-template';
 import {debounceToMicrotask} from "./debounce-to-microtask";
 import {debounce} from '../../../src/utils/rate-limit';
 import {listenOnce} from '../../../src/event-helper';
+import {ResponsiveAttributes} from './responsive_attributes';
 
 function isSizer(el) {
   return el.tagName == 'I-AMPHTML-SIZER';
 }
+
+
 
 class AmpCarousel extends AMP.BaseElement {
   /** @param {!AmpElement} element */
@@ -19,6 +22,48 @@ class AmpCarousel extends AMP.BaseElement {
     this.carousel = null;
     this.slides_ = [];
     this.slidesSlot_ = null;
+
+    this.responsiveAttributes_ = new ResponsiveAttributes({
+      'advance-count': (newValue) => {
+        this.carousel.updateAdvanceCount(Number(newValue) || 0);
+      },
+      'auto-advance': (newValue) => {
+        this.carousel.updateAutoAdvance(newValue == 'true');
+      },
+      'auto-advance-count': (newValue) => {
+        this.carousel.updateAutoAdvanceCount(Number(newValue) || 0);
+      },
+      'auto-advance-interval': (newValue) => {
+        this.carousel.updateAutoAdvanceInterval(Number(newValue) || 0);
+      },
+      'horizontal': (newValue) => {
+        this.carousel.updateHorizontal(newValue == 'true');
+      },
+      'initial-index': (newValue) => {
+        this.carousel.updateInitialIndex(Number(newValue) || 0);
+      },
+      'loop': (newValue) => {
+        this.carousel.updateLoop(newValue == 'true');
+      },
+      'mixed-length': (newValue) => {
+        this.carousel.updateMixedLength(newValue == 'true');
+      },
+      'side-slide-count': (newValue) => {
+        this.carousel.updateSideSlideCount(Number(newValue) || 0);
+      },
+      'snap': (newValue) => {
+        this.carousel.updateSnap(newValue == 'true');
+      },
+      'snap-align': (newValue) => {
+        this.carousel.updateAlignment(newValue);
+      },
+      'snap-by': (newValue) => {
+        this.carousel.updateSnapBy(Number(newValue) || 0);
+      },
+      'visible-count': (newValue) => {
+        this.carousel.updateVisibleCount(Number(newValue) || 0);
+      },
+    });
   }
 
   /** @override */
@@ -140,47 +185,7 @@ class AmpCarousel extends AMP.BaseElement {
   }
 
   attributeChanged_(name, newValue) {
-    switch (name) {
-      case 'advance-count':
-        this.carousel.updateAdvanceCount(Number(newValue) || 0);
-        break;
-      case 'auto-advance':
-        this.carousel.updateAutoAdvance(newValue == 'true');
-        break;
-      case 'auto-advance-count':
-        this.carousel.updateAutoAdvanceCount(Number(newValue) || 0);
-        break;
-      case 'auto-advance-interval':
-        this.carousel.updateAutoAdvanceInterval(Number(newValue) || 0);
-        break;
-      case 'horizontal':
-        this.carousel.updateHorizontal(newValue == 'true');
-        break;
-      case 'initial-index':
-        this.carousel.updateInitialIndex(Number(newValue) || 0);
-        break;
-      case 'loop':
-        this.carousel.updateLoop(newValue == 'true');
-        break;
-      case 'mixed-length':
-        this.carousel.updateMixedLength(newValue == 'true');
-        break;
-      case 'side-slide-count':
-        this.carousel.updateSideSlideCount(Number(newValue) || 0);
-        break;
-      case 'snap':
-        this.carousel.updateSnap(newValue == 'true');
-        break;
-      case 'snap-align':
-        this.carousel.updateAlignment(newValue);
-        break;
-      case 'snap-by':
-        this.carousel.updateSnapBy(Number(newValue) || 0);
-        break;
-      case 'visible-count':
-        this.carousel.updateVisibleCount(Number(newValue) || 0);
-        break;
-    }
+    this.responsiveAttributes_.updateAttribute(name, newValue);
   }
 
   currentIndexChanged_() {
