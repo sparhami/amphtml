@@ -1,5 +1,5 @@
 <!---
-Copyright 2018 The AMP HTML Authors. All Rights Reserved.
+Copyright 2017 The AMP HTML Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,35 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-
-# Kuadio
+# Rb.Infox.SG
 
 ## Example
 
 ```html
-<amp-embed
-    type="kuadio"
-    width="300"
-    height="660"
-    layout="responsive"
-    heights="(min-width:1024px) 23%, (min-width:760px) 27%, (min-width:480px) 72%, 220%"
-    data-region="tpe"
-    data-widget-id="78a32765-30f1-4ac1-a3e7-b42ebc6df88a">
+<amp-embed width="240" height="400"
+    type="rbinfox"
+    src="https://rb.infox.sg/infox/503">
 </amp-embed>
 ```
 
-### Configuration
+## Configuration ##
 
-For configuration semantics, contact [Kuadio](https://www.tenmax.io/kuadio).
+For semantics of configuration, please see [Rb.Infox documentation](https://adm.infox.sg).
 
 ### Required parameters
 
-- `data-widget-id`
-
-### Optional parameters
-
-- `data-region`
-- `data-debug-mode`
-- `data-beta-mode`
-- `data-fast-parse`
-- `data-ref`
+- `src`
