@@ -28,8 +28,10 @@
   <h1>Shows 3 at a time, when width >= 800px, 2 otherwise</h1>
   <amp-carousel
       id="carousel-1"
-      width="900" height="200"
       layout="responsive"
+      width="9"
+      height="2"
+      heights="(min-width: 800px) calc(100% / (3 * 3 / 2)), calc(100% / (2 * 3 / 2))"
       visible-count="(min-width: 800px) 3, 2"
       [visible-count]="carousel.visibleCount">
     <!-- wrapping divs to workaround https://bugs.webkit.org/show_bug.cgi?id=191816 -->
