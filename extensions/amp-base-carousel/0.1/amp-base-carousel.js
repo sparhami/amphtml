@@ -121,7 +121,6 @@ class AmpCarousel extends AMP.BaseElement {
     const children = toArray(element.children);
     let prevArrow;
     let nextArrow;
-    let sizer;
     // Figure out which slot the children go into.
     children.forEach(c => {
       const slot = c.getAttribute('slot');
@@ -129,9 +128,7 @@ class AmpCarousel extends AMP.BaseElement {
         prevArrow = c;
       } else if (slot == 'next-arrow') {
         nextArrow = c;
-      } else if (isSizer(c)) {
-        sizer = c;
-      } else {
+      } else if (!isSizer(c)) {
         this.slides_.push(c);
       }
     });
@@ -150,11 +147,6 @@ class AmpCarousel extends AMP.BaseElement {
     });
 
     // Do some manual "slot" distribution
-    if(sizer) {
-      const carouselContent = this.element.querySelector(
-        '.i-amphtml-carousel-container');
-      carouselContent.appendChild(sizer);
-    }
     this.slides_.forEach(slide => {
       slide.classList.add('i-amphtml-carousel-slotted');
       scrollContainer.appendChild(slide);
