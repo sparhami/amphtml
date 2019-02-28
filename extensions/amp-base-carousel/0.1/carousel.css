@@ -14,10 +14,39 @@
  * limitations under the License.
  */
 
+ /**
+  * Make the scroll area match the sizer element. See
+  * https://sepandparhami.com/sizer-without-positioned-parent/ for details
+  * on the implementation of this CSS.
+  */
+.i-amphtml-carousel-container {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+  height: 1px;
+}
+
+.i-amphtml-carousel-container > i-amphtml-sizer,
+.i-amphtml-carousel-content {
+  display: table-cell !important;
+}
+
+.i-amphtml-carousel-container > i-amphtml-sizer {
+  width: 0;
+}
+
+.i-amphtml-carousel-content {
+  height: 100%;
+}
+
 .i-amphtml-carousel-scroll {
-  position: absolute;
-  top: 0;
-  left: 0;
+  /**
+   * `contain: strict` works around a Chrome bug causing the scroll position to
+   * go to zero during the initial layout. This seems to have something to do
+   * with the table layout above, since it does not occur when using `position:
+   * absolute`.
+   */
+  contain: strict;
   display: flex;
   width: 100%;
   height: 100%;
@@ -30,8 +59,6 @@
   transform: translateZ(0);
 
   scroll-behavior: smooth;
-  /* Hide scrollbar */
-  box-sizing: content-box !important;
   -webkit-overflow-scrolling: touch !important;
 
   --visible-count: 1;
@@ -51,8 +78,6 @@
   flex-direction: row;
   scroll-snap-type-x: mandatory; /* Firefox, IE */
   scroll-snap-type: x mandatory;
-  /* Hide scrollbar */
-  padding-bottom: 20px !important;
   overflow-y: hidden;
 }
 
@@ -60,8 +85,6 @@
   flex-direction: column;
   scroll-snap-type-y: mandatory; /* Firefox, IE */
   scroll-snap-type: y mandatory;
-  /* Hide scrollbar */
-  padding-right: 20px !important;
   overflow-x: hidden;
 }
 
@@ -113,5 +136,5 @@
 }
 
 .i-amphtml-carousel-scroll > .i-amphtml-carousel-slotted {
-  will-change: transform;
+  /* will-change: transform; */
 }

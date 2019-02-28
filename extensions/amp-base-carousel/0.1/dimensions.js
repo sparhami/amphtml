@@ -116,7 +116,9 @@ export function updateLengthStyle(axis, el, length) {
 export function setTransformTranslateStyle(axis, el, delta) {
   const deltaX = axis == Axis.X ? delta : 0;
   const deltaY = axis == Axis.X ? 0 : delta;
-  setStyle(el, 'transform', `translate(${deltaX}px, ${deltaY}px)`);
+  // setStyle(el, 'transform', `translate(${deltaX}px, ${deltaY}px)`);
+  setStyle(el, 'margin-left', `${deltaX}px`);
+  setStyle(el, 'margin-top', `${deltaY}px`);
 }
 
 /**

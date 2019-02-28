@@ -1,0 +1,6 @@
+@import "../../amp-base-carousel/0.1/carousel.css";
+@import "./amp-inline-gallery-slide.css";
+
+.i-amphtml-inline-gallery-slide-slotted > .i-amphtml-replaced-content {
+  object-fit: contain;
+}

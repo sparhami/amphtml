@@ -176,6 +176,12 @@ exports.extensionBundles = [
   },
   {name: 'amp-imgur', version: '0.1', type: TYPES.MEDIA},
   {
+    name: 'amp-inline-gallery',
+    version: '0.1',
+    options: {hasCss: true},
+    type: TYPES.MISC,
+  },
+  {
     name: 'amp-inputmask',
     version: '0.1',
     type: TYPES.MISC,
