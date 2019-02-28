@@ -14,53 +14,6 @@
   </style>
   <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
   <script async src="https://cdn.ampproject.org/v0.js"></script>
-  <script>
-    const orig = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollLeft');
-    Object.defineProperty(Element.prototype, 'scrollLeft', {
-      set: function(val) {
-        console.log('setting scrollLeft to ', val);
-        return orig.set.call(this, val);
-      },
-
-      get: function() {
-        return orig.get.call(this);
-      }
-    });
-
-    const start = Date.now();
-    let hasStartMark = false;
-    let hasEndMark = false;
-    requestAnimationFrame(function logSize() {
-      const scrollEl = document.querySelector('.i-amphtml-carousel-scroll');
-      if (!scrollEl) {
-        requestAnimationFrame(logSize);
-        return;
-      }
-      const rect = scrollEl.getBoundingClientRect();
-      console.log('width: ', rect.width, 'height: ', rect.height);
-      console.log('scrollWidth: ', scrollEl.scrollWidth);
-      console.log('scrollLeft: ', scrollEl.scrollLeft);
-
-      if (!hasEndMark) {
-        if (scrollEl.scrollLeft == 0 && hasStartMark) {
-          performance.mark('scroll-left-zero-end');
-          performance.measure('scroll-left-zero', 'scroll-left-zero-start', 'scroll-left-zero-end');
-          hasEndMark = true;
-          return;
-        } else if (scrollEl.scrollLeft != 0) {
-          hasStartMark = true;
-          performance.mark('scroll-left-zero-start');
-        }
-      }
-
-      const now = Date.now();
-      if (now - start > 1000) {
-        return;
-      }
-
-      requestAnimationFrame(logSize);
-    });
-  </script>
 </head>
 <body>
   <h1>A Basic carousel, with looping</h1>

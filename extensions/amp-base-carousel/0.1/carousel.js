@@ -221,6 +221,9 @@ export class Carousel {
     /** @private {!Array<!Element>} */
     this.afterSpacers_ = [];
 
+    /** @private {!Array<!Element>} */
+    this.allSpacers_ = [];
+
     /**
     * Set from sources of programmatic scrolls to avoid doing work associated
     * with regular scrolling.
@@ -717,6 +720,10 @@ export class Carousel {
       this.setElementTransform_(spacer, -1, totalLength);
       this.scrollContainer_.appendChild(spacer);
     });
+
+    this.allSpacers_ = this.beforeSpacers_
+        .concat(this.replacementSpacers_)
+        .concat(this.afterSpacers_);
   }
 
   /**
@@ -811,19 +818,21 @@ export class Carousel {
    */
   updateCurrent_() {
     const totalLength = sum(this.getSlideLengths_());
+    // We look for the overlapping index using the spacers instead of the sides
+    // in case the slides themselves are not translated and the slide is
+    // translating its own contents instead.
     const overlappingIndex = findOverlappingIndex(
-        this.axis_, this.alignment_, this.element_, this.slides_,
-        this.currentIndex_);
+        this.axis_, this.alignment_, this.element_, this.allSpacers_,
+        this.currentIndex_ + this.slides_.length);
 
     // Currently not over a slide (e.g. on top of overscroll area).
     if (overlappingIndex === undefined) {
       return;
     }
 
-    // Pulled out as a separate variable, since Closure gets confused about
-    // whether it can be undefined pas this point when closed over (in
-    // runMutate).
-    const newIndex = overlappingIndex;
+    // Since we are looking accross all spacers, we need to convert to the
+    // slide index.
+    const newIndex = overlappingIndex % this.slides_.length;
     // Update the current offset on each scroll so that we have it up to date
     // in case of a resize.
     const currentElement = this.slides_[newIndex];

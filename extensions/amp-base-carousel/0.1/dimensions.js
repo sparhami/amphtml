@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-import {dict} from '../../../src/utils/object';
 import {mod} from '../../../src/utils/math';
-import {setStyle} from '../../../src/style';
-import {createCustomEvent} from '../../../src/event-helper';
+import {setImportantStyles, setStyle} from '../../../src/style';
 
 /**
  * @enum {number}
@@ -119,14 +117,11 @@ export function setTransformTranslateStyle(axis, el, delta) {
   const deltaX = axis == Axis.X ? delta : 0;
   const deltaY = axis == Axis.X ? 0 : delta;
   setStyle(el, 'transform', `translate(${deltaX}px, ${deltaY}px)`);
-  // Used to set the transform in a custom way. Ideally, this would be done
-  // with custom properties, but we do not have browser support.
-  // el.dispatchEvent(
-  //   createCustomEvent(el.ownerDocument.defaultView, 'update-content-transform', dict({
-  //     'x': deltaX,
-  //     'y': deltaY,
-  //   })));
-  el.style.setProperty('--content-transform', `translate(${deltaX}px, ${deltaY}px)`);
+  // Set a custom property so that the slide itself can determine how to
+  // translate the content if it so chooses.
+  setImportantStyles(el, {
+    '--content-transform': `translate(${deltaX}px, ${deltaY}px)`,
+  });
 }
 
 /**
@@ -157,6 +152,14 @@ export function findOverlappingIndex(
   const pos = alignment == Alignment.START ?
     getStart(axis, container) + 1 :
     getCenter(axis, container);
+
+    // const xStart = getStart(Axis.X, container) + 1;
+    // const xMid = getCenter(Axis.X, container);
+    // const yStart = getStart(Axis.Y, container) + 1;
+    // const yMid = getCenter(Axis.Y, container);
+  
+    // const x = axis == Axis.Y || alignment == Alignment.CENTER ? xMid : xStart;
+    // const y = axis == Axis.Y || alignment == Alignment.CENTER ? yMid : yStart;
 
   // First look at the start index, since is the most likely to overlap.
   if (overlaps(axis, children[startIndex], pos)) {
