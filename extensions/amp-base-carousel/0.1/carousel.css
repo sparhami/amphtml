@@ -114,5 +114,5 @@
 }
 
 .i-amphtml-carousel-scroll > .i-amphtml-carousel-slotted {
-  /* will-change: transform; */
+  will-change: transform;
 }
