@@ -1,5 +1,10 @@
 amp-inline-gallery-slide {
   position: static !important;
+  transform: none !important;
+}
+
+amp-inline-gallery-slide.i-amphtml-layout-size-defined {
+  overflow: visible !important;
 }
 
 .i-amphtml-inline-gallery-slide-container {
@@ -10,6 +15,7 @@ amp-inline-gallery-slide {
 .i-amphtml-inline-gallery-slide-content {
   display: flex;
   height: calc(100% - 2.5em - 6px);
+  transform: var(--content-transform);
 }
 
 .i-amphtml-inline-gallery-slide-caption {
@@ -23,11 +29,11 @@ amp-inline-gallery-slide {
   height: 2.5em;
 }
 
-@supports (contain: strict) {
+/* @supports (contain: strict) {
   .i-amphtml-inline-gallery-slide-caption {
     position: fixed;
   }
-}
+} */
 
 .i-amphtml-inline-gallery-slide-content > .i-amphtml-replaced-content {
   /*

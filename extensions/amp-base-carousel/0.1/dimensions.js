@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+import {dict} from '../../../src/utils/object';
 import {mod} from '../../../src/utils/math';
 import {setStyle} from '../../../src/style';
+import {createCustomEvent} from '../../../src/event-helper';
 
 /**
  * @enum {number}
@@ -116,9 +118,15 @@ export function updateLengthStyle(axis, el, length) {
 export function setTransformTranslateStyle(axis, el, delta) {
   const deltaX = axis == Axis.X ? delta : 0;
   const deltaY = axis == Axis.X ? 0 : delta;
-  // setStyle(el, 'transform', `translate(${deltaX}px, ${deltaY}px)`);
-  setStyle(el, 'margin-left', `${deltaX}px`);
-  setStyle(el, 'margin-top', `${deltaY}px`);
+  setStyle(el, 'transform', `translate(${deltaX}px, ${deltaY}px)`);
+  // Used to set the transform in a custom way. Ideally, this would be done
+  // with custom properties, but we do not have browser support.
+  // el.dispatchEvent(
+  //   createCustomEvent(el.ownerDocument.defaultView, 'update-content-transform', dict({
+  //     'x': deltaX,
+  //     'y': deltaY,
+  //   })));
+  el.style.setProperty('--content-transform', `translate(${deltaX}px, ${deltaY}px)`);
 }
 
 /**

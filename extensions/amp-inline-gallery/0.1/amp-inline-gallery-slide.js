@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
+import {getDetail} from '../../../src/event-helper';
 import {htmlFor} from '../../../src/static-template';
 import {isLayoutSizeDefined} from '../../../src/layout';
 import {toArray} from '../../../src/types';
+import {setStyle} from '../../../src/style';
 
 /**
  * @param {!Element} el The Element to check.
@@ -30,6 +32,12 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
+
+    /** @private {?Element} */
+    this.contentSlot_ = null;
+
+    /** @private {?Element} */
+    this.captionSlot_ = null;
   }
 
   /** @override */
@@ -43,7 +51,6 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
     const children = toArray(element.children);
     const slideContent = [];
     const slideCaption = [];
-    let sizer;
 
     // Figure out which slot the children go into.
     children.forEach(c => {
@@ -58,18 +65,29 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
     // Create the carousel's inner DOM.
     element.appendChild(this.renderContainerDom_());
 
-    const contentSlot = element.querySelector('.i-amphtml-inline-gallery-slide-content');
-    const captionSlot = element.querySelector('.i-amphtml-inline-gallery-slide-caption');
+    this.contentSlot_ = element.querySelector('.i-amphtml-inline-gallery-slide-content');
+    this.captionSlot_ = element.querySelector('.i-amphtml-inline-gallery-slide-caption');
     slideContent.forEach(el => {
       el.classList.add('i-amphtml-inline-gallery-slide-slotted');
-      contentSlot.appendChild(el);
+      this.contentSlot_.appendChild(el);
     });
     slideCaption.forEach(el => {
-      captionSlot.appendChild(el);
+      this.captionSlot_.appendChild(el);
+    });
+
+    element.addEventListener('update-content-transform', (event) => {
+      this.updateContentTransform_(event);
     });
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
+  }
+
+  updateContentTransform_(event) {
+    const detail = getDetail(event);
+    const x = detail['x'];
+    const y = detail['y'];
+    setStyle(this.contentSlot_, 'transform', `translate(${x}px, ${y}px)`);
   }
 
   /**

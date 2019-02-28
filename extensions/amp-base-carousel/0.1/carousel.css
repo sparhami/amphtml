@@ -40,13 +40,6 @@
 }
 
 .i-amphtml-carousel-scroll {
-  /**
-   * `contain: strict` works around a Chrome bug causing the scroll position to
-   * go to zero during the initial layout. This seems to have something to do
-   * with the table layout above, since it does not occur when using `position:
-   * absolute`.
-   */
-  contain: strict;
   display: flex;
   width: 100%;
   height: 100%;
@@ -56,7 +49,7 @@
    * Need to force a layer to work around a Chrome bug where scroll position
    * updates cause a temporary incorrect UI rendering.
    */
-  transform: translateZ(0);
+  /* transform: translateZ(0); */
 
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch !important;
