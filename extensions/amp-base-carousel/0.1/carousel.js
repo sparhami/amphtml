@@ -641,6 +641,7 @@ export class Carousel {
     for (let i = 0; i < count; i++) {
       const spacer = document.createElement('div');
       spacer.className = 'i-amphtml-carousel-spacer';
+      spacer.hidden = true;
       spacers.push(spacer);
     }
     return spacers;
