@@ -85,6 +85,17 @@ export function getStart(axis, el) {
 }
 
 /**
+ * Gets the point of reference along an axis for a desired alignment.
+ * @param {!Axis} axis The axis to get the reference point for.
+ * @param {!Alignment} alignment The alignment to get the reference point for.
+ * @param {!Element} el The element to get the reference point for.
+ */
+export function getReferencePoint(axis, alignment, el) {
+  return alignment == Alignment.CENTER ? getCenter(axis, el) :
+      getStart(axis, el);
+}
+
+/**
  * @param {!Axis} axis The Axis to get the offset for.
  * @param {!Element} el The Element to get the offset for.
  * @return {number} The offsetLeft or offsetTop for the Element, depending on
