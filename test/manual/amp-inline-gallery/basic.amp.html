@@ -9,9 +9,17 @@
   <script async custom-element="amp-inline-gallery" src="https://cdn.ampproject.org/v0/amp-inline-gallery-0.1.js"></script>
   <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
   <script async src="https://cdn.ampproject.org/v0.js"></script>
+  <style amp-custom>
+    .with-background {
+      background-color: #eee;
+    }
+  </style>
 </head>
 <body>
   <h1>A Basic inline gallery</h1>
+  <div class="with-background">
+    Some content above the carousel.
+  </div>
   <amp-inline-gallery width="1" height="1"
       heights="calc((100% * 2 / 3) + 2.5em + 6px)">
     <amp-inline-gallery-slide layout="flex-item">
@@ -39,5 +47,8 @@
       </div>
     </amp-inline-gallery-slide>
   </amp-inline-gallery>
+  <div class="with-background">
+    Some content below the carousel.
+  </div>
 </body>
 </html>
