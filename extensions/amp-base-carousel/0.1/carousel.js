@@ -817,30 +817,41 @@ export class Carousel {
    * @private
    */
   updateCurrent_() {
+    const {
+      allSpacers_,
+      alignment_,
+      axis_,
+      currentIndex_,
+      element_,
+      loop_,
+      slides_, 
+    } = this;
     const totalLength = sum(this.getSlideLengths_());
-    // We look for the overlapping index using the spacers instead of the sides
-    // in case the slides themselves are not translated and the slide is
-    // translating its own contents instead.
-    const overlappingIndex = findOverlappingIndex(
-        this.axis_, this.alignment_, this.element_, this.allSpacers_,
-        this.currentIndex_ + this.slides_.length);
+    // We look for the overlapping index using the spacers when looping
+    // instead of the slides in case the slides themselves are not translated
+    // and the slide is translating its own contents instead. Since we do not
+    // translate when not looping, this only needs to be done for looping.
+    const items = loop_ ? allSpacers_ : slides_;
+    const startIndex = loop_ ? currentIndex_ + slides_.length : currentIndex_;
+    const overlappingIndex =
+        findOverlappingIndex(axis_, alignment_, element_, items, startIndex);
 
     // Currently not over a slide (e.g. on top of overscroll area).
     if (overlappingIndex === undefined) {
       return;
     }
 
-    // Since we are looking accross all spacers, we need to convert to the
-    // slide index.
-    const newIndex = overlappingIndex % this.slides_.length;
+    // Since we are potentially looking accross all spacers, we need to convert
+    // to a slide index.
+    const newIndex = overlappingIndex % slides_.length;
     // Update the current offset on each scroll so that we have it up to date
     // in case of a resize.
-    const currentElement = this.slides_[newIndex];
-    const dimension = getDimension(this.axis_, currentElement);
+    const currentElement = slides_[newIndex];
+    const dimension = getDimension(axis_, currentElement);
     this.currentElementOffset_ = dimension.start;
 
     // We did not move at all.
-    if (newIndex == this.currentIndex_) {
+    if (newIndex == currentIndex_) {
       return;
     }
 

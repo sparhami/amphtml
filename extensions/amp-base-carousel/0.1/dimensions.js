@@ -153,14 +153,6 @@ export function findOverlappingIndex(
     getStart(axis, container) + 1 :
     getCenter(axis, container);
 
-    // const xStart = getStart(Axis.X, container) + 1;
-    // const xMid = getCenter(Axis.X, container);
-    // const yStart = getStart(Axis.Y, container) + 1;
-    // const yMid = getCenter(Axis.Y, container);
-  
-    // const x = axis == Axis.Y || alignment == Alignment.CENTER ? xMid : xStart;
-    // const y = axis == Axis.Y || alignment == Alignment.CENTER ? yMid : yStart;
-
   // First look at the start index, since is the most likely to overlap.
   if (overlaps(axis, children[startIndex], pos)) {
     return startIndex;

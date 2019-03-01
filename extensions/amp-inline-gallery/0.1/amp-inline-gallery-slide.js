@@ -17,8 +17,8 @@
 import {getDetail} from '../../../src/event-helper';
 import {htmlFor} from '../../../src/static-template';
 import {isLayoutSizeDefined} from '../../../src/layout';
-import {toArray} from '../../../src/types';
 import {setStyle} from '../../../src/style';
+import {toArray} from '../../../src/types';
 
 /**
  * @param {!Element} el The Element to check.
@@ -65,8 +65,10 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
     // Create the carousel's inner DOM.
     element.appendChild(this.renderContainerDom_());
 
-    this.contentSlot_ = element.querySelector('.i-amphtml-inline-gallery-slide-content');
-    this.captionSlot_ = element.querySelector('.i-amphtml-inline-gallery-slide-caption');
+    this.contentSlot_ = element.querySelector(
+        '.i-amphtml-inline-gallery-slide-content');
+    this.captionSlot_ = element.querySelector(
+        '.i-amphtml-inline-gallery-slide-caption');
     slideContent.forEach(el => {
       el.classList.add('i-amphtml-inline-gallery-slide-slotted');
       this.contentSlot_.appendChild(el);
@@ -75,19 +77,8 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
       this.captionSlot_.appendChild(el);
     });
 
-    element.addEventListener('update-content-transform', (event) => {
-      this.updateContentTransform_(event);
-    });
-
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
-  }
-
-  updateContentTransform_(event) {
-    const detail = getDetail(event);
-    const x = detail['x'];
-    const y = detail['y'];
-    setStyle(this.contentSlot_, 'transform', `translate(${x}px, ${y}px)`);
   }
 
   /**
@@ -97,10 +88,10 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
   renderContainerDom_() {
     const html = htmlFor(this.element);
     return html`
-      <div class="i-amphtml-inline-gallery-slide-container">
+      <figure class="i-amphtml-inline-gallery-slide-container">
         <div class="i-amphtml-inline-gallery-slide-content"></div>
-        <div class="i-amphtml-inline-gallery-slide-caption"></div>
-      </div>
+        <figcaption class="i-amphtml-inline-gallery-slide-caption"></figcaption>
+      </figure>
     `;
   }
 }
