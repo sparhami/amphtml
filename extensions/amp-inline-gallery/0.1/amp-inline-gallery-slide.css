@@ -1,7 +1,21 @@
 amp-inline-gallery-slide {
+  /*
+   * We do not want the slide to be positioned, so the captions can position
+   * relative to the gallery itself.
+   */
   position: static !important;
+  /*
+   * Do not transform the slide, but rather transform just the content.
+   */
   transform: none !important;
   will-change: auto !important;
+
+  --caption-vertical-margin: 3px;
+  --caption-horizontal-margin: 6px;
+  --caption-font-size: 1em;
+  --caption-lines: 2;
+  --caption-line-height: 1.25;
+  --caption-height: calc(var(--caption-font-size) * var(--caption-lines) * var(--caption-line-height));
 }
 
 amp-inline-gallery-slide.i-amphtml-layout-size-defined {
@@ -15,12 +29,14 @@ amp-inline-gallery-slide.i-amphtml-layout-size-defined {
 .i-amphtml-inline-gallery-slide-container {
   width: 100%;
   height: 100%;
+  /* Override default from <figure> */
   margin: 0;
 }
 
 .i-amphtml-inline-gallery-slide-content {
   display: flex;
-  height: calc(100% - 2.5em - 6px);
+  /* Subtract out height for the caption */
+  height: calc(100% - var(--caption-height) - var(--caption-horizontal-margin));
   transform: var(--content-transform, translateZ(1px));
   will-change: transform;
 }
@@ -30,10 +46,10 @@ amp-inline-gallery-slide.i-amphtml-layout-size-defined {
   bottom: 0;
   left: 0;
   right: 0;
-  margin: 3px 6px;
-  font-size: 1em;
-  line-height: 1.25em;
-  height: 2.5em;
+  margin: var(--caption-vertical-margin) var(--caption-horizontal-margin);
+  font-size: var(--caption-font-size);
+  line-height: var(--caption-line-height);
+  height: var(--caption-height);
   overflow: hidden;
   opacity: var(--caption-opacity);
 }
