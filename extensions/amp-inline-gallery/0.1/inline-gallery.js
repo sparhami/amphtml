@@ -58,6 +58,9 @@ export class InlineGallery {
       initialIndex,
       runMutate,
     });
+    // The carousel is always in 'mixed length' mode; we control the slide
+    // widths via CSS.
+    this.carousel_.updateMixedLength(true);
 
     /** @private @const */
     this.element_ = element;
@@ -92,14 +95,6 @@ export class InlineGallery {
    */
   updateLoop(loop) {
     this.carousel_.updateLoop(loop);
-  }
-
-  /**
-   * @param {number} slidePeek How much of other slides should be peeking. When
-   *    center aligned, this is shared by the previous and next slides.
-   */
-  updateSlidePeek(slidePeek) {
-    this.carousel_.updateVisibleCount(1 + slidePeek);
   }
 
   /**

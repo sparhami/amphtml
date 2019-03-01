@@ -9,13 +9,6 @@ amp-inline-gallery-slide {
    */
   transform: none !important;
   will-change: auto !important;
-
-  --caption-vertical-margin: 3px;
-  --caption-horizontal-margin: 6px;
-  --caption-font-size: 1em;
-  --caption-lines: 2;
-  --caption-line-height: 1.25;
-  --caption-height: calc(var(--caption-font-size) * var(--caption-lines) * var(--caption-line-height));
 }
 
 amp-inline-gallery-slide.i-amphtml-layout-size-defined {
@@ -36,7 +29,7 @@ amp-inline-gallery-slide.i-amphtml-layout-size-defined {
 .i-amphtml-inline-gallery-slide-content {
   display: flex;
   /* Subtract out height for the caption */
-  height: calc(100% - var(--caption-height) - var(--caption-horizontal-margin));
+  height: calc(100% - var(--amp-caption-height) - var(--amp-caption-horizontal-margin));
   transform: var(--content-transform, translateZ(1px));
   will-change: transform;
 }
@@ -46,10 +39,10 @@ amp-inline-gallery-slide.i-amphtml-layout-size-defined {
   bottom: 0;
   left: 0;
   right: 0;
-  margin: var(--caption-vertical-margin) var(--caption-horizontal-margin);
-  font-size: var(--caption-font-size);
-  line-height: var(--caption-line-height);
-  height: var(--caption-height);
+  margin: var(--amp-caption-vertical-margin) var(--amp-caption-horizontal-margin);
+  font-size: var(--amp-caption-font-size);
+  line-height: var(--amp-caption-line-height);
+  height: var(--amp-caption-height);
   overflow: hidden;
   opacity: var(--caption-opacity);
 }

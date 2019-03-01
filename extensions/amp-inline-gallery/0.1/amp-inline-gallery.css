@@ -1,7 +1,31 @@
 @import "../../amp-base-carousel/0.1/carousel.css";
 @import "./amp-inline-gallery-slide.css";
 
+amp-inline-gallery {
+  /* The can be customized per component */
+  --amp-caption-vertical-margin: 3px;
+  --amp-caption-horizontal-margin: 6px;
+  --amp-caption-font-size: 1em;
+  --amp-caption-lines: 2;
+  --amp-caption-line-height: 1.25;
+  --amp-caption-height: calc(var(--amp-caption-font-size) * var(--amp-caption-lines) * var(--amp-caption-line-height));
+  --amp-slide-peek: 0;
+  --amp-gallery-image-aspect-ratio: calc(4 / 3);
+
+  /* Do not change */
+  --amp-gcar: calc(var(--amp-gallery-image-aspect-ratio) / (1 - var(--amp-slide-peek)));
+  --amp-gch: calc(var(--amp-caption-height) + 2 * var(--amp-caption-vertical-margin));
+  --amp-gmw: calc((100vh - var(--amp-gch)) * var(--amp-gcar));
+  --amp-gallery-height: calc((100% / var(--amp-gcar)) + var(--amp-gch));
+
+  max-width: var(--amp-gmw);
+}
+
 .i-amphtml-inline-gallery-slide-slotted > .i-amphtml-replaced-content {
   object-fit: contain;
 }
 
+/* Controls the slide width based on the peek amount */
+amp-inline-gallery .i-amphtml-carousel-slotted {
+  width: calc(100% * (1 - var(--amp-slide-peek, 0)));
+}
