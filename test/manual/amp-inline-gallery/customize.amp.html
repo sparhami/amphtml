@@ -13,16 +13,55 @@
     .with-background {
       background-color: #eee;
     }
+
+    /**
+     * <amp-inline-gallery> boilerplate, shared by all inline-galleries.
+     * Custom properties cann be customized on a per gallery basis.
+     */
+    amp-inline-gallery {
+      /* The can be customized per component */
+      --amp-caption-vertical-margin: 3px;
+      --amp-caption-horizontal-margin: 6px;
+      --amp-caption-font-size: 1em;
+      --amp-caption-lines: 2;
+      --amp-caption-line-height: 1.25;
+      --amp-caption-height: calc(var(--amp-caption-font-size) * var(--amp-caption-lines) * var(--amp-caption-line-height));
+      --amp-slide-peek: 0;
+      --amp-gallery-image-aspect-ratio: calc(4 / 3);
+
+      /* Do not change */
+      --amp-gcar: calc(var(--amp-gallery-image-aspect-ratio) / (1 - var(--amp-slide-peek)));
+      --amp-gch: calc(var(--amp-caption-height) + 2 * var(--amp-caption-vertical-margin));
+      --amp-gmw: calc((100vh - var(--amp-gch)) * var(--amp-gcar));
+      --amp-gallery-height: calc((100% / var(--amp-gcar)) + var(--amp-gch));
+
+      max-width: var(--amp-gmw);
+    }
+
+    .my-gallery {
+      margin: auto;
+
+      --amp-slide-peek: 0.2;
+      --amp-caption-lines: 3;
+      --amp-gallery-image-aspect-ratio: calc(3 / 2);
+    }
+
+    @media (max-width: 600px) {
+      .my-gallery {
+        --amp-slide-peek: 0;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>A Basic inline gallery</h1>
+  <h1>A customized inline gallery</h1>
   <div class="with-background">
     Some content above the carousel.
   </div>
-  <amp-inline-gallery width="1" height="1"
-      style="max-width: calc((100vh - 2.5em - 6px) * 3 / 2)"
-      heights="calc((100% * 2 / 3) + 2.5em + 6px)">
+  <amp-inline-gallery
+      class="my-gallery"
+      width="3" height="2"
+      heights="var(--amp-gallery-height)">
     <amp-inline-gallery-slide layout="flex-item">
       <amp-img src="../amp-base-carousel/img/redgradient.png" layout="flex-item"></amp-img>
       <div slot="caption">

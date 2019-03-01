@@ -46,9 +46,6 @@ class AmpInlineGallery extends AMP.BaseElement {
       'loop': newValue => {
         this.inlineGallery_.updateLoop(this.getLoopValue_(newValue));
       },
-      'slide-peek': newValue => {
-        this.inlineGallery_.updateSlidePeek(this.getSlidePeekValue_(newValue));
-      },
       'alignment': newValue => {
         this.inlineGallery_.updateAlignment(this.getAlignmentValue_(newValue));
       },
@@ -72,15 +69,6 @@ class AmpInlineGallery extends AMP.BaseElement {
    */
   getLoopValue_(loop) {
     return loop != 'false';
-  }
-
-  /**
-   * Gets the slide peek, defaulting to `0`.
-   * @param {?string} slidePeek
-   * @return {number}
-   */
-  getSlidePeekValue_(slidePeek) {
-    return Number(slidePeek) || 0;
   }
 
   /**
