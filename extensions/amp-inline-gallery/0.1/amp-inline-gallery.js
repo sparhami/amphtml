@@ -35,6 +35,16 @@ function isSizer(el) {
   return el.tagName == 'I-AMPHTML-SIZER';
 }
 
+/**
+ * Returns a number falling off from one to zero, based on a distance
+ * progress percentage and a power to decay at.
+ * @param {number} percentage 
+ * @param {number} power
+ */
+function exponentialFalloff(percentage, power) {
+  return Math.max(0, 1 - (1 / Math.pow(percentage, power)));
+}
+
 class AmpInlineGallery extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
@@ -49,9 +59,36 @@ class AmpInlineGallery extends AMP.BaseElement {
     /** @private @const */
     this.responsiveAttributes_ = new ResponsiveAttributes({
       'loop': newValue => {
-        this.carousel_.setLoop(newValue == 'true');
+        this.carousel_.updateLoop(this.getLoop_(newValue));
       },
+      'slide-peek': newValue => {
+        this.carousel_.updateVisibleCount(this.getVisibleCount_(newValue));
+      },
+      'alignment': newValue => {
+        this.carousel_.updateVisibleCount(this.getAlignment_(newValue));
+      }
     });
+  }
+
+  /**
+   * @param {?string} loop 
+   */
+  getLoop_(loop) {
+    return loop != 'false';
+  }
+
+  /**
+   * @param {?string} slidePeek 
+   */
+  getVisibleCount_(slidePeek) {
+    return 1 + (Number(slidePeek) || 0);
+  }
+
+  /**
+   * @param {?string} alignment 
+   */
+  getAlignment_(alignment) {
+    return alignment == 'start' ? 'start' : 'center';
   }
 
   /** @override */
@@ -63,14 +100,11 @@ class AmpInlineGallery extends AMP.BaseElement {
   buildCallback() {
     const {element, win} = this;
     const children = toArray(element.children);
-    let sizer;
 
     // Figure out which slot the children go into.
     children.forEach(c => {
       const slot = c.getAttribute('slot');
-      if (isSizer(c)) {
-        sizer = c;
-      } else if (!slot) {
+      if (!isSizer(c) && !slot) {
         this.slides_.push(c);
       }
     });
@@ -87,13 +121,8 @@ class AmpInlineGallery extends AMP.BaseElement {
       initialIndex: 0,
       runMutate: cb => this.mutateElement(cb),
     });
+    this.configureCarouselDefaults_();
 
-    // Do some manual "slot" distribution
-    if(sizer) {
-      const carouselContent = this.element.querySelector(
-        '.i-amphtml-carousel-container');
-      carouselContent.appendChild(sizer);
-    }
     this.slides_.forEach(slide => {
       slide.classList.add('i-amphtml-carousel-slotted');
       scrollContainer.appendChild(slide);
@@ -103,17 +132,24 @@ class AmpInlineGallery extends AMP.BaseElement {
     toArray(this.element.attributes).forEach(attr => {
       this.attributeMutated_(attr.name, attr.value);
     });
-    this.carousel_.updateVisibleCount(1.2);
-    this.carousel_.updateAlignment('center');
-    this.carousel_.updateLoop(true);
 
     this.element.addEventListener('indexchange', event => {
       this.onIndexChanged_(event);
     });
+    this.element.addEventListener('scroll', event => {
+      this.handleScroll_(event);
+    }, true);
 
     this.carousel_.updateSlides(this.slides_);
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
+  }
+
+
+  configureCarouselDefaults_() {
+    this.carousel_.updateVisibleCount(this.getVisibleCount_());
+    this.carousel_.updateAlignment(this.getAlignment_());
+    this.carousel_.updateLoop(this.getLoop_());
   }
 
   /** @override */
@@ -131,9 +167,36 @@ class AmpInlineGallery extends AMP.BaseElement {
    * @param {!Event} event
    */
   onIndexChanged_(event) {
-    const detail = getDetail(event);
-    const index = detail['index'];
     // TODO(sparhami) update the pagination indicator
+    // const detail = getDetail(event);
+    // const index = detail['index'];
+  }
+
+
+  handleScroll_() {
+    let galleryRect;
+    let contentRects;
+
+    this.measureMutateElement(() => {
+      galleryRect = this.element.getBoundingClientRect();
+      contentRects = this.slides_
+        .map(slide => {
+          const slideContent = slide.querySelector(
+              '.i-amphtml-inline-gallery-slide-content');
+          return slideContent || slide;
+        })
+        .map(el => el.getBoundingClientRect());
+    }, () => {
+      const {left, width} = galleryRect;
+
+      this.slides_.forEach((slide, i) => {
+        const {left: slideLeft} = contentRects[i];
+        const distancePercentage = Math.abs(left - slideLeft) / (width / 2);
+        const opacity = exponentialFalloff(distancePercentage, -3);
+        slide.style.setProperty('--caption-opacity', opacity);
+        slide.style.setProperty('pointer-events', opacity == 0 ? 'none' : 'all');
+      })
+    });
   }
 
   /**
@@ -143,12 +206,8 @@ class AmpInlineGallery extends AMP.BaseElement {
   renderContainerDom_() {
     const html = htmlFor(this.element);
     return html`
-      <div>
-        <div class="i-amphtml-carousel-container">
-          <div class="i-amphtml-carousel-content">
-            <div class="i-amphtml-carousel-scroll"></div>
-          </div>
-        </div>
+      <div class="i-amphtml-carousel-content">
+        <div class="i-amphtml-carousel-scroll"></div>
         <div class="i-amphtml-carousel-arrow-next-slot"></div>
         <div class="i-amphtml-carousel-arrow-prev-slot"></div>
       </div>
@@ -157,7 +216,11 @@ class AmpInlineGallery extends AMP.BaseElement {
 
   /** @override */
   mutatedAttributesCallback(mutations) {
-
+    for (const key in mutations) {
+      // Stringify since the attribute logic deals with strings and amp-bind
+      // may not (e.g. value could be a Number).
+      this.attributeMutated_(key, String(mutations[key]));
+    }
   }
 
   /**

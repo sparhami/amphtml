@@ -11,6 +11,7 @@ amp-inline-gallery-slide.i-amphtml-layout-size-defined {
 .i-amphtml-inline-gallery-slide-container {
   width: 100%;
   height: 100%;
+  margin: 0;
 }
 
 .i-amphtml-inline-gallery-slide-content {
@@ -25,10 +26,12 @@ amp-inline-gallery-slide.i-amphtml-layout-size-defined {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 3px 6px;
+  margin: 3px 6px;
   font-size: 1em;
   line-height: 1.25em;
   height: 2.5em;
+  overflow: hidden;
+  opacity: var(--caption-opacity);
 }
 
 .i-amphtml-inline-gallery-slide-content > .i-amphtml-replaced-content {
