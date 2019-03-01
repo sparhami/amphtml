@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import {AmpInlineGallerySlide} from './amp-inline-gallery-slide.js';
+import {AmpInlineGallerySlide} from './amp-inline-gallery-slide';
 import {CSS} from '../../../build/amp-inline-gallery-0.1.css';
-import {Carousel} from '../../amp-base-carousel/0.1/carousel.js';
+import {InlineGallery} from './inline-gallery.js';
 import {Layout} from '../../../src/layout';
 import {
   ResponsiveAttributes,
@@ -24,7 +24,6 @@ import {
 import {dev} from '../../../src/log';
 import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
-import {setImportantStyles} from '../../../src/style.js';
 import {toArray} from '../../../src/types';
 
 /**
@@ -33,16 +32,6 @@ import {toArray} from '../../../src/types';
  */
 function isSizer(el) {
   return el.tagName == 'I-AMPHTML-SIZER';
-}
-
-/**
- * Returns a number falling off from one to zero, based on a distance
- * progress percentage and a power to decay at.
- * @param {number} percentage
- * @param {number} power
- */
-function exponentialFalloff(percentage, power) {
-  return Math.max(0, 1 - (1 / Math.pow(percentage, power)));
 }
 
 class AmpInlineGallery extends AMP.BaseElement {
@@ -55,13 +44,13 @@ class AmpInlineGallery extends AMP.BaseElement {
      */
     this.attributeConfig_ = {
       'loop': newValue => {
-        this.carousel_.updateLoop(this.getLoop_(newValue));
+        this.inlineGallery_.updateLoop(this.getLoopValue_(newValue));
       },
       'slide-peek': newValue => {
-        this.carousel_.updateVisibleCount(this.getVisibleCount_(newValue));
+        this.inlineGallery_.updateSlidePeek(this.getSlidePeekValue_(newValue));
       },
       'alignment': newValue => {
-        this.carousel_.updateAlignment(this.getAlignment_(newValue));
+        this.inlineGallery_.updateAlignment(this.getAlignmentValue_(newValue));
       },
     };
 
@@ -69,8 +58,8 @@ class AmpInlineGallery extends AMP.BaseElement {
     this.responsiveAttributes_ = new ResponsiveAttributes(
         this.attributeConfig_);
 
-    /** @private {?Carousel} */
-    this.carousel_ = null;
+    /** @private {?InlineGallery} */
+    this.inlineGallery_ = null;
 
     /** @private {!Array<!Element>} */
     this.slides_ = [];
@@ -81,17 +70,17 @@ class AmpInlineGallery extends AMP.BaseElement {
    * @param {?string} loop
    * @return {boolean}
    */
-  getLoop_(loop) {
+  getLoopValue_(loop) {
     return loop != 'false';
   }
 
   /**
-   * Gets the visible count, defaulting to `1`.
+   * Gets the slide peek, defaulting to `0`.
    * @param {?string} slidePeek
    * @return {number}
    */
-  getVisibleCount_(slidePeek) {
-    return 1 + (Number(slidePeek) || 0);
+  getSlidePeekValue_(slidePeek) {
+    return Number(slidePeek) || 0;
   }
 
   /**
@@ -99,7 +88,7 @@ class AmpInlineGallery extends AMP.BaseElement {
    * @param {?string} alignment
    * @return {string}
    */
-  getAlignment_(alignment) {
+  getAlignmentValue_(alignment) {
     return alignment == 'start' ? 'start' : 'center';
   }
 
@@ -126,7 +115,7 @@ class AmpInlineGallery extends AMP.BaseElement {
     const scrollContainer = dev().assertElement(
         this.element.querySelector('.i-amphtml-carousel-scroll'));
 
-    this.carousel_ = new Carousel({
+    this.inlineGallery_ = new InlineGallery({
       win,
       element,
       scrollContainer,
@@ -140,7 +129,8 @@ class AmpInlineGallery extends AMP.BaseElement {
       scrollContainer.appendChild(slide);
     });
 
-    // Handle the configuration defaults.
+    // Handle the configuration defaults for all attributes since some may not
+    // be specified.
     for (const attrName in this.attributeConfig_) {
       this.attributeMutated_(attrName, '');
     }
@@ -149,11 +139,7 @@ class AmpInlineGallery extends AMP.BaseElement {
       this.attributeMutated_(attr.name, attr.value);
     });
 
-    this.element.addEventListener('scroll', event => {
-      this.handleScroll_(event);
-    }, true);
-
-    this.carousel_.updateSlides(this.slides_);
+    this.inlineGallery_.updateSlides(this.slides_);
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
   }
@@ -165,43 +151,8 @@ class AmpInlineGallery extends AMP.BaseElement {
 
   /** @override */
   layoutCallback() {
-    this.carousel_.updateUi();
+    this.inlineGallery_.updateUi();
     return Promise.resolve();
-  }
-
-
-  /**
-   * TODO(sparhami) Move to a separate file.
-   */
-  handleScroll_() {
-    let galleryRect;
-    let contentRects;
-
-    this.measureElement(() => {
-      galleryRect = this.element.getBoundingClientRect();
-      contentRects = this.slides_
-          .map(slide => {
-            const slideContent = slide.querySelector(
-                '.i-amphtml-inline-gallery-slide-content');
-            return slideContent || slide;
-          })
-          .map(el => el.getBoundingClientRect());
-    });
-
-    this.mutateElement(() => {
-      const {left, width} = galleryRect;
-
-      this.slides_.forEach((slide, i) => {
-        const {left: slideLeft} = contentRects[i];
-        const distancePercentage = Math.abs(left - slideLeft) / (width / 2);
-        const opacity = exponentialFalloff(distancePercentage, -3);
-
-        setImportantStyles(slide, {
-          '--caption-opacity': opacity,
-          'pointer-events': opacity == 0 ? 'none' : 'all',
-        });
-      });
-    });
   }
 
   /**
