@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-import {getDetail} from '../../../src/event-helper';
 import {htmlFor} from '../../../src/static-template';
 import {isLayoutSizeDefined} from '../../../src/layout';
-import {setStyle} from '../../../src/style';
 import {toArray} from '../../../src/types';
 
 /**

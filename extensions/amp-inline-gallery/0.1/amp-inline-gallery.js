@@ -17,14 +17,14 @@
 import {AmpInlineGallerySlide} from './amp-inline-gallery-slide.js';
 import {CSS} from '../../../build/amp-inline-gallery-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel.js';
+import {Layout} from '../../../src/layout';
 import {
   ResponsiveAttributes,
 } from '../../amp-base-carousel/0.1/responsive-attributes';
 import {dev} from '../../../src/log';
-import {getDetail} from '../../../src/event-helper';
 import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
-import {isLayoutSizeDefined} from '../../../src/layout';
+import {setImportantStyles} from '../../../src/style.js';
 import {toArray} from '../../../src/types';
 
 /**
@@ -38,7 +38,7 @@ function isSizer(el) {
 /**
  * Returns a number falling off from one to zero, based on a distance
  * progress percentage and a power to decay at.
- * @param {number} percentage 
+ * @param {number} percentage
  * @param {number} power
  */
 function exponentialFalloff(percentage, power) {
@@ -50,14 +50,10 @@ class AmpInlineGallery extends AMP.BaseElement {
   constructor(element) {
     super(element);
 
-    /** @private {?Carousel} */
-    this.carousel_ = null;
-
-    /** @private {!Array<!Element>} */
-    this.slides_ = [];
-
-    /** @private @const */
-    this.responsiveAttributes_ = new ResponsiveAttributes({
+    /**
+     * @private @const {!Object<string, function(string)>}
+     */
+    this.attributeConfig_ = {
       'loop': newValue => {
         this.carousel_.updateLoop(this.getLoop_(newValue));
       },
@@ -65,27 +61,43 @@ class AmpInlineGallery extends AMP.BaseElement {
         this.carousel_.updateVisibleCount(this.getVisibleCount_(newValue));
       },
       'alignment': newValue => {
-        this.carousel_.updateVisibleCount(this.getAlignment_(newValue));
-      }
-    });
+        this.carousel_.updateAlignment(this.getAlignment_(newValue));
+      },
+    };
+
+    /** @private @const */
+    this.responsiveAttributes_ = new ResponsiveAttributes(
+        this.attributeConfig_);
+
+    /** @private {?Carousel} */
+    this.carousel_ = null;
+
+    /** @private {!Array<!Element>} */
+    this.slides_ = [];
   }
 
   /**
-   * @param {?string} loop 
+   * Gets the loop value, defaulting to `true`.
+   * @param {?string} loop
+   * @return {boolean}
    */
   getLoop_(loop) {
     return loop != 'false';
   }
 
   /**
-   * @param {?string} slidePeek 
+   * Gets the visible count, defaulting to `1`.
+   * @param {?string} slidePeek
+   * @return {number}
    */
   getVisibleCount_(slidePeek) {
     return 1 + (Number(slidePeek) || 0);
   }
 
   /**
-   * @param {?string} alignment 
+   * Gets the alignment, defaulting to `'center'`.
+   * @param {?string} alignment
+   * @return {string}
    */
   getAlignment_(alignment) {
     return alignment == 'start' ? 'start' : 'center';
@@ -93,7 +105,7 @@ class AmpInlineGallery extends AMP.BaseElement {
 
   /** @override */
   isLayoutSupported(layout) {
-    return isLayoutSizeDefined(layout);
+    return layout == Layout.RESPONSIVE;
   }
 
   /** @override */
@@ -121,21 +133,22 @@ class AmpInlineGallery extends AMP.BaseElement {
       initialIndex: 0,
       runMutate: cb => this.mutateElement(cb),
     });
-    this.configureCarouselDefaults_();
 
+    // Do manual 'slot' distribution.
     this.slides_.forEach(slide => {
       slide.classList.add('i-amphtml-carousel-slotted');
       scrollContainer.appendChild(slide);
     });
 
-    // Handle the initial set of attributes
+    // Handle the configuration defaults.
+    for (const attrName in this.attributeConfig_) {
+      this.attributeMutated_(attrName, '');
+    }
+    // Handle the initial set of attributes.
     toArray(this.element.attributes).forEach(attr => {
       this.attributeMutated_(attr.name, attr.value);
     });
 
-    this.element.addEventListener('indexchange', event => {
-      this.onIndexChanged_(event);
-    });
     this.element.addEventListener('scroll', event => {
       this.handleScroll_(event);
     }, true);
@@ -143,13 +156,6 @@ class AmpInlineGallery extends AMP.BaseElement {
     this.carousel_.updateSlides(this.slides_);
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
-  }
-
-
-  configureCarouselDefaults_() {
-    this.carousel_.updateVisibleCount(this.getVisibleCount_());
-    this.carousel_.updateAlignment(this.getAlignment_());
-    this.carousel_.updateLoop(this.getLoop_());
   }
 
   /** @override */
@@ -162,40 +168,39 @@ class AmpInlineGallery extends AMP.BaseElement {
     this.carousel_.updateUi();
     return Promise.resolve();
   }
+
+
   /**
-   * @private
-   * @param {!Event} event
+   * TODO(sparhami) Move to a separate file.
    */
-  onIndexChanged_(event) {
-    // TODO(sparhami) update the pagination indicator
-    // const detail = getDetail(event);
-    // const index = detail['index'];
-  }
-
-
   handleScroll_() {
     let galleryRect;
     let contentRects;
 
-    this.measureMutateElement(() => {
+    this.measureElement(() => {
       galleryRect = this.element.getBoundingClientRect();
       contentRects = this.slides_
-        .map(slide => {
-          const slideContent = slide.querySelector(
-              '.i-amphtml-inline-gallery-slide-content');
-          return slideContent || slide;
-        })
-        .map(el => el.getBoundingClientRect());
-    }, () => {
+          .map(slide => {
+            const slideContent = slide.querySelector(
+                '.i-amphtml-inline-gallery-slide-content');
+            return slideContent || slide;
+          })
+          .map(el => el.getBoundingClientRect());
+    });
+
+    this.mutateElement(() => {
       const {left, width} = galleryRect;
 
       this.slides_.forEach((slide, i) => {
         const {left: slideLeft} = contentRects[i];
         const distancePercentage = Math.abs(left - slideLeft) / (width / 2);
         const opacity = exponentialFalloff(distancePercentage, -3);
-        slide.style.setProperty('--caption-opacity', opacity);
-        slide.style.setProperty('pointer-events', opacity == 0 ? 'none' : 'all');
-      })
+
+        setImportantStyles(slide, {
+          '--caption-opacity': opacity,
+          'pointer-events': opacity == 0 ? 'none' : 'all',
+        });
+      });
     });
   }
 
