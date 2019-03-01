@@ -824,7 +824,7 @@ export class Carousel {
       currentIndex_,
       element_,
       loop_,
-      slides_, 
+      slides_,
     } = this;
     const totalLength = sum(this.getSlideLengths_());
     // We look for the overlapping index using the spacers when looping
