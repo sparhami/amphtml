@@ -670,7 +670,6 @@ export class Carousel {
     for (let i = 0; i < count; i++) {
       const spacer = document.createElement('div');
       spacer.className = 'i-amphtml-carousel-spacer';
-      spacer.hidden = true;
       spacers.push(spacer);
     }
     return spacers;
@@ -827,10 +826,10 @@ export class Carousel {
       slides_,
     } = this;
     const totalLength = sum(this.getSlideLengths_());
-    // We look for the overlapping index using the spacers when looping
-    // instead of the slides in case the slides themselves are not translated
-    // and the slide is translating its own contents instead. Since we do not
-    // translate when not looping, this only needs to be done for looping.
+    // When looping, we translate the slides, but the slides might decide to
+    // translate their content instead of the whole slide. As a result, we need
+    // to use the spacers to figure out where we are rather than the slides
+    // themselves.
     const items = loop_ ? allSpacers_ : slides_;
     const startIndex = loop_ ? currentIndex_ + slides_.length : currentIndex_;
     const overlappingIndex =

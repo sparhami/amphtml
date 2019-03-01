@@ -20,7 +20,7 @@
   * 1. We do not want to make the scrolling area positioned, so that content
   *    inside can position relative to the outer container.
   * 2. Chrome causes the slides to flicker if the scrolling element is
-  *    position: absolute; 
+  *    position: absolute;
   */
 .i-amphtml-carousel-content {
   position: absolute;
@@ -37,6 +37,8 @@
   align-items: center;
 
   scroll-behavior: smooth;
+  /* Hide scrollbar */
+  box-sizing: content-box !important;
   -webkit-overflow-scrolling: touch !important;
 
   --visible-count: 1;
@@ -56,6 +58,8 @@
   flex-direction: row;
   scroll-snap-type-x: mandatory; /* Firefox, IE */
   scroll-snap-type: x mandatory;
+  /* Hide scrollbar */
+  padding-bottom: 20px !important;
   overflow-y: hidden;
 }
 
@@ -63,6 +67,8 @@
   flex-direction: column;
   scroll-snap-type-y: mandatory; /* Firefox, IE */
   scroll-snap-type: y mandatory;
+  /* Hide scrollbar */
+  padding-right: 20px !important;
   overflow-x: hidden;
 }
 
