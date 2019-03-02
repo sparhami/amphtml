@@ -2,7 +2,7 @@
 <html ⚡>
 <head>
   <meta charset="utf-8">
-  <title>A Basic inline gallery</title>
+  <title>An inline gallery hiding captions</title>
   <link rel="canonical" href="amps.html" >
   <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
   <link href='https://fonts.googleapis.com/css?family=Questrial' rel='stylesheet' type='text/css'>
@@ -15,14 +15,14 @@
     }
 
     .caption {
-      height: 2.5em;
+      height: 0;
       line-height: 1.25em;
       font-size: 1em;
     }
   </style>
 </head>
 <body>
-  <h1>A Basic inline gallery</h1>
+  <h1>An inline gallery hiding captions</h1>
   <div class="with-background">
     Some content above the carousel.
   </div>
@@ -53,7 +53,7 @@
         </div>
       </amp-inline-gallery-slide>
     </amp-inline-gallery-slides>
-    <amp-inline-gallery-captions-sizer class="caption" layout="container">
+    <amp-inline-gallery-captions-sizer class="caption" layout="container" hidden>
     </amp-inline-gallery-captions-sizer>
   </amp-inline-gallery>
   <div class="with-background">

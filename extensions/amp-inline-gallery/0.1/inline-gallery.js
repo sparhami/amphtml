@@ -58,9 +58,6 @@ export class InlineGallery {
       initialIndex,
       runMutate,
     });
-    // The carousel is always in 'mixed length' mode; we control the slide
-    // widths via CSS.
-    this.carousel_.updateMixedLength(true);
 
     /** @private @const */
     this.element_ = element;

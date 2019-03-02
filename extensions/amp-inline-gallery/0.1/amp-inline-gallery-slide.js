@@ -15,7 +15,7 @@
  */
 
 import {htmlFor} from '../../../src/static-template';
-import {isLayoutSizeDefined} from '../../../src/layout';
+import {Layout} from '../../../src/layout';
 import {toArray} from '../../../src/types';
 
 /**
@@ -39,8 +39,8 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
   }
 
   /** @override */
-  isLayoutSupported(layout) {
-    return isLayoutSizeDefined(layout);
+  isLayoutSupported() {
+    return Layout.FLEX_ITEM;
   }
 
   /** @override */

@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
+import {AmpInlineGalleryCaptionsSizer} from './amp-inline-gallery-captions-sizer';
 import {AmpInlineGallerySlide} from './amp-inline-gallery-slide';
+import {AmpInlineGallerySlides} from './amp-inline-gallery-slides';
 import {CSS} from '../../../build/amp-inline-gallery-0.1.css';
-import {InlineGallery} from './inline-gallery.js';
 import {Layout} from '../../../src/layout';
-import {
-  ResponsiveAttributes,
-} from '../../amp-base-carousel/0.1/responsive-attributes';
-import {dev} from '../../../src/log';
-import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
-import {toArray} from '../../../src/types';
 
 /**
  * @param {!Element} el The Element to check.
@@ -38,142 +33,11 @@ class AmpInlineGallery extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
-
-    /**
-     * @private @const {!Object<string, function(string)>}
-     */
-    this.attributeConfig_ = {
-      'loop': newValue => {
-        this.inlineGallery_.updateLoop(this.getLoopValue_(newValue));
-      },
-      'alignment': newValue => {
-        this.inlineGallery_.updateAlignment(this.getAlignmentValue_(newValue));
-      },
-    };
-
-    /** @private @const */
-    this.responsiveAttributes_ = new ResponsiveAttributes(
-        this.attributeConfig_);
-
-    /** @private {?InlineGallery} */
-    this.inlineGallery_ = null;
-
-    /** @private {!Array<!Element>} */
-    this.slides_ = [];
-  }
-
-  /**
-   * Gets the loop value, defaulting to `true`.
-   * @param {?string} loop
-   * @return {boolean}
-   */
-  getLoopValue_(loop) {
-    return loop != 'false';
-  }
-
-  /**
-   * Gets the alignment, defaulting to `'center'`.
-   * @param {?string} alignment
-   * @return {string}
-   */
-  getAlignmentValue_(alignment) {
-    return alignment == 'start' ? 'start' : 'center';
   }
 
   /** @override */
   isLayoutSupported(layout) {
-    return layout == Layout.RESPONSIVE;
-  }
-
-  /** @override */
-  buildCallback() {
-    const {element, win} = this;
-    const children = toArray(element.children);
-
-    // Figure out which slot the children go into.
-    children.forEach(c => {
-      const slot = c.getAttribute('slot');
-      if (!isSizer(c) && !slot) {
-        this.slides_.push(c);
-      }
-    });
-    // Create the carousel's inner DOM.
-    element.appendChild(this.renderContainerDom_());
-
-    const scrollContainer = dev().assertElement(
-        this.element.querySelector('.i-amphtml-carousel-scroll'));
-
-    this.inlineGallery_ = new InlineGallery({
-      win,
-      element,
-      scrollContainer,
-      initialIndex: 0,
-      runMutate: cb => this.mutateElement(cb),
-    });
-
-    // Do manual 'slot' distribution.
-    this.slides_.forEach(slide => {
-      slide.classList.add('i-amphtml-carousel-slotted');
-      scrollContainer.appendChild(slide);
-    });
-
-    // Handle the configuration defaults for all attributes since some may not
-    // be specified.
-    for (const attrName in this.attributeConfig_) {
-      this.attributeMutated_(attrName, '');
-    }
-    // Handle the initial set of attributes.
-    toArray(this.element.attributes).forEach(attr => {
-      this.attributeMutated_(attr.name, attr.value);
-    });
-
-    this.inlineGallery_.updateSlides(this.slides_);
-    // Signal for runtime to check children for layout.
-    return this.mutateElement(() => {});
-  }
-
-  /** @override */
-  isRelayoutNeeded() {
-    return true;
-  }
-
-  /** @override */
-  layoutCallback() {
-    this.inlineGallery_.updateUi();
-    return Promise.resolve();
-  }
-
-  /**
-   * @return {!Element}
-   * @private
-   */
-  renderContainerDom_() {
-    const html = htmlFor(this.element);
-    return html`
-      <div class="i-amphtml-carousel-content">
-        <div class="i-amphtml-carousel-scroll"></div>
-        <div class="i-amphtml-carousel-arrow-next-slot"></div>
-        <div class="i-amphtml-carousel-arrow-prev-slot"></div>
-      </div>
-    `;
-  }
-
-  /** @override */
-  mutatedAttributesCallback(mutations) {
-    for (const key in mutations) {
-      // Stringify since the attribute logic deals with strings and amp-bind
-      // may not (e.g. value could be a Number).
-      this.attributeMutated_(key, String(mutations[key]));
-    }
-  }
-
-  /**
-   * @param {string} name The name of the attribute.
-   * @param {string} newValue The new value of the attribute.
-   * @private
-   */
-  attributeMutated_(name, newValue) {
-    this.responsiveAttributes_.updateAttribute(name, newValue);
+    return layout == Layout.CONTAINER;
   }
 }
 
@@ -183,5 +47,7 @@ AMP.extension('amp-inline-gallery', '0.1', AMP => {
   }
 
   AMP.registerElement('amp-inline-gallery', AmpInlineGallery, CSS);
+  AMP.registerElement('amp-inline-gallery-slides', AmpInlineGallerySlides);
   AMP.registerElement('amp-inline-gallery-slide', AmpInlineGallerySlide);
+  AMP.registerElement('amp-inline-gallery-captions-sizer', AmpInlineGalleryCaptionsSizer);
 });
