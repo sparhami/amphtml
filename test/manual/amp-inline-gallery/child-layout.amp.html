@@ -19,29 +19,33 @@
       line-height: 1.25em;
       font-size: 1em;
     }
+
+    amp-img {
+      background-color :#eee;
+    }
   </style>
 </head>
 <body>
-  <h1>A Basic inline gallery</h1>
+  <h1>An Inline Gallery with different layouts for the children</h1>
   <div class="with-background">
     Some content above the carousel.
   </div>
   <amp-inline-gallery layout="container">
     <amp-inline-gallery-slides layout="responsive" width="3" height="2">
       <amp-inline-gallery-slide layout="flex-item">
-        <amp-img src="../amp-base-carousel/img/redgradient.png" layout="fill"></amp-img>
+        <amp-img src="../amp-base-carousel/img/redgradient.png" layout="responsive" width="5" height="2"></amp-img>
         <div class="caption" slot="caption">
           This is an image with a red gradient. Red is the color of several fruits like strawberries, cherries, tomatoes and apples.
         </div>
       </amp-inline-gallery-slide>
       <amp-inline-gallery-slide layout="flex-item">
-        <amp-img src="../amp-base-carousel/img/greengradient.png" layout="fill"></amp-img>
+        <amp-img src="../amp-base-carousel/img/greengradient.png" layout="fixed" width="90" height="60"></amp-img>
         <div class="caption" slot="caption">
           Notable characters that are green include: Shrek, Kermit the Frog, Yoda, and Hulk. It is also the color of grass and leaves.
         </div>
       </amp-inline-gallery-slide>
       <amp-inline-gallery-slide layout="flex-item">
-        <amp-img src="../amp-base-carousel/img/bluegradient.png" layout="fill"></amp-img>
+        <amp-img src="../amp-base-carousel/img/bluegradient.png" layout="fixed-height" height="60"></amp-img>
         <div class="caption" slot="caption">
           One of the three primary colors, the color blue symbolizes wisdom and intelligence. Some shades of blue include ultramarine, navy blue, cerulean, and sapphire.
         </div>
