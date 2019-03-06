@@ -13,6 +13,10 @@
     .with-background {
       background-color: #eee;
     }
+
+    .my-gallery {
+      --amp-gallery-image-aspect-ratio: calc(3 / 2);
+    }
   </style>
 </head>
 <body>
@@ -20,9 +24,11 @@
   <div class="with-background">
     Some content above the carousel.
   </div>
-  <amp-inline-gallery width="1" height="1"
-      style="max-width: calc((100vh - 2.5em - 6px) * 3 / 2)"
-      heights="calc((100% * 2 / 3) + 2.5em + 6px)">
+  <amp-inline-gallery 
+      class="my-gallery"
+      layout="responsive"
+      width="1" height="1"
+      heights="var(--amp-gallery-height)">
     <amp-inline-gallery-slide layout="flex-item">
       <amp-img src="../amp-base-carousel/img/redgradient.png" layout="flex-item"></amp-img>
       <div slot="caption">
