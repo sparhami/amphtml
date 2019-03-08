@@ -25,6 +25,7 @@ import {
   setScrollPosition,
   setTransformTranslateStyle,
   updateLengthStyle,
+  getPercentageOffsetFromAlignment,
 } from './dimensions.js';
 import {AutoAdvance} from './auto-advance';
 import {createCustomEvent, listenOnce} from '../../../src/event-helper';
@@ -218,9 +219,10 @@ export class Carousel {
     this.ignoreNextScroll_ = false;
 
     /**
-    * The offset from the start edge for the element at the current index.
-    * This is used to preserve relative scroll position when updating the UI
-    * after things have moved (e.g. on rotate).
+    * The offset for the current element, based on the alignment and axis. This
+    * is a percentage of the Element's length along the current axis. This is
+    * used to preserve relative scroll position when updating the UI after 
+    * things have moved (e.g. on rotate).
     * @private {number}
     */
     this.currentElementOffset_ = 0;
@@ -543,17 +545,36 @@ export class Carousel {
   }
 
   /**
-   * Updates the current index as well as firing an event.
-   * @param {number} currentIndex The new current index.
+   * Updates the resting index as well as firing an event.
+   * @param {number} index The new resting index.
    * @private
    */
-  updateCurrentIndex_(currentIndex) {
-    this.currentIndex_ = currentIndex;
+  updateRestingIndex_(index) {
+    this.restingIndex_ = index;
     this.element_.dispatchEvent(
         createCustomEvent(this.win_, 'indexchange', dict({
-          'index': currentIndex,
+          'index': index,
           'actionSource': this.actionSource_,
-        })));
+        }), {
+          bubbles: true,
+        }));
+  }
+
+  /**
+   * Updates the current offset within the current Element as well as firing an
+   * event.
+   * @param {number} index The index of the Element.
+   * @param {number} offset The offset, as a percentage of the Element's width.
+   */
+  updateCurrentElementOffset_(index, offset) {
+    this.currentElementOffset_ = offset;
+    this.element_.dispatchEvent(
+      createCustomEvent(this.win_, 'offsetchange', dict({
+        'index': index,
+        'offset': offset,
+      }), {
+        bubbles: true,
+      }));
   }
 
   /**
@@ -792,11 +813,14 @@ export class Carousel {
     // Since we are potentially looking accross all spacers, we need to convert
     // to a slide index.
     const newIndex = overlappingIndex % slides_.length;
-    // Update the current offset on each scroll so that we have it up to date
-    // in case of a resize.
     const currentElement = slides_[newIndex];
-    const dimension = getDimension(axis_, currentElement);
-    this.currentElementOffset_ = dimension.start;
+
+    // Update the current offset on each scroll so that we have it up to date
+    // in case of a resize. Also notifies interested parties about where we are
+    // within the current index.
+    const offset = getPercentageOffsetFromAlignment(
+        axis_, alignment_, element_, currentElement);
+    this.updateCurrentElementOffset_(newIndex, offset);
 
     // We did not move at all.
     if (newIndex == currentIndex_) {
@@ -832,9 +856,7 @@ export class Carousel {
     const totalLength = sum(this.getSlideLengths_());
 
     this.runMutate_(() => {
-      this.restingIndex_ = this.currentIndex_;
-      this.updateCurrentIndex_(this.restingIndex_);
-
+      this.updateRestingIndex_(this.currentIndex_);
       this.resetSlideTransforms_(totalLength);
       this.hideSpacersAndSlides_();
       this.moveSlides_(totalLength);
@@ -858,14 +880,13 @@ export class Carousel {
       slides_,
     } = this;
     const currentElement = slides_[currentIndex_];
-    const {length, start} = getDimension(axis_, scrollContainer_);
-    const currentElementStart = Math.abs(currentElementOffset_) <= length ?
-      currentElementOffset_ : 0;
+    const {length} = getDimension(axis_, currentElement);
+    const offsetInPixels = currentElementOffset_ * length;
     // Use the offsetStart to figure out the scroll position of the current
     // element. Note that this only works because the element is not translated
     // at this point.
     const offsetStart = getOffsetStart(axis_, currentElement);
-    const pos = offsetStart - currentElementStart + start;
+    const pos = offsetStart + offsetInPixels;
 
     this.ignoreNextScroll_ = true;
     runDisablingSmoothScroll(scrollContainer_, () => {
