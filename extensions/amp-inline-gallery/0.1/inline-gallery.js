@@ -75,7 +75,7 @@ export class InlineGallery {
 
     this.element_.addEventListener('offsetchange', (event) => {
       this.handleOffsetChange_(event);
-    }, true);
+    });
   }
 
   /**
@@ -112,25 +112,20 @@ export class InlineGallery {
     this.carousel_.updateUi();
   }
 
-  /**
-   * @param {!Element} slide The slide to get the content for.
-   * @return {!Element} The content for the slide, or the slide itself. 
-   */
-  getSlideContent_(slide) {
-    return slide.querySelector('.i-amphtml-inline-gallery-slide-content') ||
-        slide;
-  }
-
-  /**
-   * Updates the opacities of the captions, based on their distance from the
-   * current slide.
-   */
   handleOffsetChange_(event) {
     const data = getDetail(event);
     const index = data['index'];
     const offset = data['offset'];
     const position = index + offset;
 
+    this.updateCaptionOpacities_(position);
+  }
+
+  /**
+   * Updates the opacities of the captions, based on their distance from the
+   * current slide.
+   */
+  updateCaptionOpacities_(position) {
     this.runMutate_(() => {
       this.slides_.forEach((slide, i) => {
         const indexDistance = Math.abs(position - i);

@@ -557,6 +557,7 @@ export class Carousel {
     this.element_.dispatchEvent(
         createCustomEvent(this.win_, 'indexchange', dict({
           'index': index,
+          'total': this.slides_.length,
           'actionSource': this.actionSource_,
         }), {
           bubbles: true,
@@ -575,6 +576,7 @@ export class Carousel {
     this.element_.dispatchEvent(
       createCustomEvent(this.win_, 'offsetchange', dict({
         'index': index,
+        'total': this.slides_.length,
         'offset': offset,
       }), {
         bubbles: true,

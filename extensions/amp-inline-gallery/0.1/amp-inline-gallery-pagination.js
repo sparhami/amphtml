@@ -15,19 +15,20 @@
  */
 
 import {Layout} from '../../../src/layout';
-import {setImportantStyles} from '../../../src/style.js';
+import {setImportantStyles, setStyle} from '../../../src/style.js';
+import { getDetail } from '../../../src/event-helper';
+import { htmlFor } from '../../../src/static-template';
 
 export class AmpInlineGalleryPagination extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
 
-    this.element.addEventListener('index-change', () => {
-      console.log('index-change');
-    });
-    this.element.addEventListener('items-change', () => {
-      console.log('items-change');
-    });
+    this.total_ = 0;
+
+    this.shadowRoot_ = null;
+
+    this.paginationDots_ = null;
   }
 
   /** @override */
@@ -41,7 +42,85 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
   }
 
   /** @override */
+  buildCallback() {
+    this.shadowRoot_ = this.element.attachShadow({mode: 'open'});
+    this.shadowRoot_.innerHTML = `
+      <style>
+        .pagination-dots {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100%;
+        }
+
+        .pagination-dot {
+          position: relative;
+          overflow: hidden;
+          margin: 0 4px;
+          background-color: #aaa;
+        }
+
+        .pagination-dot-progress {
+          position: absolute;
+          top: 0;
+          background-color: #333;
+        }
+
+        .pagination-dot,
+        .pagination-dot-progress {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+      </style>
+      <div class="pagination-dots" aria-hidden="true"></div>
+    `;
+    this.paginationDots_ = this.shadowRoot_.querySelector('.pagination-dots');
+
+    this.element.addEventListener('offsetchange-update', (event) => {
+      this.handleIndexChangeUpdate_(event);
+    });
+  }
+
+  /** @override */
   layoutCallback() {
 
+  }
+
+  createPaginationDot_() {
+    const html = htmlFor(this.element);
+    return html`
+      <div class="pagination-dot">
+        <div class="pagination-dot-progress"></div>
+      </div>
+    `;
+  }
+
+  updateTotal_(total) {
+    if (total == this.total_) {
+      return;
+    }
+
+    this.total_ = total;
+    this.paginationDots_.innerHTML = '';
+    for (let i = 0; i < total; i++) {
+      this.paginationDots_.appendChild(this.createPaginationDot_());
+    }
+  }
+
+  handleIndexChangeUpdate_(event) {
+    const detail = getDetail(event);
+    const total = detail['total'];
+    const index = detail['index'];
+    const offset = detail['offset'];
+    const position = index - offset;
+
+    this.updateTotal_(total);
+    Array.from(this.paginationDots_.children).forEach((dot, i) => {
+      const movement = (i - position) * 12;
+      const offset = `${movement}px`;
+      const progressEl = dot.firstElementChild;
+      setStyle(progressEl, 'right', offset);
+    });
   }
 }

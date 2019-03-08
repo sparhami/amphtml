@@ -15,19 +15,14 @@
  */
 
 import {AmpInlineGalleryCaptionsSizer} from './amp-inline-gallery-captions-sizer';
+import {AmpInlineGalleryPagination} from './amp-inline-gallery-pagination';
 import {AmpInlineGallerySlide} from './amp-inline-gallery-slide';
 import {AmpInlineGallerySlides} from './amp-inline-gallery-slides';
 import {CSS} from '../../../build/amp-inline-gallery-0.1.css';
 import {Layout} from '../../../src/layout';
+import {createCustomEvent, getDetail} from '../../../src/event-helper';
+import {dict} from '../../../src/utils/object';
 import {isExperimentOn} from '../../../src/experiments';
-
-/**
- * @param {!Element} el The Element to check.
- * @return {boolean} Whether or not the Element is a sizer Element.
- */
-function isSizer(el) {
-  return el.tagName == 'I-AMPHTML-SIZER';
-}
 
 class AmpInlineGallery extends AMP.BaseElement {
   /** @param {!AmpElement} element */
@@ -36,8 +31,36 @@ class AmpInlineGallery extends AMP.BaseElement {
   }
 
   /** @override */
+  buildCallback() {
+    this.element.addEventListener('offsetchange', event => {
+      this.onIndexChanged_(event);
+    });
+  }
+
+  /** @override */
   isLayoutSupported(layout) {
     return layout == Layout.CONTAINER;
+  }
+
+  /**
+   * 
+   * @param {string}} name 
+   * @param {!JsonObject} detail
+   * @private
+   */
+  dispatchOnChildren_(name, detail) {
+    Array.from(this.element.children).forEach(child => {
+      child.dispatchEvent(createCustomEvent(this.win, name, detail));
+    });
+  }
+
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onIndexChanged_(event) {
+    const detail = getDetail(event);
+    this.dispatchOnChildren_('offsetchange-update', detail);
   }
 }
 
@@ -46,8 +69,9 @@ AMP.extension('amp-inline-gallery', '0.1', AMP => {
     return;
   }
 
-  AMP.registerElement('amp-inline-gallery', AmpInlineGallery, CSS);
+  AMP.registerElement('amp-inline-gallery-captions-sizer', AmpInlineGalleryCaptionsSizer);
+  AMP.registerElement('amp-inline-gallery-pagination', AmpInlineGalleryPagination);
   AMP.registerElement('amp-inline-gallery-slides', AmpInlineGallerySlides);
   AMP.registerElement('amp-inline-gallery-slide', AmpInlineGallerySlide);
-  AMP.registerElement('amp-inline-gallery-captions-sizer', AmpInlineGalleryCaptionsSizer);
+  AMP.registerElement('amp-inline-gallery', AmpInlineGallery, CSS);
 });
