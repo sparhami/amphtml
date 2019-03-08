@@ -27,6 +27,10 @@ import {
   getPercentageOffsetFromAlignment,
 } from './dimensions.js';
 import {AutoAdvance} from './auto-advance';
+import {
+  backwardWrappingDistance,
+  forwardWrappingDistance,
+} from './array-util';
 import {createCustomEvent, listenOnce} from '../../../src/event-helper';
 import {debounce} from '../../../src/utils/rate-limit';
 import {dict} from '../../../src/utils/object';
@@ -772,11 +776,17 @@ export class Carousel {
     const numAfterSpacers = Math.max(0, currentIndex_ - 1);
 
     beforeSpacers_.forEach((el, i) => {
-      el.hidden = i < slides_.length - numBeforeSpacers;
+      const distance = backwardWrappingDistance(
+        currentIndex_, i, beforeSpacers_);	
+      const tooFar = distance > slides_.length - 1;
+      el.hidden = tooFar || i < slides_.length - numBeforeSpacers;
     });
 
     afterSpacers_.forEach((el, i) => {
-      el.hidden = i > numAfterSpacers;
+      const distance = forwardWrappingDistance(
+          currentIndex_, i, afterSpacers_);
+      const tooFar = distance > slides_.length - 1;
+      el.hidden = tooFar || i > numAfterSpacers;
     });
   }
 
@@ -810,16 +820,17 @@ export class Carousel {
       return;
     }
 
+    // The overlapping element, may be a spacer.
+    const overlappingElement = items[overlappingIndex];
     // Since we are potentially looking accross all spacers, we need to convert
     // to a slide index.
     const newIndex = overlappingIndex % slides_.length;
-    const currentElement = slides_[newIndex];
 
     // Update the current offset on each scroll so that we have it up to date
     // in case of a resize. Also notifies interested parties about where we are
     // within the current index.
     const offset = getPercentageOffsetFromAlignment(
-        axis_, alignment_, element_, currentElement);
+        axis_, alignment_, element_, overlappingElement);
     this.updateCurrentElementOffset_(newIndex, offset);
 
     // We did not move at all.
