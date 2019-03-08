@@ -841,21 +841,29 @@ export class Carousel {
    * @private
    */
   resetScrollReferencePoint_(force = false) {
+    const {
+      currentElementOffset_,
+      currentIndex_,
+      restingIndex_,
+      touching_,
+    } = this;
+
     // Make sure if the user is in the middle of a drag, we do not move
     // anything.
-    if (this.touching_) {
+    if (touching_) {
       return;
     }
 
     // We are still on the same slide, so nothing needs to move.
-    if (this.restingIndex_ == this.currentIndex_ && !force) {
+    if (restingIndex_ == currentIndex_ && !force) {
       return;
     }
 
     const totalLength = sum(this.getSlideLengths_());
 
     this.runMutate_(() => {
-      this.updateRestingIndex_(this.currentIndex_);
+      this.updateRestingIndex_(currentIndex_);
+      this.updateCurrentElementOffset_(currentIndex_, currentElementOffset_);
       this.resetSlideTransforms_(totalLength);
       this.hideSpacersAndSlides_();
       this.moveSlides_(totalLength);

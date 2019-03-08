@@ -17,10 +17,9 @@
 import {
   Alignment,
   Axis,
-  getDimension,
-  getReferencePoint,
 } from "../../amp-base-carousel/0.1/dimensions";
 import {Carousel} from "../../amp-base-carousel/0.1/carousel";
+import {getDetail} from "../../../src/event-helper";
 import {setImportantStyles} from '../../../src/style.js';
 
 /**
@@ -74,8 +73,8 @@ export class InlineGallery {
     /** @private {!Array<!Element>} */
     this.slides_ = [];
 
-    this.element_.addEventListener('scroll', () => {
-      this.handleScroll_();
+    this.element_.addEventListener('offsetchange', (event) => {
+      this.handleOffsetChange_(event);
     }, true);
   }
 
@@ -114,13 +113,6 @@ export class InlineGallery {
   }
 
   /**
-   * Handles a scroll, updating the opacity of captions.
-   */
-  handleScroll_() {
-    this.updateSlideOpacities_();
-  }
-
-  /**
    * @param {!Element} slide The slide to get the content for.
    * @return {!Element} The content for the slide, or the slide itself. 
    */
@@ -133,27 +125,16 @@ export class InlineGallery {
    * Updates the opacities of the captions, based on their distance from the
    * current slide.
    */
-  updateSlideOpacities_() {
-    const {
-      alignment_,
-      axis_,
-      element_,
-      slides_,
-    } = this;
-    const galleryLength = getDimension(axis_, element_).length;
-    const galleryReferencePoint = getReferencePoint(axis_, alignment_, element_);
-    const contentReferencePoints = slides_
-        .map(slide => this.getSlideContent_(slide))
-        .map(el => getReferencePoint(axis_, alignment_, el));
+  handleOffsetChange_(event) {
+    const data = getDetail(event);
+    const index = data['index'];
+    const offset = data['offset'];
+    const position = index + offset;
 
     this.runMutate_(() => {
-      slides_.forEach((slide, i) => {
-        const slideReferencePoint = contentReferencePoints[i];
-        const distancePercentage =
-            Math.abs(galleryReferencePoint - slideReferencePoint) /
-            (galleryLength / 2);
-        const opacity = exponentialFalloff(distancePercentage, -3);
-
+      this.slides_.forEach((slide, i) => {
+        const indexDistance = Math.abs(position - i);
+        const opacity = exponentialFalloff(2 * indexDistance, -3);
         setImportantStyles(slide, {
           '--caption-opacity': opacity,
           // Need to prevent pointer events on all other slide's captions so
