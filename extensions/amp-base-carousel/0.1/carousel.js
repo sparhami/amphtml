@@ -20,11 +20,10 @@ import {
   Axis,
   findOverlappingIndex,
   getDimension,
-  getOffsetStart,
   scrollContainerToElement,
-  setScrollPosition,
   setTransformTranslateStyle,
   updateLengthStyle,
+  updateScrollPosition,
   getPercentageOffsetFromAlignment,
 } from './dimensions.js';
 import {AutoAdvance} from './auto-advance';
@@ -567,6 +566,7 @@ export class Carousel {
    * @param {number} offset The offset, as a percentage of the Element's width.
    */
   updateCurrentElementOffset_(index, offset) {
+    this.currentIndex_ = index;
     this.currentElementOffset_ = offset;
     this.element_.dispatchEvent(
       createCustomEvent(this.win_, 'offsetchange', dict({
@@ -828,7 +828,6 @@ export class Carousel {
     }
 
     this.runMutate_(() => {
-      this.currentIndex_ = newIndex;
       this.moveSlides_(totalLength);
     });
   }
@@ -873,24 +872,32 @@ export class Carousel {
    */
   restoreScrollStart_() {
     const {
+      alignment_,
       axis_,
       currentElementOffset_,
       currentIndex_,
+      element_,
       scrollContainer_,
       slides_,
     } = this;
     const currentElement = slides_[currentIndex_];
+    // Figure out what is the difference between where the Element is, and
+    // where it should be as a percentage of its length.
+    const actualOffset = getPercentageOffsetFromAlignment(
+      axis_, alignment_, element_, currentElement);
+    const deltaOffset = actualOffset - currentElementOffset_;
+    // Now convert the offset into pixels.
     const {length} = getDimension(axis_, currentElement);
-    const offsetInPixels = currentElementOffset_ * length;
+    const deltaInPixels = deltaOffset * length;
     // Use the offsetStart to figure out the scroll position of the current
     // element. Note that this only works because the element is not translated
     // at this point.
-    const offsetStart = getOffsetStart(axis_, currentElement);
-    const pos = offsetStart + offsetInPixels;
+    // const offsetStart = getOffsetStart(axis_, currentElement);
+    // const pos = offsetStart + offsetInPixels;
 
     this.ignoreNextScroll_ = true;
     runDisablingSmoothScroll(scrollContainer_, () => {
-      setScrollPosition(axis_, scrollContainer_, pos);
+      updateScrollPosition(axis_, scrollContainer_, deltaInPixels);
     });
   }
 

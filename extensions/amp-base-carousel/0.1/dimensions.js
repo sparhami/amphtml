@@ -85,16 +85,6 @@ export function getStart(axis, el) {
 }
 
 /**
- * @param {!Axis} axis The Axis to get the offset for.
- * @param {!Element} el The Element to get the offset for.
- * @return {number} The offsetLeft or offsetTop for the Element, depending on
- *    the axis.
- */
-export function getOffsetStart(axis, el) {
-  return axis == Axis.X ? el./*OK*/offsetLeft : el./*OK*/offsetTop;
-}
-
-/**
  * @param {!Axis} axis The Axis to get the position for.
  * @param {!Alignment} alignment The Alignment to get the position for.
  * @param {!Element} el The Element to get the position for.
@@ -104,6 +94,16 @@ export function getOffsetStart(axis, el) {
 export function getPosition(axis, alignment, el) {
   return alignment == Alignment.START ? getStart(axis, el) :
       getCenter(axis, el);
+}
+
+/**
+ * @param {!Axis} axis The Axis to get the offset for.
+ * @param {!Element} el The Element to get the offset for.
+ * @return {number} The offsetLeft or offsetTop for the Element, depending on
+ *    the axis.
+ */
+export function getOffsetStart(axis, el) {
+  return axis == Axis.X ? el./*OK*/offsetLeft : el./*OK*/offsetTop;
 }
 
 /**
