@@ -452,6 +452,7 @@ exports.extensionBundles = [
   {
     name: 'amp-inline-gallery',
     version: '0.1',
+    latestVersion: '0.1',
     options: {hasCss: true},
     type: TYPES.MISC,
   },
