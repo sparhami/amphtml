@@ -689,10 +689,11 @@ export class Carousel {
     this.beforeSpacers_.forEach(spacer => {
       this.scrollContainer_.removeChild(spacer);
     });
+    const referencePoint = this.scrollContainer_.firstChild;
     this.beforeSpacers_ = this.createSpacers_(count);
     this.beforeSpacers_.forEach((spacer, i) => {
       updateLengthStyle(axis_, spacer, slideLengths[i]);
-      this.scrollContainer_.insertBefore(spacer, slides_[0]);
+      this.scrollContainer_.insertBefore(spacer, referencePoint);
     });
 
     // Replace the replacement spacers.

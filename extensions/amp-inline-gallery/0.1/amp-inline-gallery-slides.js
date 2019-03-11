@@ -85,34 +85,32 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    const {element, win} = this;
-    const children = toArray(element.children);
-
-    // Figure out which slot the children go into.
-    children.forEach(c => {
-      const slot = c.getAttribute('slot');
-      if (!isSizer(c) && !slot) {
-        this.slides_.push(c);
+    Array.from(this.element.children).forEach(c => {
+      if (isSizer(c)) {
+        c.setAttribute('slot', 'sizer');
       }
     });
-    // Create the carousel's inner DOM.
-    element.appendChild(this.renderContainerDom_());
 
+    this.shadowRoot_ = this.element.attachShadow({mode: 'open'});
+    this.shadowRoot_.innerHTML = `
+      <style>${CSS}</style>
+      <slot name="sizer"></slot>
+      <div class="i-amphtml-carousel-content">
+        <div class="i-amphtml-carousel-scroll">
+          <slot></slot>
+        </div>
+      </div>
+    `;
     const scrollContainer = dev().assertElement(
-        this.element.querySelector('.i-amphtml-carousel-scroll'));
+        this.shadowRoot_.querySelector('.i-amphtml-carousel-scroll'));
+    const slideSlot = scrollContainer.firstElementChild;
 
     this.inlineGallery_ = new InlineGallery({
-      win,
-      element,
+      win: this.win,
+      element: this.element,
       scrollContainer,
       initialIndex: 0,
       runMutate: cb => this.mutateElement(cb),
-    });
-
-    // Do manual 'slot' distribution.
-    this.slides_.forEach(slide => {
-      slide.classList.add('i-amphtml-carousel-slotted');
-      scrollContainer.appendChild(slide);
     });
 
     // Handle the configuration defaults for all attributes since some may not
@@ -125,6 +123,9 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       this.attributeMutated_(attr.name, attr.value);
     });
 
+    this.slides_ = Array.from(slideSlot.assignedNodes()).filter(n => {
+      return n.nodeType == 1; // Elements only
+    })
     this.inlineGallery_.updateSlides(this.slides_);
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
@@ -139,21 +140,6 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
   layoutCallback() {
     this.inlineGallery_.updateUi();
     return Promise.resolve();
-  }
-
-  /**
-   * @return {!Element}
-   * @private
-   */
-  renderContainerDom_() {
-    const html = htmlFor(this.element);
-    return html`
-      <div class="i-amphtml-carousel-content">
-        <div class="i-amphtml-carousel-scroll"></div>
-        <div class="i-amphtml-carousel-arrow-next-slot"></div>
-        <div class="i-amphtml-carousel-arrow-prev-slot"></div>
-      </div>
-    `;
   }
 
   /** @override */
