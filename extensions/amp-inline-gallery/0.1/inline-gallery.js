@@ -16,10 +16,8 @@
 
 import {
   Alignment,
-  Axis,
 } from "../../amp-base-carousel/0.1/dimensions";
 import {Carousel} from "../../amp-base-carousel/0.1/carousel";
-import {setImportantStyles} from '../../../src/style.js';
 
 export class InlineGallery {
   /**

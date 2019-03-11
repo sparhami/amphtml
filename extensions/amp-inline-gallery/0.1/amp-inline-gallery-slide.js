@@ -34,13 +34,13 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
       <style>
         :host {
           /*
-          * We do not want the slide to be positioned, so the captions can position
-          * relative to the gallery itself.
-          */
+           * We do not want the slide to be positioned, so the captions can position
+           * relative to the gallery itself.
+           */
           position: static !important;
           /*
-          * Do not transform the slide, but rather transform just the content.
-          */
+           * Do not transform the slide, but rather transform just the content.
+           */
           transform: none !important;
           will-change: auto !important;
         }
@@ -87,8 +87,8 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
         
         ::slotted > .i-amphtml-replaced-content {
           /*
-          * Apply contain object-fit to all replaced content to avoid distorted ratios.
-          */
+           * Apply contain object-fit to all replaced content to avoid distorted ratios.
+           */
           object-fit: contain;
         }
       </style>
