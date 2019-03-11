@@ -14,28 +14,12 @@
  * limitations under the License.
  */
 
-import {htmlFor} from '../../../src/static-template';
 import {Layout} from '../../../src/layout';
-import {toArray} from '../../../src/types';
-
-/**
- * @param {!Element} el The Element to check.
- * @return {boolean} Whether or not the Element is a sizer Element.
- */
-function isSizer(el) {
-  return el.tagName == 'I-AMPHTML-SIZER';
-}
 
 export class AmpInlineGallerySlide extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
-
-    /** @private {?Element} */
-    this.contentSlot_ = null;
-
-    /** @private {?Element} */
-    this.captionSlot_ = null;
   }
 
   /** @override */
@@ -45,51 +29,80 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    const {element} = this;
-    const children = toArray(element.children);
-    const slideContent = [];
-    const slideCaption = [];
-
-    // Figure out which slot the children go into.
-    children.forEach(c => {
-      const slot = c.getAttribute('slot');
-      if (slot == 'caption') {
-        slideCaption.push(c);
-      } else if (!isSizer(c)) {
-        slideContent.push(c);
-      }
-    });
-
-    // Create the carousel's inner DOM.
-    element.appendChild(this.renderContainerDom_());
-
-    this.contentSlot_ = element.querySelector(
-        '.i-amphtml-inline-gallery-slide-content');
-    this.captionSlot_ = element.querySelector(
-        '.i-amphtml-inline-gallery-slide-caption');
-    slideContent.forEach(el => {
-      el.classList.add('i-amphtml-inline-gallery-slide-slotted');
-      this.contentSlot_.appendChild(el);
-    });
-    slideCaption.forEach(el => {
-      this.captionSlot_.appendChild(el);
-    });
+    this.shadowRoot_ = this.element.attachShadow({mode: 'open'});
+    this.shadowRoot_.innerHTML = `
+      <style>
+        :host {
+          /*
+          * We do not want the slide to be positioned, so the captions can position
+          * relative to the gallery itself.
+          */
+          position: static !important;
+          /*
+          * Do not transform the slide, but rather transform just the content.
+          */
+          transform: none !important;
+          will-change: auto !important;
+        }
+        
+        :host(.i-amphtml-layout-size-defined) {
+          /*
+          * Since the content is translated, it may be outside the area of the
+          * slide itself.
+          */
+          overflow: visible !important;
+        }
+        
+        .container {
+          width: 100%;
+          height: 100%;
+          /* Override default from <figure> */
+          margin: 0;
+        }
+        
+        .content {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          /* Subtract out height for the caption */
+          height: calc(100% - calc(var(--amp-caption-height, 0px)));
+          transform: var(--content-transform, translateZ(1px));
+          will-change: transform;
+          overflow: hidden;
+        }
+        
+        .caption {
+          position: absolute;
+          left: 0;
+          right: 0;
+          margin-top: var(--amp-caption-margin-top);
+          height: var(--amp-caption-height, 0);
+          overflow: hidden;
+          opacity: var(--caption-opacity);
+        }
+        
+        ::slotted {
+          width: 100%;
+        }
+        
+        ::slotted > .i-amphtml-replaced-content {
+          /*
+          * Apply contain object-fit to all replaced content to avoid distorted ratios.
+          */
+          object-fit: contain;
+        }
+      </style>
+      <figure class="container">
+        <div class="content">
+          <slot></slot>
+        </div>
+        <figcaption class="caption">
+          <slot name="caption"></slot>
+        </figcaption>
+      </figure>
+    `;
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
-  }
-
-  /**
-   * @return {!Element}
-   * @private
-   */
-  renderContainerDom_() {
-    const html = htmlFor(this.element);
-    return html`
-      <figure class="i-amphtml-inline-gallery-slide-container">
-        <div class="i-amphtml-inline-gallery-slide-content"></div>
-        <figcaption class="i-amphtml-inline-gallery-slide-caption"></figcaption>
-      </figure>
-    `;
   }
 }
