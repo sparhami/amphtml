@@ -19,18 +19,7 @@ import {
   Axis,
 } from "../../amp-base-carousel/0.1/dimensions";
 import {Carousel} from "../../amp-base-carousel/0.1/carousel";
-import {getDetail} from "../../../src/event-helper";
 import {setImportantStyles} from '../../../src/style.js';
-
-/**
- * Returns a number falling off from one to zero, based on a distance
- * progress percentage and a power to decay at.
- * @param {number} percentage
- * @param {number} power
- */
-function exponentialFalloff(percentage, power) {
-  return Math.max(0, 1 - (1 / Math.pow(percentage, power)));
-}
 
 export class InlineGallery {
   /**
@@ -57,32 +46,12 @@ export class InlineGallery {
       initialIndex,
       runMutate,
     });
-
-    /** @private @const */
-    this.element_ = element;
-
-    /** @private @const */
-    this.runMutate_ = runMutate;
-
-    /** @private {!Alignment} */
-    this.alignment_ = Alignment.CENTER;
-
-    /** @private {!Axis} */
-    this.axis_ = Axis.X;
-
-    /** @private {!Array<!Element>} */
-    this.slides_ = [];
-
-    this.element_.addEventListener('offsetchange', (event) => {
-      this.handleOffsetChange_(event);
-    });
   }
 
   /**
    * @param {!Alignment} alignment How the gallery should align slides.
    */
   updateAlignment(alignment) {
-    this.alignment_ = alignment;
     this.carousel_.updateAlignment(alignment);
   }
 
@@ -99,7 +68,6 @@ export class InlineGallery {
    * @param {!Array<!Element>} slides
    */
   updateSlides(slides) {
-    this.slides_ = slides;
     this.carousel_.updateSlides(slides);
   }
 
@@ -110,33 +78,5 @@ export class InlineGallery {
    */
   updateUi() {
     this.carousel_.updateUi();
-  }
-
-  handleOffsetChange_(event) {
-    const data = getDetail(event);
-    const index = data['index'];
-    const offset = data['offset'];
-    const position = index + offset;
-
-    this.updateCaptionOpacities_(position);
-  }
-
-  /**
-   * Updates the opacities of the captions, based on their distance from the
-   * current slide.
-   */
-  updateCaptionOpacities_(position) {
-    this.runMutate_(() => {
-      this.slides_.forEach((slide, i) => {
-        const indexDistance = Math.abs(position - i);
-        const opacity = exponentialFalloff(2 * indexDistance, -3);
-        setImportantStyles(slide, {
-          '--caption-opacity': opacity,
-          // Need to prevent pointer events on all other slide's captions so
-          // that the user can select the caption text, click on links, etc.
-          'pointer-events': opacity == 0 ? 'none' : 'all',
-        });
-      });
-    });
   }
  }

@@ -559,6 +559,7 @@ export class Carousel {
           'index': index,
           'total': this.slides_.length,
           'actionSource': this.actionSource_,
+          'slides': this.slides_,
         }), {
           bubbles: true,
         }));
@@ -578,6 +579,7 @@ export class Carousel {
         'index': index,
         'total': this.slides_.length,
         'offset': offset,
+        'slides': this.slides_,
       }), {
         bubbles: true,
       }));

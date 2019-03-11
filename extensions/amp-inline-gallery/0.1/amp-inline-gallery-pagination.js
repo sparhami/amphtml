@@ -115,11 +115,6 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     });
   }
 
-  /** @override */
-  layoutCallback() {
-
-  }
-
   createPaginationDot_() {
     const html = htmlFor(this.element);
     return html`

@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-import {AmpInlineGalleryCaptionsSizer} from './amp-inline-gallery-captions-sizer';
+import {AmpInlineGalleryCaptions} from './amp-inline-gallery-captions';
 import {AmpInlineGalleryPagination} from './amp-inline-gallery-pagination';
 import {AmpInlineGallerySlide} from './amp-inline-gallery-slide';
 import {AmpInlineGallerySlides} from './amp-inline-gallery-slides';
 import {CSS} from '../../../build/amp-inline-gallery-0.1.css';
 import {Layout} from '../../../src/layout';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
-import {dict} from '../../../src/utils/object';
 import {isExperimentOn} from '../../../src/experiments';
 
 class AmpInlineGallery extends AMP.BaseElement {
@@ -69,7 +68,7 @@ AMP.extension('amp-inline-gallery', '0.1', AMP => {
     return;
   }
 
-  AMP.registerElement('amp-inline-gallery-captions-sizer', AmpInlineGalleryCaptionsSizer);
+  AMP.registerElement('amp-inline-gallery-captions', AmpInlineGalleryCaptions);
   AMP.registerElement('amp-inline-gallery-pagination', AmpInlineGalleryPagination);
   AMP.registerElement('amp-inline-gallery-slides', AmpInlineGallerySlides);
   AMP.registerElement('amp-inline-gallery-slide', AmpInlineGallerySlide);
