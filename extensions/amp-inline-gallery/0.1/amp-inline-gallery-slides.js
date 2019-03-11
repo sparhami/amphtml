@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {CSS} from '../../../build/amp-inline-gallery-slides-0.1.css';
 import {InlineGallery} from './inline-gallery.js';
 import {Layout} from '../../../src/layout';
 import {

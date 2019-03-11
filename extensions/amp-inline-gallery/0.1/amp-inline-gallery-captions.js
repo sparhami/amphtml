@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {CSS} from '../../../build/amp-inline-gallery-captions-0.1.css';
 import {Layout} from '../../../src/layout';
 import {getDetail} from "../../../src/event-helper";
 import {setImportantStyles} from '../../../src/style.js';
@@ -48,13 +49,7 @@ export class AmpInlineGalleryCaptions extends AMP.BaseElement {
   buildCallback() {
     this.shadowRoot_ = this.element.attachShadow({mode: 'open'});
     this.shadowRoot_.innerHTML = `
-      <style>
-        :host {
-          pointer-events: none;
-          padding-top: var(--amp-caption-margin-top);
-          margin-top: calc(-1 * var(--amp-caption-height, 0));
-        }
-      </style>
+      <style>${CSS}</style>
     `;
 
     this.element.addEventListener('offsetchange-update', (event) => {

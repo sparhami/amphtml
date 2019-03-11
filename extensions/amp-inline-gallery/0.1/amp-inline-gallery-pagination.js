@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+import {CSS} from '../../../build/amp-inline-gallery-pagination-0.1.css';
 import {Layout} from '../../../src/layout';
-import {setImportantStyles, setStyle} from '../../../src/style.js';
-import { getDetail } from '../../../src/event-helper';
-import { htmlFor } from '../../../src/static-template';
+import {setImportantStyles} from '../../../src/style.js';
+import {getDetail} from '../../../src/event-helper';
+import {htmlFor} from '../../../src/static-template';
 
 /**
  * Returns a number falling off from one to zero, based on a distance
@@ -55,57 +56,7 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
   buildCallback() {
     this.shadowRoot_ = this.element.attachShadow({mode: 'open'});
     this.shadowRoot_.innerHTML = `
-      <style>
-        .pagination-dots {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 100%;
-        }
-
-        .pagination-dot {
-          position: relative;
-          overflow: hidden;
-          margin: 4px;
-          background-color: #aaa;
-        }
-
-        .pagination-dot-progress {
-          position: absolute;
-          top: 0;
-          background-color: #333;
-          transform: scale(calc(1 - var(--percentage-falloff)));
-          opacity: calc(1 - var(--percentage-falloff));
-        }
-
-        .pagination-dot,
-        .pagination-dot-progress {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-        }
-
-        :host([inset]) {
-          position: absolute !important;
-          left: 0;
-          right: 0;
-          bottom: calc(var(--amp-caption-margin-top) + var(--amp-caption-height, 0));
-          display: flex !important;
-          justify-content: center;
-          margin: 4px;
-        }
-
-        :host([inset]) .pagination-dot {
-          background-color: #bbb;
-          box-shadow: 0 0 3px rgba(0, 0, 0, 0.25),
-                      0 1px 1px rgba(0, 0, 0, 0.4);
-          mix-blend-mode: hard-light;
-        }
-
-        :host([inset]) .pagination-dot-progress {
-          background-color: #fff;
-        }
-      </style>
+      <style>${CSS}</style>
       <div class="pagination-dots" aria-hidden="true"></div>
     `;
     this.paginationDots_ = this.shadowRoot_.querySelector('.pagination-dots');

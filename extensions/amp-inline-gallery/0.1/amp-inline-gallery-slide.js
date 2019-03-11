@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {CSS} from '../../../build/amp-inline-gallery-slide-0.1.css';
 import {Layout} from '../../../src/layout';
 
 export class AmpInlineGallerySlide extends AMP.BaseElement {
@@ -31,67 +32,7 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
   buildCallback() {
     this.shadowRoot_ = this.element.attachShadow({mode: 'open'});
     this.shadowRoot_.innerHTML = `
-      <style>
-        :host {
-          /*
-           * We do not want the slide to be positioned, so the captions can position
-           * relative to the gallery itself.
-           */
-          position: static !important;
-          /*
-           * Do not transform the slide, but rather transform just the content.
-           */
-          transform: none !important;
-          will-change: auto !important;
-        }
-        
-        :host(.i-amphtml-layout-size-defined) {
-          /*
-          * Since the content is translated, it may be outside the area of the
-          * slide itself.
-          */
-          overflow: visible !important;
-        }
-        
-        .container {
-          width: 100%;
-          height: 100%;
-          /* Override default from <figure> */
-          margin: 0;
-        }
-        
-        .content {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          /* Subtract out height for the caption */
-          height: calc(100% - calc(var(--amp-caption-height, 0px)));
-          transform: var(--content-transform, translateZ(1px));
-          will-change: transform;
-          overflow: hidden;
-        }
-        
-        .caption {
-          position: absolute;
-          left: 0;
-          right: 0;
-          margin-top: var(--amp-caption-margin-top);
-          height: var(--amp-caption-height, 0);
-          overflow: hidden;
-          opacity: var(--caption-opacity);
-        }
-        
-        ::slotted {
-          width: 100%;
-        }
-        
-        ::slotted > .i-amphtml-replaced-content {
-          /*
-           * Apply contain object-fit to all replaced content to avoid distorted ratios.
-           */
-          object-fit: contain;
-        }
-      </style>
+      <style>${CSS}</style>
       <figure class="container">
         <div class="content">
           <slot></slot>
