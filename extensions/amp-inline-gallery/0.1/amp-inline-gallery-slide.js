@@ -19,7 +19,6 @@ import {Layout} from '../../../src/layout';
 
 export class AmpInlineGallerySlide extends AMP.BaseElement {
   /**
-   * @param {!Element} element 
    * @return {!ShadowRoot}
    * @private
    */

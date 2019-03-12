@@ -157,6 +157,7 @@ export class Carousel {
     win,
     element,
     scrollContainer,
+    slideContentSelector = ':scope',
     initialIndex = 0,
     runMutate,
   }) {
@@ -171,6 +172,9 @@ export class Carousel {
 
     /** @private @const */
     this.scrollContainer_ = scrollContainer;
+
+    /** @private @const */
+    this.slideContentSelector_ = slideContentSelector;
 
     /** @private @const */
     this.autoAdvance_ = new AutoAdvance({
@@ -376,12 +380,11 @@ export class Carousel {
       return;
     }
 
-    if (index == this.currentIndex_) {
-      return;
-    }
+    const slide = this.slides_[index];
+    const target = slide.querySelector(this.slideContentSelector_) || slide;
 
     this.actionSource_ = actionSource;
-    this.scrollSlideIntoView_(this.slides_[index], {smoothScroll});
+    this.scrollSlideIntoView_(target, {smoothScroll});
   }
 
   /**

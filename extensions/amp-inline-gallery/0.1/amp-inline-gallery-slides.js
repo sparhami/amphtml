@@ -15,13 +15,14 @@
  */
 
 import {CSS} from '../../../build/amp-inline-gallery-slides-0.1.css';
-import {InlineGallery} from './inline-gallery.js';
+import {Carousel} from '../../amp-base-carousel/0.1/carousel';
 import {Layout} from '../../../src/layout';
 import {
   ResponsiveAttributes,
 } from '../../amp-base-carousel/0.1/responsive-attributes';
 import {dev} from '../../../src/log';
 import {toArray} from '../../../src/types';
+import { getDetail } from '../../../src/event-helper';
 
 /**
  * @param {!Element} el The Element to check.
@@ -33,7 +34,6 @@ function isSizer(el) {
 
 export class AmpInlineGallerySlides extends AMP.BaseElement {
   /**
-   * @param {!Element} element 
    * @return {!ShadowRoot}
    * @private
    */
@@ -60,10 +60,10 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
      */
     this.attributeConfig_ = {
       'loop': newValue => {
-        this.inlineGallery_.updateLoop(this.getLoopValue_(newValue));
+        this.carousel_.updateLoop(this.getLoopValue_(newValue));
       },
       'alignment': newValue => {
-        this.inlineGallery_.updateAlignment(this.getAlignmentValue_(newValue));
+        this.carousel_.updateAlignment(this.getAlignmentValue_(newValue));
       },
     };
 
@@ -71,8 +71,8 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
     this.responsiveAttributes_ = new ResponsiveAttributes(
         this.attributeConfig_);
 
-    /** @private {?InlineGallery} */
-    this.inlineGallery_ = null;
+    /** @private {?Carousel} */
+    this.carousel_ = null;
   }
 
   /** @override */
@@ -93,9 +93,10 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
         sr.querySelector('.i-amphtml-carousel-scroll'));
     const slideSlot = scrollContainer.firstElementChild;
 
-    this.inlineGallery_ = new InlineGallery({
+    this.carousel_ = new Carousel({
       win: this.win,
       element: this.element,
+      slideContentSelector: ':scope > :not([slot])',
       scrollContainer,
       initialIndex: 0,
       runMutate: cb => this.mutateElement(cb),
@@ -103,6 +104,10 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
 
     this.configureInitialAttributes_();
     this.configureSlides_(slideSlot);
+    this.element.addEventListener('goToSlide', (event) => {
+      const detail = getDetail(event);
+      this.carousel_.goToSlide(detail['index']);
+    });
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
@@ -115,7 +120,7 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
 
   /** @override */
   layoutCallback() {
-    this.inlineGallery_.updateUi();
+    this.carousel_.updateUi();
     return Promise.resolve();
   }
 
@@ -169,7 +174,7 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       const slides = Array.from(slidesSlot.assignedNodes()).filter(n => {
         return n.nodeType == 1; // Elements only
       })
-      this.inlineGallery_.updateSlides(slides);
+      this.carousel_.updateSlides(slides);
     };
 
     slidesSlot.addEventListener('slotchange', updateSlides);

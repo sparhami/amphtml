@@ -17,7 +17,8 @@
 import {CSS} from '../../../build/amp-inline-gallery-pagination-0.1.css';
 import {Layout} from '../../../src/layout';
 import {setImportantStyles} from '../../../src/style.js';
-import {getDetail} from '../../../src/event-helper';
+import {createCustomEvent, getDetail} from '../../../src/event-helper';
+import {dict} from '../../../src/utils/object';
 import {htmlFor} from '../../../src/static-template';
 
 /**
@@ -32,7 +33,6 @@ function exponentialFalloff(percentage, power) {
 
 export class AmpInlineGalleryPagination extends AMP.BaseElement {
   /**
-   * @param {!Element} element 
    * @return {!ShadowRoot}
    * @private
    */
@@ -74,13 +74,24 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     });
   }
 
-  createPaginationDot_() {
+  createPaginationDot_(index) {
     const html = htmlFor(this.element);
-    return html`
+    const content = html`
       <div class="pagination-dot">
         <div class="pagination-dot-progress"></div>
       </div>
     `;
+
+    content.onclick = () => {
+      const event = createCustomEvent(this.win, 'goToSlide', dict({
+        'index': index
+      }), {
+        bubbles: true,
+      });
+      this.element.dispatchEvent(event);
+    };
+
+    return content;
   }
 
   updateTotal_(total) {
@@ -91,7 +102,7 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     this.total_ = total;
     this.paginationDots_.innerHTML = '';
     for (let i = 0; i < total; i++) {
-      this.paginationDots_.appendChild(this.createPaginationDot_());
+      this.paginationDots_.appendChild(this.createPaginationDot_(i));
     }
   }
 

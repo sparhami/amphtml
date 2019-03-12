@@ -18,6 +18,7 @@ import {AmpInlineGalleryCaptions} from './amp-inline-gallery-captions';
 import {AmpInlineGalleryPagination} from './amp-inline-gallery-pagination';
 import {AmpInlineGallerySlide} from './amp-inline-gallery-slide';
 import {AmpInlineGallerySlides} from './amp-inline-gallery-slides';
+import {AmpInlineGalleryThumbnails} from './amp-inline-gallery-thumbnails';
 import {CSS} from '../../../build/amp-inline-gallery-0.1.css';
 import {Layout} from '../../../src/layout';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
@@ -32,7 +33,13 @@ class AmpInlineGallery extends AMP.BaseElement {
   /** @override */
   buildCallback() {
     this.element.addEventListener('offsetchange', event => {
-      this.onIndexChanged_(event);
+      this.onOffsetChange_(event);
+    });
+    this.element.addEventListener('indexchange', event => {
+      this.onIndexChange_(event);
+    });
+    this.element.addEventListener('goToSlide', event => {
+      this.onGoToSlide_(event);
     });
   }
 
@@ -52,14 +59,31 @@ class AmpInlineGallery extends AMP.BaseElement {
       child.dispatchEvent(createCustomEvent(this.win, name, detail));
     });
   }
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onIndexChange_(event) {
+    const detail = getDetail(event);
+    this.dispatchOnChildren_('indexchange-update', detail);
+  }
 
   /**
    * @param {!Event} event
    * @private
    */
-  onIndexChanged_(event) {
+  onOffsetChange_(event) {
     const detail = getDetail(event);
     this.dispatchOnChildren_('offsetchange-update', detail);
+  }
+
+  /**
+   * @param {!Event} event
+   * @private
+   */
+  onGoToSlide_(event) {
+    const detail = getDetail(event);
+    this.dispatchOnChildren_('goToSlide', detail);
   }
 }
 
@@ -72,5 +96,6 @@ AMP.extension('amp-inline-gallery', '0.1', AMP => {
   AMP.registerElement('amp-inline-gallery-pagination', AmpInlineGalleryPagination);
   AMP.registerElement('amp-inline-gallery-slides', AmpInlineGallerySlides);
   AMP.registerElement('amp-inline-gallery-slide', AmpInlineGallerySlide);
+  AMP.registerElement('amp-inline-gallery-thumbnails', AmpInlineGalleryThumbnails);
   AMP.registerElement('amp-inline-gallery', AmpInlineGallery, CSS);
 });

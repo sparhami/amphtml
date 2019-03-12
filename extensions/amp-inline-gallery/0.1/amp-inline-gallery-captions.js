@@ -31,7 +31,6 @@ function exponentialFalloff(percentage, power) {
 
 export class AmpInlineGalleryCaptions extends AMP.BaseElement {
   /**
-   * @param {!Element} element 
    * @return {!ShadowRoot}
    * @private
    */
