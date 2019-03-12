@@ -21,7 +21,6 @@ import {
   ResponsiveAttributes,
 } from '../../amp-base-carousel/0.1/responsive-attributes';
 import {dev} from '../../../src/log';
-import {htmlFor} from '../../../src/static-template';
 import {toArray} from '../../../src/types';
 
 /**
@@ -33,6 +32,25 @@ function isSizer(el) {
 }
 
 export class AmpInlineGallerySlides extends AMP.BaseElement {
+  /**
+   * @param {!Element} element 
+   * @return {!ShadowRoot}
+   * @private
+   */
+  createShadowRoot_() {
+    const sr = this.element.attachShadow({mode: 'open'});
+    sr.innerHTML = `
+      <style>${CSS}</style>
+      <slot name="sizer"></slot>
+      <div class="i-amphtml-carousel-content">
+        <div class="i-amphtml-carousel-scroll">
+          <slot></slot>
+        </div>
+      </div>
+    `;
+    return sr;
+  }
+
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
@@ -55,27 +73,6 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
 
     /** @private {?InlineGallery} */
     this.inlineGallery_ = null;
-
-    /** @private {!Array<!Element>} */
-    this.slides_ = [];
-  }
-
-  /**
-   * Gets the loop value, defaulting to `true`.
-   * @param {?string} loop
-   * @return {boolean}
-   */
-  getLoopValue_(loop) {
-    return loop != 'false';
-  }
-
-  /**
-   * Gets the alignment, defaulting to `'center'`.
-   * @param {?string} alignment
-   * @return {string}
-   */
-  getAlignmentValue_(alignment) {
-    return alignment == 'start' ? 'start' : 'center';
   }
 
   /** @override */
@@ -91,18 +88,9 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       }
     });
 
-    this.shadowRoot_ = this.element.attachShadow({mode: 'open'});
-    this.shadowRoot_.innerHTML = `
-      <style>${CSS}</style>
-      <slot name="sizer"></slot>
-      <div class="i-amphtml-carousel-content">
-        <div class="i-amphtml-carousel-scroll">
-          <slot></slot>
-        </div>
-      </div>
-    `;
+    const sr = this.createShadowRoot_();
     const scrollContainer = dev().assertElement(
-        this.shadowRoot_.querySelector('.i-amphtml-carousel-scroll'));
+        sr.querySelector('.i-amphtml-carousel-scroll'));
     const slideSlot = scrollContainer.firstElementChild;
 
     this.inlineGallery_ = new InlineGallery({
@@ -113,20 +101,9 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       runMutate: cb => this.mutateElement(cb),
     });
 
-    // Handle the configuration defaults for all attributes since some may not
-    // be specified.
-    for (const attrName in this.attributeConfig_) {
-      this.attributeMutated_(attrName, '');
-    }
-    // Handle the initial set of attributes.
-    toArray(this.element.attributes).forEach(attr => {
-      this.attributeMutated_(attr.name, attr.value);
-    });
+    this.configureInitialAttributes_();
+    this.configureSlides_(slideSlot);
 
-    this.slides_ = Array.from(slideSlot.assignedNodes()).filter(n => {
-      return n.nodeType == 1; // Elements only
-    })
-    this.inlineGallery_.updateSlides(this.slides_);
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
   }
@@ -149,6 +126,55 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       // may not (e.g. value could be a Number).
       this.attributeMutated_(key, String(mutations[key]));
     }
+  }
+
+  /**
+   * Gets the loop value, defaulting to `true`.
+   * @param {?string} loop
+   * @return {boolean}
+   */
+  getLoopValue_(loop) {
+    return loop != 'false';
+  }
+
+  /**
+   * Gets the alignment, defaulting to `'center'`.
+   * @param {?string} alignment
+   * @return {string}
+   */
+  getAlignmentValue_(alignment) {
+    return alignment == 'start' ? 'start' : 'center';
+  }
+
+  /**
+   * @private
+   */
+  configureInitialAttributes_() {
+    // Handle the configuration defaults for all attributes since some may not
+    // be specified.
+    for (const attrName in this.attributeConfig_) {
+      this.attributeMutated_(attrName, '');
+    }
+    // Handle the initial set of attributes.
+    toArray(this.element.attributes).forEach(attr => {
+      this.attributeMutated_(attr.name, attr.value);
+    });
+  }
+
+  /**
+   * @param {!Element} slidesSlot
+   */
+  configureSlides_(slidesSlot) {
+    const updateSlides = () => {
+      const slides = Array.from(slidesSlot.assignedNodes()).filter(n => {
+        return n.nodeType == 1; // Elements only
+      })
+      this.inlineGallery_.updateSlides(slides);
+    };
+
+    slidesSlot.addEventListener('slotchange', updateSlides);
+    // Not all browsers fire slotchange immediately.
+    updateSlides();
   }
 
   /**

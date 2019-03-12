@@ -18,6 +18,27 @@ import {CSS} from '../../../build/amp-inline-gallery-slide-0.1.css';
 import {Layout} from '../../../src/layout';
 
 export class AmpInlineGallerySlide extends AMP.BaseElement {
+  /**
+   * @param {!Element} element 
+   * @return {!ShadowRoot}
+   * @private
+   */
+  createShadowRoot_() {
+    const sr = this.element.attachShadow({mode: 'open'});
+    sr.innerHTML = `
+      <style>${CSS}</style>
+      <figure class="container">
+        <div class="content">
+          <slot></slot>
+        </div>
+        <figcaption class="caption">
+          <slot name="caption"></slot>
+        </figcaption>
+      </figure>
+    `;
+    return sr;
+  }
+
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
@@ -30,18 +51,7 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    this.shadowRoot_ = this.element.attachShadow({mode: 'open'});
-    this.shadowRoot_.innerHTML = `
-      <style>${CSS}</style>
-      <figure class="container">
-        <div class="content">
-          <slot></slot>
-        </div>
-        <figcaption class="caption">
-          <slot name="caption"></slot>
-        </figcaption>
-      </figure>
-    `;
+    this.createShadowRoot_();
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});

@@ -31,13 +31,25 @@ function exponentialFalloff(percentage, power) {
 }
 
 export class AmpInlineGalleryPagination extends AMP.BaseElement {
+  /**
+   * @param {!Element} element 
+   * @return {!ShadowRoot}
+   * @private
+   */
+  createShadowRoot_() {
+    const sr = this.element.attachShadow({mode: 'open'});
+    sr.innerHTML = `
+      <style>${CSS}</style>
+      <div class="pagination-dots" aria-hidden="true"></div>
+    `;
+    return sr;
+  }
+
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
 
     this.total_ = 0;
-
-    this.shadowRoot_ = null;
 
     this.paginationDots_ = null;
   }
@@ -54,12 +66,8 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    this.shadowRoot_ = this.element.attachShadow({mode: 'open'});
-    this.shadowRoot_.innerHTML = `
-      <style>${CSS}</style>
-      <div class="pagination-dots" aria-hidden="true"></div>
-    `;
-    this.paginationDots_ = this.shadowRoot_.querySelector('.pagination-dots');
+    const shadowRoot = this.createShadowRoot_();
+    this.paginationDots_ = shadowRoot.querySelector('.pagination-dots');
 
     this.element.addEventListener('offsetchange-update', (event) => {
       this.handleIndexChangeUpdate_(event);

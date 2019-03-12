@@ -30,6 +30,19 @@ function exponentialFalloff(percentage, power) {
 }
 
 export class AmpInlineGalleryCaptions extends AMP.BaseElement {
+  /**
+   * @param {!Element} element 
+   * @return {!ShadowRoot}
+   * @private
+   */
+  createShadowRoot_() {
+    const sr = this.element.attachShadow({mode: 'open'});
+    sr.innerHTML = `
+        <style>${CSS}</style>
+    `;
+    return sr;
+  }
+
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
@@ -47,10 +60,7 @@ export class AmpInlineGalleryCaptions extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    this.shadowRoot_ = this.element.attachShadow({mode: 'open'});
-    this.shadowRoot_.innerHTML = `
-      <style>${CSS}</style>
-    `;
+    this.createShadowRoot_();
 
     this.element.addEventListener('offsetchange-update', (event) => {
       this.handleIndexChangeUpdate_(event);

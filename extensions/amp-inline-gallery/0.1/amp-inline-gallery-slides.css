@@ -1,5 +1,5 @@
 @import "../../amp-base-carousel/0.1/carousel.css";
 
-amp-inline-gallery-slides {
+:host {
   padding-bottom: var(--amp-caption-height, 0px);
 }
