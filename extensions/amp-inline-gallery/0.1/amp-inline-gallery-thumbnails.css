@@ -1,5 +1,9 @@
 @import "../../amp-base-carousel/0.1/carousel.css";
 
+:host .i-amphtml-carousel-scroll {
+  scroll-behavior: auto;
+}
+
 .i-amphtml-carousel-content {
   padding: 0 calc(var(--amp-thumbnail-margin, 0) / 2);
 }

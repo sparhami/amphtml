@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Alignment} from '../../amp-base-carousel/0.1/dimensions';
+import {Alignment, scrollContainerToElement, Axis} from '../../amp-base-carousel/0.1/dimensions';
 import {CSS} from '../../../build/amp-inline-gallery-thumbnails-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
@@ -54,6 +54,8 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
 
     this.slides_ = null;
 
+    this.thumbnails_ = null;
+
     this.thumbnailsContainer_ = null;
 
     this.carousel_ = null;
@@ -91,12 +93,13 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     this.carousel_.updateAlignment(Alignment.CENTER);
     this.carousel_.updateLoop(true);
     this.carousel_.updateMixedLength(true);
+    this.carousel_.updateSnap(false);
 
     this.thumbWidth = this.element.getAttribute('thumbnail-aspect-ratio-width') || 1;
     this.thumbHeight = this.element.getAttribute('thumbnail-aspect-ratio-height') || 1;
 
-    this.element.addEventListener('indexchange-update', (event) => {
-      this.handleIndexChangeUpdate_(event);
+    this.element.addEventListener('offsetchange-update', (event) => {
+      this.handleOffsetChangeUpdate_(event);
     });
     this.element.addEventListener('offsetchange', event => {
       event.stopPropagation();
@@ -166,30 +169,33 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     }
 
     this.slides_ = slides;
-    const thumbnails = this.slides_.map((s, i) => this.createThumbnail_(s, i));
+    this.thumbnails_ = this.slides_.map((s, i) => this.createThumbnail_(s, i));
     this.mutateElement(() => {
       this.thumbnailsContainer_.innerHTML = '';
-      thumbnails.forEach(t => this.thumbnailsContainer_.appendChild(t));
-      this.carousel_.updateSlides(thumbnails);
+      this.thumbnails_.forEach(t => this.thumbnailsContainer_.appendChild(t));
+      this.carousel_.updateSlides(this.thumbnails_);
     });
-    console.log('slides!');
   }
 
-  updateIndex_(index) {
-    if (index == this.index_) {
-      return;
-    }
+  updateOffset_(index, offset) {
+    const thumbnail = this.thumbnails_[index];
 
-    this.index_ = index;
-    this.carousel_.goToSlide(index);
+    scrollContainerToElement(
+      Axis.X,
+      Alignment.CENTER,
+      this.thumbnailsContainer_,
+      thumbnail,
+      offset
+    );
   }
 
-  handleIndexChangeUpdate_(event) {
+  handleOffsetChangeUpdate_(event) {
     const detail = getDetail(event);
     const index = detail['index'];
     const slides = detail['slides'];
+    const offset = detail['offset'];
 
     this.updateSlides_(slides);
-    this.updateIndex_(index);
+    this.updateOffset_(index, offset);
   }
 }

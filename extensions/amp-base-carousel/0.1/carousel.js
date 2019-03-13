@@ -942,10 +942,10 @@ export class Carousel {
     const runner = smoothScroll ? (el, cb) => cb() : runDisablingSmoothScroll;
     runner(this.scrollContainer_, () => {
       scrollContainerToElement(
-          slide,
-          this.scrollContainer_,
           this.axis_,
-          this.alignment_
+          this.alignment_,
+          this.scrollContainer_,
+          slide
       );
     });
   }

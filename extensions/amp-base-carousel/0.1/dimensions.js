@@ -247,12 +247,14 @@ export function updateScrollPosition(axis, el, delta) {
  * @param {!Axis} axis The axis to scroll along.
  * @param {!Alignment} alignment How to align the element within the container.
  */
-export function scrollContainerToElement(el, container, axis, alignment) {
+export function scrollContainerToElement(
+    axis, alignment, container, el, offset = 0) {
   const startAligned = alignment == Alignment.START;
+  const length = getDimension(axis, el).length;
   const snapOffset = startAligned ? getStart(axis, el) : getCenter(axis, el);
   const scrollOffset = startAligned ? getStart(axis, container) :
     getCenter(axis, container);
-  const delta = snapOffset - scrollOffset;
+  const delta = snapOffset - scrollOffset - (offset * length);
 
   updateScrollPosition(axis, container, delta);
 }
