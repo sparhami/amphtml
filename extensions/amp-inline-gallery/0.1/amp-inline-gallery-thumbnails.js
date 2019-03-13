@@ -110,17 +110,16 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
   }
 
   createThumbnailForElement_(element, index) {
-    const sizerSrc = `data:image/svg+xml;utf8,<svg height="${this.thumbHeight}px" width="${this.thumbWidth}px" xmlns="http://www.w3.org/2000/svg"></svg>`;
     const html = htmlFor(this.element);
     const content = html `
       <div class="thumbnail-container">
         <div class="thumbnail">
-          <img class="resizer"></img>
+          <svg class="resizer"></svg>
         </div>
       </div>
     `;
 
-    content.querySelector('.resizer').src = sizerSrc;
+    content.querySelector('.resizer').setAttribute('viewBox', `0 0 ${this.thumbWidth} ${this.thumbHeight}`);
     content.querySelector('.thumbnail').appendChild(element);
     content.onclick = () => {
       const event = createCustomEvent(this.win, 'goToSlide', dict({
