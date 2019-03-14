@@ -17,7 +17,7 @@
 import {Alignment, scrollContainerToElement, Axis} from '../../amp-base-carousel/0.1/dimensions';
 import {CSS} from '../../../build/amp-inline-gallery-thumbnails-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel';
-import {createCustomEvent, getDetail} from '../../../src/event-helper';
+import {createCustomEvent, getDetail, listenOnce} from '../../../src/event-helper';
 import {dev} from '../../../src/log';
 import {dict} from '../../../src/utils/object';
 import {getStyle, setStyle} from '../../../src/style';
@@ -126,6 +126,11 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     this.element.addEventListener('indexchange', event => {
       event.stopPropagation();
     });
+    this.element.addEventListener('touchstart', event => {
+      this.handleTouchstart_();
+    }, {
+      passive: true,
+    });
   }
 
   createThumbnailForElement_(element, index) {
@@ -220,6 +225,10 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
   }
 
   updateOffset_(index, offset) {
+    if (this.touching_ || this.userScrolling_) {
+      return;
+    }
+
     this.ignoreScrollUntilSettled_ = !this.isScrollSettled_(index, offset);
 
     if (this.ignoreScrollUntilSettled_) {
@@ -227,6 +236,31 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     }
 
     this.scrollToElement(index, offset);
+  }
+
+  handleTouchstart_() {
+    this.touching_ = true;
+
+    // Check for a scroll initiated from a touch event. If the touchend occurs
+    // prior to any scroll, stop listening as it was caused by something else.
+    const unlistenScroll = listenOnce(this.element, 'scroll', () => {
+      this.handleManualScroll_();
+    });
+
+    listenOnce(this.element, 'touchend', () => {
+      this.touching_ = false;
+      unlistenScroll();
+    }, {
+      passive: true,
+    });
+  }
+
+  handleManualScroll_() {
+    this.userScrolling_ = true;
+
+    listenOnce(this.element, 'reset-reference-point', event => {
+      this.userScrolling_ = false;
+    });
   }
 
   handleOffsetChangeUpdate_(event) {

@@ -888,6 +888,9 @@ export class Carousel {
       this.moveSlides_(totalLength);
       this.restoreScrollStart_();
     });
+
+    this.element_.dispatchEvent(
+        createCustomEvent(this.win_, 'reset-reference-point'));
   }
 
   /**
