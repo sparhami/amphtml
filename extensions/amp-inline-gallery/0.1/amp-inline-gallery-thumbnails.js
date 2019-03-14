@@ -20,6 +20,7 @@ import {Carousel} from '../../amp-base-carousel/0.1/carousel';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {dev} from '../../../src/log';
 import {dict} from '../../../src/utils/object';
+import {getStyle, setStyle} from '../../../src/style';
 import {htmlFor} from '../../../src/static-template';
 
 /**
@@ -28,6 +29,20 @@ import {htmlFor} from '../../../src/static-template';
  */
 function isSizer(el) {
   return el.tagName == 'I-AMPHTML-SIZER';
+}
+
+/**
+ * Runs a callback while disabling smooth scrolling by temporarily setting
+ * the `scrollBehavior` to `auto`.
+ * @param {!Element} el
+ * @param {Function} cb
+ */
+function runEnablingSmoothScroll(el, cb) {
+  const scrollBehavior = getStyle(el, 'scrollBehavior');
+
+  setStyle(el, 'scrollBehavior', 'smooth');
+  cb();
+  setStyle(el, 'scrollBehavior', scrollBehavior);
 }
 
 export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
@@ -59,6 +74,10 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     this.thumbnailsContainer_ = null;
 
     this.carousel_ = null;
+
+    this.requestedIndex_ = 0;
+
+    this.ignoreScrollUntilSettled_ = false;
   }
 
   /** @override */
@@ -128,7 +147,11 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
         bubbles: true,
       });
       this.element.dispatchEvent(event);
-      this.carousel_.goToSlide(index);
+      this.requestedIndex_ = index;
+      this.ignoreScrollUntilSettled_ = true;
+      runEnablingSmoothScroll(this.thumbnailsContainer_, () => {
+        this.scrollToElement(index);
+      })
     };
     return content;
   }
@@ -157,9 +180,29 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     return img;
   }
 
+  scrollToElement(index, offset = 0) {
+    const thumbnail = this.thumbnails_[index];
+
+    scrollContainerToElement(
+      Axis.X,
+      Alignment.CENTER,
+      this.thumbnailsContainer_,
+      thumbnail,
+      offset
+    );
+  }
+
   createThumbnail_(slide, index) {
     return this.createThumbnailForElement_(
         this.getThumbnailContent_(slide), index);
+  }
+
+  isScrollSettled_(index, offset) {
+    if (!this.ignoreScrollUntilSettled_) {
+      return true;
+    }
+
+    return this.requestedIndex_ == index && Math.abs(offset) <= 0.01;
   }
 
   updateSlides_(slides) {
@@ -177,15 +220,13 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
   }
 
   updateOffset_(index, offset) {
-    const thumbnail = this.thumbnails_[index];
+    this.ignoreScrollUntilSettled_ = !this.isScrollSettled_(index, offset);
 
-    scrollContainerToElement(
-      Axis.X,
-      Alignment.CENTER,
-      this.thumbnailsContainer_,
-      thumbnail,
-      offset
-    );
+    if (this.ignoreScrollUntilSettled_) {
+      return;
+    }
+
+    this.scrollToElement(index, offset);
   }
 
   handleOffsetChangeUpdate_(event) {

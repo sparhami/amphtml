@@ -1,6 +1,9 @@
 @import "../../amp-base-carousel/0.1/carousel.css";
 
-:host .i-amphtml-carousel-scroll {
+/**
+ * Disable the carousel's built-in smooth scrolling.
+ */
+.i-amphtml-carousel-scroll {
   scroll-behavior: auto;
 }
 
