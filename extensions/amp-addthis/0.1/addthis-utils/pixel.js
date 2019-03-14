@@ -79,7 +79,9 @@ export const pixelDrop = (url, ampDoc) => {
         'src': url,
       })
   );
-  doc.body.appendChild(ampPixel);
+  // Insert at the start of the body instead of appending. See
+  // https://github.com/ampproject/amphtml/issues/19876
+  doc.body.insertBefore(ampPixel, document.body.firstChild);
 };
 
 const getIframeName = url => parseUrlDeprecated(url).host
@@ -105,7 +107,9 @@ const iframeDrop = (url, ampDoc, {name, title}) => {
     position: 'absolute',
     clip: 'rect(0px 0px 0px 0px)',
   });
-  doc.body.appendChild(iframe);
+  // Insert at the start of the body instead of appending. See
+  // https://github.com/ampproject/amphtml/issues/19876
+  doc.body.insertBefore(iframe, document.body.firstChild);
 };
 
 const dropPixelatorPixel = (url, ampDoc) => {

@@ -345,7 +345,9 @@ export class AmpGeo extends AMP.BaseElement {
                   JSON.stringify(/** @type {!JsonObject} */(states)) ;
               state.appendChild(confScript);
               state.id = GEO_ID;
-              body.appendChild(state);
+              // Insert at the start of the body instead of appending. See
+              // https://github.com/ampproject/amphtml/issues/19876
+              body.insertBefore(state, body.firstChild);
             }
           }, body);
 

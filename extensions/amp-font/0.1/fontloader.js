@@ -198,7 +198,8 @@ export class FontLoader {
 
     const comparators = DEFAULT_FONTS_.map(defaultFont => new FontComparator(
         containerElement, this.fontConfig_.family, defaultFont));
-    this.ampdoc_.getBody().appendChild(containerElement);
+    const body = this.ampdoc_.getBody();
+    body.insertBefore(containerElement, body.firstChild);
     return comparators;
   }
 
