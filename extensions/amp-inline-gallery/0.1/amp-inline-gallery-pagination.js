@@ -108,8 +108,9 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
 
   updateDots_(index, offset) {
     const position = index - offset;
+    const allDots = Array.from(this.paginationDots_.children);
 
-    Array.from(this.paginationDots_.children).forEach((dot, i) => {
+    allDots.forEach((dot, i) => {
       const distance = i - position;
       const percentage = Math.max(1 - Math.abs(distance), 0);
       const percentageFalloff = exponentialFalloff(percentage, -0.5);
@@ -118,6 +119,8 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
         '--percentage-falloff': percentageFalloff,
       });
     });
+
+    allDots[index].scrollIntoView();
   }
 
   handleIndexChangeUpdate_(event) {

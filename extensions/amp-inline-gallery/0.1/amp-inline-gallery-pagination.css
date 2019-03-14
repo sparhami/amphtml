@@ -1,12 +1,16 @@
 .pagination-dots {
+  position: relative;
   display: flex;
-  justify-content: center;
-  align-items: center;
   height: 100%;
+  /* Show at most 10 dots */
+  max-width: 160px;
+  margin: auto;
+  overflow-x: auto;
 }
 
 .pagination-dot {
   position: relative;
+  flex-shrink: 0;
   overflow: hidden;
   margin: 4px;
   background-color: #aaa;
