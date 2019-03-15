@@ -1,6 +1,7 @@
 .pagination-dots {
   position: relative;
   display: flex;
+  align-items: center;
   height: 100%;
   /* Show at most 10 dots */
   max-width: 160px;
@@ -8,11 +9,20 @@
   overflow-x: auto;
 }
 
+.pagination-dot-container {
+  display: flex;
+  width: 28px;
+  min-width: 16px;
+  /*
+   * Center the pagination dots. Using `justify-content: center`on the parent
+   * results in the dots at the start/end being unable to be scrolled to.
+   */
+  margin: auto;
+}
+
 .pagination-dot {
   position: relative;
-  flex-shrink: 0;
   overflow: hidden;
-  margin: 4px;
   background-color: #aaa;
 }
 
@@ -36,9 +46,8 @@
   left: 0;
   right: 0;
   bottom: calc(var(--amp-caption-margin-top) + var(--amp-caption-height, 0));
-  display: flex !important;
-  justify-content: center;
-  margin: 4px;
+  display: block !important;
+  margin: 8px;
 }
 
 :host([inset]) .pagination-dot {

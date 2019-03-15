@@ -77,8 +77,10 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
   createPaginationDot_(index) {
     const html = htmlFor(this.element);
     const content = html`
-      <div class="pagination-dot">
-        <div class="pagination-dot-progress"></div>
+      <div class="pagination-dot-container">
+        <div class="pagination-dot">
+          <div class="pagination-dot-progress"></div>
+        </div>
       </div>
     `;
 
