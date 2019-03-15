@@ -122,6 +122,8 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
       });
     });
 
+    // TODO(sparhami) Don't use scrollIntoView, since it it causes the page
+    // scroll position to move as well.
     allDots[index].scrollIntoView();
   }
 
