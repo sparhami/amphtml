@@ -134,6 +134,12 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     });
   }
 
+  /** @override */
+  layoutCallback() {
+    this.carousel_.updateUi();
+    return Promise.resolve();
+  }
+  
   createThumbnailForElement_(element, index) {
     const html = htmlFor(this.element);
     const content = html `
