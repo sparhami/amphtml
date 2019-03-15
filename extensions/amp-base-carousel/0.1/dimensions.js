@@ -93,7 +93,7 @@ export function getStart(axis, el) {
  */
 export function getPosition(axis, alignment, el) {
   return alignment == Alignment.START ? getStart(axis, el) :
-      getCenter(axis, el);
+    getCenter(axis, el);
 }
 
 /**
@@ -153,12 +153,12 @@ export function overlaps(axis, el, position) {
  * @param {!Alignment} alignment The desired alignment.
  * @param {!Element} container The container to align against.
  * @param {!Element} el The Element get the offset for.
- * @return {number} How far el is from alignment, as a percentage of its length. 
+ * @return {number} How far el is from alignment, as a percentage of its length.
  */
 export function getPercentageOffsetFromAlignment(axis, alignment, container, el) {
   const elPos = getPosition(axis, alignment, el);
   const containerPos = getPosition(axis, alignment, container);
-  const {length : elLength} = getDimension(axis, el);
+  const {length: elLength} = getDimension(axis, el);
   return (elPos - containerPos) / elLength;
 }
 
@@ -248,9 +248,9 @@ export function updateScrollPosition(axis, el, delta) {
  * @param {!Alignment} alignment How to align the element within the container.
  */
 export function scrollContainerToElement(
-    axis, alignment, container, el, offset = 0) {
+  axis, alignment, container, el, offset = 0) {
   const startAligned = alignment == Alignment.START;
-  const length = getDimension(axis, el).length;
+  const {length} = getDimension(axis, el);
   const snapOffset = startAligned ? getStart(axis, el) : getCenter(axis, el);
   const scrollOffset = startAligned ? getStart(axis, container) :
     getCenter(axis, container);

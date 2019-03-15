@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {Alignment, scrollContainerToElement, Axis} from '../../amp-base-carousel/0.1/dimensions';
+import {Alignment, Axis, scrollContainerToElement} from '../../amp-base-carousel/0.1/dimensions';
 import {CSS} from '../../../build/amp-inline-gallery-thumbnails-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel';
 import {createCustomEvent, getDetail, listenOnce} from '../../../src/event-helper';
@@ -117,7 +117,7 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     this.thumbWidth = this.element.getAttribute('thumbnail-aspect-ratio-width') || 1;
     this.thumbHeight = this.element.getAttribute('thumbnail-aspect-ratio-height') || 1;
 
-    this.element.addEventListener('offsetchange-update', (event) => {
+    this.element.addEventListener('offsetchange-update', event => {
       this.handleOffsetChangeUpdate_(event);
     });
     this.element.addEventListener('offsetchange', event => {
@@ -147,7 +147,7 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     content.querySelector('.thumbnail').appendChild(element);
     content.onclick = () => {
       const event = createCustomEvent(this.win, 'goToSlide', dict({
-        'index': index
+        'index': index,
       }), {
         bubbles: true,
       });
@@ -156,7 +156,7 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
       this.ignoreScrollUntilSettled_ = true;
       runEnablingSmoothScroll(this.thumbnailsContainer_, () => {
         this.scrollToElement(index);
-      })
+      });
     };
     return content;
   }
@@ -165,17 +165,17 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     const html = htmlFor(this.element);
     return html `
       <div class="default-thumbnail-content"></div>
-    `
+    `;
   }
 
   getThumbnailContent_(slide) {
     const ampImg = slide.tagName == 'AMP-IMG' ? slide :
-        slide.querySelector(':scope > amp-img');
-    
+      slide.querySelector(':scope > amp-img');
+
     if (!ampImg) {
       return this.createDefaultThumbnail_();
     }
-    
+
     const img = new Image();
     img.className = 'thumbnail-img';
     img.src = ampImg.getAttribute('src');
@@ -189,11 +189,11 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     const thumbnail = this.thumbnails_[index];
 
     scrollContainerToElement(
-      Axis.X,
-      Alignment.CENTER,
-      this.thumbnailsContainer_,
-      thumbnail,
-      offset
+        Axis.X,
+        Alignment.CENTER,
+        this.thumbnailsContainer_,
+        thumbnail,
+        offset
     );
   }
 

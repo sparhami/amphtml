@@ -49,8 +49,8 @@ class AmpInlineGallery extends AMP.BaseElement {
   }
 
   /**
-   * 
-   * @param {string}} name 
+   *
+   * @param {string}} name
    * @param {!JsonObject} detail
    * @private
    */

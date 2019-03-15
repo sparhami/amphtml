@@ -462,7 +462,7 @@ exports.extensionBundles = [
         'amp-inline-gallery-slide',
         'amp-inline-gallery-slides',
         'amp-inline-gallery-thumbnails',
-      ]
+      ],
     },
     type: TYPES.MISC,
   },

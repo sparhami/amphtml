@@ -16,7 +16,7 @@
 
 import {CSS} from '../../../build/amp-inline-gallery-captions-0.1.css';
 import {Layout} from '../../../src/layout';
-import {getDetail} from "../../../src/event-helper";
+import {getDetail} from '../../../src/event-helper';
 import {setImportantStyles} from '../../../src/style.js';
 
 /**
@@ -61,7 +61,7 @@ export class AmpInlineGalleryCaptions extends AMP.BaseElement {
   buildCallback() {
     this.createShadowRoot_();
 
-    this.element.addEventListener('offsetchange-update', (event) => {
+    this.element.addEventListener('offsetchange-update', event => {
       this.handleIndexChangeUpdate_(event);
     });
   }
@@ -71,7 +71,7 @@ export class AmpInlineGalleryCaptions extends AMP.BaseElement {
     const {height} = this.getLayoutBox();
 
     setImportantStyles(this.element.parentNode, {
-      '--amp-caption-height': `${height}px`
+      '--amp-caption-height': `${height}px`,
     });
   }
 

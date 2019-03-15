@@ -21,8 +21,8 @@ import {
   ResponsiveAttributes,
 } from '../../amp-base-carousel/0.1/responsive-attributes';
 import {dev} from '../../../src/log';
+import {getDetail} from '../../../src/event-helper';
 import {toArray} from '../../../src/types';
-import { getDetail } from '../../../src/event-helper';
 
 /**
  * @param {!Element} el The Element to check.
@@ -104,7 +104,7 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
 
     this.configureInitialAttributes_();
     this.configureSlides_(slideSlot);
-    this.element.addEventListener('goToSlide', (event) => {
+    this.element.addEventListener('goToSlide', event => {
       const detail = getDetail(event);
       this.carousel_.goToSlide(detail['index']);
     });
@@ -173,7 +173,7 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
     const updateSlides = () => {
       const slides = Array.from(slidesSlot.assignedNodes()).filter(n => {
         return n.nodeType == 1; // Elements only
-      })
+      });
       this.carousel_.updateSlides(slides);
     };
 

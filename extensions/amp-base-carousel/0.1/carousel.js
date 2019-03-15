@@ -20,11 +20,11 @@ import {
   Axis,
   findOverlappingIndex,
   getDimension,
+  getPercentageOffsetFromAlignment,
   scrollContainerToElement,
   setTransformTranslateStyle,
   updateLengthStyle,
   updateScrollPosition,
-  getPercentageOffsetFromAlignment,
 } from './dimensions.js';
 import {AutoAdvance} from './auto-advance';
 import {
@@ -228,7 +228,7 @@ export class Carousel {
     /**
     * The offset for the current element, based on the alignment and axis. This
     * is a percentage of the Element's length along the current axis. This is
-    * used to preserve relative scroll position when updating the UI after 
+    * used to preserve relative scroll position when updating the UI after
     * things have moved (e.g. on rotate).
     * @private {number}
     */
@@ -578,14 +578,14 @@ export class Carousel {
     this.currentIndex_ = index;
     this.currentElementOffset_ = offset;
     this.element_.dispatchEvent(
-      createCustomEvent(this.win_, 'offsetchange', dict({
-        'index': index,
-        'total': this.slides_.length,
-        'offset': offset,
-        'slides': this.slides_,
-      }), {
-        bubbles: true,
-      }));
+        createCustomEvent(this.win_, 'offsetchange', dict({
+          'index': index,
+          'total': this.slides_.length,
+          'offset': offset,
+          'slides': this.slides_,
+        }), {
+          bubbles: true,
+        }));
   }
 
   /**
@@ -785,7 +785,7 @@ export class Carousel {
 
     beforeSpacers_.forEach((el, i) => {
       const distance = backwardWrappingDistance(
-        currentIndex_, i, beforeSpacers_);	
+          currentIndex_, i, beforeSpacers_);
       const tooFar = distance > slides_.length - 1;
       el.hidden = tooFar || i < slides_.length - numBeforeSpacers;
     });
@@ -914,7 +914,7 @@ export class Carousel {
     // Figure out what is the difference between where the Element is, and
     // where it should be as a percentage of its length.
     const actualOffset = getPercentageOffsetFromAlignment(
-      axis_, alignment_, element_, currentElement);
+        axis_, alignment_, element_, currentElement);
     const deltaOffset = actualOffset - currentElementOffset_;
     // Now convert the offset into pixels.
     const {length} = getDimension(axis_, currentElement);

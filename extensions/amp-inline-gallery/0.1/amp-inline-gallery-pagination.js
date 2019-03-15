@@ -16,10 +16,10 @@
 
 import {CSS} from '../../../build/amp-inline-gallery-pagination-0.1.css';
 import {Layout} from '../../../src/layout';
-import {setImportantStyles} from '../../../src/style.js';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {dict} from '../../../src/utils/object';
 import {htmlFor} from '../../../src/static-template';
+import {setImportantStyles} from '../../../src/style.js';
 
 /**
  * Returns a number falling off from one to zero, based on a distance
@@ -69,7 +69,7 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     const shadowRoot = this.createShadowRoot_();
     this.paginationDots_ = shadowRoot.querySelector('.pagination-dots');
 
-    this.element.addEventListener('offsetchange-update', (event) => {
+    this.element.addEventListener('offsetchange-update', event => {
       this.handleIndexChangeUpdate_(event);
     });
   }
@@ -86,7 +86,7 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
 
     content.onclick = () => {
       const event = createCustomEvent(this.win, 'goToSlide', dict({
-        'index': index
+        'index': index,
       }), {
         bubbles: true,
       });
