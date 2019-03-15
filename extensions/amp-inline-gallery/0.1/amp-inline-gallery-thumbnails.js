@@ -16,6 +16,7 @@
 
 import {Alignment, Axis, scrollContainerToElement} from '../../amp-base-carousel/0.1/dimensions';
 import {CSS} from '../../../build/amp-inline-gallery-thumbnails-0.1.css';
+import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel';
 import {createCustomEvent, getDetail, listenOnce} from '../../../src/event-helper';
 import {dev} from '../../../src/log';
@@ -53,7 +54,7 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
   createShadowRoot_() {
     const sr = this.element.attachShadow({mode: 'open'});
     sr.innerHTML = `
-      <style>${CSS}</style>
+      <style>${CarouselCSS + CSS}</style>
       <slot name="sizer"></slot>
       <div class="i-amphtml-carousel-content" aria-hidden="true">
         <div class="i-amphtml-carousel-scroll">

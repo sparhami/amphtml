@@ -1,5 +1,3 @@
-@import "../../amp-base-carousel/0.1/carousel.css";
-
 :host {
   padding-bottom: var(--amp-caption-height, 0px);
 }
