@@ -16,6 +16,7 @@
 
 import {CSS} from '../../../build/amp-inline-gallery-slide-0.1.css';
 import {Layout} from '../../../src/layout';
+import { truncate } from './truncate';
 
 export class AmpInlineGallerySlide extends AMP.BaseElement {
   /**
@@ -32,6 +33,7 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
         </div>
         <figcaption class="caption">
           <slot name="caption"></slot>
+          <div overflow style="display: none">⇱</div>
         </figcaption>
       </figure>
     `;
@@ -41,6 +43,8 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
+
+    this.caption_ = null;
   }
 
   /** @override */
@@ -50,9 +54,15 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    this.createShadowRoot_();
+    const sr = this.createShadowRoot_();
+    this.caption_ = this.element.querySelector('.caption');
+    this.captionOverflow_ = sr.querySelector('[overflow]');
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
+  }
+
+  layoutCallback() {
+    truncate(this.caption_, this.captionOverflow_ );
   }
 }
