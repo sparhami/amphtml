@@ -1,0 +1,7 @@
+.i-amphtml-clamp-text-content:not([i-amphtml-clamp-overflow]) .amp-clamp-overflow {
+  display: none !important;
+}
+
+[i-amphtml-clamp-child-overflow] {
+  display: none !important;
+}
