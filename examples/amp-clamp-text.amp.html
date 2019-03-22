@@ -7,10 +7,6 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
   <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
   <style amp-custom>
-    amp-clamp-text {
-      color: red;
-    }
-
     .text {
       position: relative;
       font-size: 1em;
@@ -19,35 +15,107 @@
       width: 150px;
       overflow: hidden;
     }
+
+    .padded {
+      display: flex;
+      padding: 2px 6px;
+      background-color: #eee;
+    }
+
+    .amp-clamp-overflow {
+      color: #4081f7;
+    }
+
+    .right-aligned {
+      float: right;
+    }
+
+    .overflow-button {
+      height: 22px;
+      background-color: #eee;
+      border-radius: 0;
+    }
   </style>
   <script async custom-element="amp-clamp-text" src="https://cdn.ampproject.org/v0/amp-clamp-text-0.1.js"></script>
   <script async src="https://cdn.ampproject.org/v0.js"></script>
 </head>
 <body>
-  <!-- <div class="text">
-    <amp-clamp-text layout="fixed-height" height="3em">
+  <h1>Can this be fixed?</h1>
 
-
+  <div class="text">
+    <amp-clamp-text layout="fill">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
       luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
       Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
       Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
+      <span class="amp-clamp-overflow right-aligned"> See more</span>
+    </amp-clamp-text>
+  </div>
 
+  <h1>All</h1>
+
+  <div class="text">
+    <amp-clamp-text layout="fill">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
+      luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
+      Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
+      Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
+      <button class="amp-clamp-overflow right-aligned">See more</button>
+    </amp-clamp-text>
+  </div>
+
+  <div class="text">
+    <amp-clamp-text layout="fill">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
+      luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
+      Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
+      Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
+      <button class="amp-clamp-overflow overflow-button">See more</button>
+    </amp-clamp-text>
+  </div>
+
+  <div class="text">
+    <amp-clamp-text layout="fill">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
+      luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
+      Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
+      Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
+      <span class="amp-clamp-overflow"> See more</span>
+    </amp-clamp-text>
+  </div>
+
+  <div class="text">
+    <amp-clamp-text layout="fill">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
+      luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
+      Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
+      Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
+      <span class="amp-clamp-overflow right-aligned"> See more</span>
+    </amp-clamp-text>
+  </div>
+
+  <div class="text">
+    <amp-clamp-text layout="fill">
+      Some text <a href="#">with a link</a> that should ellipsize and show a see more span afterwards.
+      <span class="amp-clamp-overflow"> See more</span>
+    </amp-clamp-text>
+  </div>
+
+  <div class="text">
+    <amp-clamp-text layout="fill">
+      Some text <a href="#">with a long link that should ellipsize and show</a> a see more span afterwards.
+      <span class="amp-clamp-overflow"> See more</span>
+    </amp-clamp-text>
+  </div>
+
+  <div class="text padded">
+    <amp-clamp-text layout="flex-item">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
+      luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
+      Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
+      Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
       <button class="amp-clamp-overflow">See more</button>
     </amp-clamp-text>
-  </div> -->
-
-          <div class="text">
-              <amp-clamp-text layout="fixed-height" height="3em">
-          
-          
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
-                luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
-                Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
-                Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
-          
-                <button class="amp-clamp-overflow">See more</button>
-              </amp-clamp-text>
-            </div>
+  </div>
 </body>
 </html>
