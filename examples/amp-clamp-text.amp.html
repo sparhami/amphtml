@@ -22,58 +22,128 @@
       background-color: #eee;
     }
 
-    .amp-clamp-overflow {
-      color: #4081f7;
-    }
-
     .right-aligned {
       float: right;
     }
 
     .overflow-button {
-      height: 22px;
-      background-color: #eee;
+      color: inherit;
+    }
+
+    .overflow-button.large {
+      height: 2em;
+      padding: 0 0.5em;
       border-radius: 0;
+      background-color: #eee;
+    }
+
+    .overflow-button.compact {
+      font-size: inherit;
+      font-family: inherit;
+      padding-top: 0;
+      padding-bottom: 0;
+      border: none;
+      background-color: transparent;
+    }
+
+    .inline-button {
+      display: inline;
+      padding: 0;
+      border: none;
+      font-size: inherit;
+      font-family: inherit;
+      background-color: transparent;
+    }
+
+    .amp-clamp-overflow {
+      color: #1b61e0;
     }
   </style>
   <script async custom-element="amp-clamp-text" src="https://cdn.ampproject.org/v0/amp-clamp-text-0.1.js"></script>
   <script async src="https://cdn.ampproject.org/v0.js"></script>
 </head>
 <body>
-  <h1>Can this be fixed?</h1>
+  <h1>amp-clamp-text examples</h1>
 
+  <h2>No overflow element</h2>
   <div class="text">
     <amp-clamp-text layout="fill">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
       luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
       Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
       Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
-      <span class="amp-clamp-overflow right-aligned"> See more</span>
     </amp-clamp-text>
   </div>
 
-  <h1>All</h1>
+  <h2>Non-inline overflow element</h2>
+  <div class="text">
+    <amp-clamp-text layout="fill" overflow-style="default">
+      <div class="amp-clamp-overflow right-aligned" style="height: 100%;">
+        <button class="overflow-button compact">See more</button>
+      </div>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
+      luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
+      Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
+      Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
+    </amp-clamp-text>
+  </div>
 
+  <h2>Button, right aligned, that fits on a single line</h2>
   <div class="text">
     <amp-clamp-text layout="fill">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
       luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
       Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
       Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
-      <button class="amp-clamp-overflow right-aligned">See more</button>
+      <button class="amp-clamp-overflow overflow-button compact right-aligned">See more</button>
     </amp-clamp-text>
   </div>
 
+  <h2>Button, that fits on a single line</h2>
   <div class="text">
     <amp-clamp-text layout="fill">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
       luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
       Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
       Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
-      <button class="amp-clamp-overflow overflow-button">See more</button>
+      <button class="amp-clamp-overflow overflow-button compact">See more</button>
     </amp-clamp-text>
   </div>
 
+  <h2>Button, right aligned, that is taller than one line</h2>
+  <div class="text">
+    <amp-clamp-text layout="fill">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
+      luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
+      Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
+      Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
+      <button class="amp-clamp-overflow overflow-button large right-aligned">See more</button>
+    </amp-clamp-text>
+  </div>
+
+  <h2>Button, that is taller than one line</h2>
+  <div class="text">
+    <amp-clamp-text layout="fill">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
+      luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
+      Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
+      Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
+      <button class="amp-clamp-overflow overflow-button large">See more</button>
+    </amp-clamp-text>
+  </div>
+
+  <h2>Inline button, right aligned, with a space between ellipsis and overflow</h2>
+  <div class="text">
+    <amp-clamp-text layout="fill">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
+      luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
+      Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
+      Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
+      <button class="amp-clamp-overflow inline-button right-aligned"> See more</button>
+    </amp-clamp-text>
+  </div>
+
+  <h2>Inline text, with a space between ellipsis and overflow</h2>
   <div class="text">
     <amp-clamp-text layout="fill">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
@@ -84,16 +154,7 @@
     </amp-clamp-text>
   </div>
 
-  <div class="text">
-    <amp-clamp-text layout="fill">
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
-      luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
-      Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
-      Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
-      <span class="amp-clamp-overflow right-aligned"> See more</span>
-    </amp-clamp-text>
-  </div>
-
+  <h2>Inline text, with a link before the truncation point</h2>
   <div class="text">
     <amp-clamp-text layout="fill">
       Some text <a href="#">with a link</a> that should ellipsize and show a see more span afterwards.
@@ -101,6 +162,7 @@
     </amp-clamp-text>
   </div>
 
+  <h2>Inline text, with a link that is truncated</h2>
   <div class="text">
     <amp-clamp-text layout="fill">
       Some text <a href="#">with a long link that should ellipsize and show</a> a see more span afterwards.
@@ -108,13 +170,14 @@
     </amp-clamp-text>
   </div>
 
+  <h2>Example of how to use padding</h2>
   <div class="text padded">
     <amp-clamp-text layout="flex-item">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
       luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
       Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
       Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
-      <button class="amp-clamp-overflow">See more</button>
+      <button class="amp-clamp-overflow overflow-button compact right-aligned">See more</button>
     </amp-clamp-text>
   </div>
 </body>

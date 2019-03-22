@@ -41,16 +41,19 @@ export class AmpClampText extends AMP.BaseElement {
   
   /** @override */
   layoutCallback() {
+    const overflowStyleAttr = this.element.getAttribute('overflow-style');
+    const overflowStyle = overflowStyleAttr == 'default' ? 'default' : 'inline';
+
     clamp({
       element: this.content_,
       runMutation: (cb) => this.mutateElement(cb),
-      overflowStyle: 'inline',
+      overflowStyle,
       overflowElement: this.content_.querySelector('.amp-clamp-overflow'),
     });
   }
 
   /** @override */
-  isLayoutSupported(layout) {
+  isLayoutSupported() {
     return true;
   }
   

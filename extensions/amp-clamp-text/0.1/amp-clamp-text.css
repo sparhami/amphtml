@@ -1,3 +1,13 @@
+amp-clamp-text {
+  padding: 0 !important;
+  border: none !important;
+}
+
+.i-amphtml-clamp-text-content .amp-clamp-overflow {
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+
 .i-amphtml-clamp-text-content:not([i-amphtml-clamp-overflow]) .amp-clamp-overflow {
   display: none !important;
 }
@@ -5,3 +15,4 @@
 [i-amphtml-clamp-child-overflow] {
   display: none !important;
 }
+

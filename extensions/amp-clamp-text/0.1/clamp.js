@@ -1,6 +1,5 @@
-import { setStyle, setStyles } from "../../../src/style";
-import { toArray } from "../../../src/types";
-import { isAbsolute } from "path";
+import {toArray} from "../../../src/types";
+import {htmlFor} from '../../../src/static-template';
 
 /**
  * @enum {string}
@@ -10,6 +9,7 @@ const OverflowStyle = {
   DEFAULT: 'default',
 };
 
+
 const zeroSize = {
   width: 0,
   height: 0,
@@ -18,14 +18,24 @@ const zeroSize = {
 const CONTAINER_OVERFLOW_ATTRIBUTE = 'i-amphtml-clamp-overflow';
 const ELEMENT_OVERFLOW_ATTRIBUTE = 'i-amphtml-clamp-child-overflow';
 
-function createEllipsisSpan() {
-  const ellipsisSpan = document.createElement('span');
-  ellipsisSpan.textContent = '…';
-  setStyles(ellipsisSpan, {
-    'position': isAbsolute,
-  });
-
-  return ellipsisSpan;
+/** 
+ * Creates a span with an ellipsis, used to measure how much space we will need
+ * for an ellipsis. Assumes that the font size used for the ellipsis here is
+ * the same as the ellipsis we add.
+ * 
+ * - Uses `position: absolute` so that this does not affect layout.
+ * - Uses `display: inline-block`, which allows us to measure the full line
+ *   height and not just the text height. This is needed by the truncation
+ *   code when dealing with overflow elements that are `inline-block`.
+ * - Uses a non-breaking space so we can also measure the width of the space
+ *   since we always add one (which may collapse with adjacent ones) after
+ *   the ellipsis.
+ */
+function createEllipsisSpan(doc) {
+  const html = htmlFor(doc);
+  return html`<span style="position: absolute; display: inline-block;">
+    …&nbsp;
+  </span>`;
 }
 
 export function clamp({
@@ -38,6 +48,7 @@ export function clamp({
     return;
   }
 
+  // Mutate, first phase
   if (overflowElement && element.hasAttribute(CONTAINER_OVERFLOW_ATTRIBUTE)) {
     element.removeAttribute(CONTAINER_OVERFLOW_ATTRIBUTE);
   }
@@ -47,32 +58,36 @@ export function clamp({
   });
 
   Promise.resolve().then(() => {
+    // Measure, first phase
     return isOverflowing(element);
   }).then((overflowing) => {
     if (!overflowing) {
       return;
     }
 
+    // Mutate, second phase
     if (overflowElement) {
       element.setAttribute(CONTAINER_OVERFLOW_ATTRIBUTE, '');
     }
 
-    const ellipsisSpan = createEllipsisSpan();
+    const ellipsisSpan = createEllipsisSpan(element.ownerDocument);
     element.appendChild(ellipsisSpan);
-    runMutation(() => element.removeChild(ellipsisSpan));
     return ellipsisSpan;
   }).then((ellipsisSpan) => {
     if (!ellipsisSpan) {
       return;
     }
 
-    calculateTruncation({
+    // Measure, second phase
+    // The truncation logic will group mutates into a third phase.
+    runTruncation(
       element,
-      runMutation,
       overflowElement,
       overflowStyle,
       ellipsisSpan,
-    });
+      runMutation,
+    );
+    runMutation(() => element.removeChild(ellipsisSpan));
   });
 }
 
@@ -80,6 +95,53 @@ function isOverflowing(element) {
   return element.scrollHeight > element.offsetHeight;
 }
 
+function runTruncation(
+  element,
+  overflowElement,
+  overflowStyle,
+  ellipsisSpan,
+  runMutation
+) {
+  const expectedBox = element.getBoundingClientRect();
+  const ellipsisBox = ellipsisSpan.getBoundingClientRect();
+  const reservedBox =
+      overflowElement && overflowStyle == OverflowStyle.INLINE ?
+      overflowElement.getBoundingClientRect() : zeroSize;
+  const queue = [element];
+  let done = false;
+
+  while (!done && queue.length) {
+    const node = queue.pop();
+
+    // The overflow element is never truncated.
+    if (node == overflowElement) {
+      continue;
+    }
+
+    // If we have an element that is completely overflowing, we hide it. This
+    // is because it may still take some size even if we clear out all of the
+    // text.
+    if (node.nodeType == Node.ELEMENT_NODE &&
+        node.getBoundingClientRect().top > expectedBox.bottom) {
+      runMutation(() => {
+        node.setAttribute(ELEMENT_OVERFLOW_ATTRIBUTE, '');
+      });
+      continue;
+    }
+
+    // Truncate the text node. If it got ellipsized, the we are done.
+    if (node.nodeType == Node.TEXT_NODE) {
+      done = ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutation);
+      continue;
+    }
+
+    // By pushing the children to the queue, we traverse in reverse order of
+    // children, since we want to truncate later nodes first.
+    for (let child = node.firstChild; child; child = child.nextSibling) {
+      queue.push(child);      
+    }
+  }
+}
 
 /**
  * Does a binary search across a range of values until a condition is met. If
@@ -116,126 +178,83 @@ function binarySearch(start, end, condition) {
   return -(low + 1);
 }
 
-function calculateTruncation({
-  element,
-  overflowElement,
-  overflowStyle,
-  ellipsisSpan,
-  runMutation,
-}) {
-  const expectedBox = element.getBoundingClientRect();
-  const ellipsisBox = ellipsisSpan.getBoundingClientRect();
-  const reservedBox =
-      overflowElement && overflowStyle == OverflowStyle.INLINE ?
-      overflowElement.getBoundingClientRect() : zeroSize;
-  const queue = [element];
-  let done = false;
-
-  while (!done && queue.length) {
-    const node = queue.pop();
-
-    // The overflow element is never truncated.
-    if (node == overflowElement) {
-      continue;
-    }
-
-    // If we have an element that is completely overflowing, we hide it. This
-    // is because it may still take some size even if we clear out all of the
-    // text.
-    if (node.nodeType == Node.ELEMENT_NODE &&
-        node.getBoundingClientRect().top > expectedBox.bottom) {
-      runMutation(() => {
-        node.setAttribute(ELEMENT_OVERFLOW_ATTRIBUTE, '');
-      });
-      continue;
-    }
-
-    // Truncate the text node. If it got ellipsized, the we are done.
-    if (node.nodeType == Node.TEXT_NODE) {
-      done = ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutation);
-    }
-
-    for (let child = node.firstChild; child; child = child.nextSibling) {
-      queue.push(child);      
-    }
+/**
+ * Trims a string on the right, using the native implementation if available,
+ * @param {string} str 
+ */
+function trimRight(str) {
+  if (str.trimRight) {
+    return str.trimRight();
   }
+
+  return ('_' + str).trim().slice(1);
 }
 
 function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutation) {
-  const text = node.textContent;
-  const range = document.createRange();
-  range.selectNode(node);
-
-  /**
-   * Gets the amount of overflow for the node at an index, assuming that we
-   * need to reserve space for an ellipsis and an additional reserved box.
-   * @param {number} index 
-   */
-  function getOverflow(index) {
-    range.setEnd(node, index);
-    // Since our range is operating on a single node, these rects are for each
-    // line of text.
-    const rects = range.getClientRects();
-    const lastLineRect = rects[rects.length - 1];
-    const {
-      top,
-      width,
-      height,
-    } = lastLineRect;
-
-    // The last line width should also include the ellipsis, if it were added.
-    const lastLineWidth = width + ellipsisBox.width;
-
-    // The reserved box wraps onto a new line if it cannot fit on the last line
-    // of text.
-    const reservedBoxWraps = lastLineWidth + reservedBox.width > expectedBox.width;
-    // If the box does not wrap, it may still be taller than the text, so we need
-    // also check the reserved box's height.
-    const finalLineAndReservedBoxHeight = reservedBoxWraps ?
-        height + reservedBox.height :
-        Math.max(height, reservedBox.height)
-
-    return  (top + finalLineAndReservedBoxHeight) - expectedBox.bottom;
+  function overrflowWithoutReservedBox(rect) {
+    return rect.bottom - expectedBox.bottom;
   }
+
+  function overflowWithReservedBox(rect) {
+    const targetLeft = expectedBox.width - reservedBox.width - ellipsisBox.width;
+    const wraps = targetLeft <= rect.right;
+    const textLineHeightDifference = (ellipsisBox.height - rect.height);
+    const requestedHeight = reservedBox.height - textLineHeightDifference;
+    const requestedBottom = wraps ?
+      rect.top + textLineHeightDifference + rect.height + requestedHeight :
+      rect.top + Math.max(rect.height, requestedHeight);
+
+    return requestedBottom - expectedBox.bottom;
+  }
+
+  function overflowAtPosition(index) {
+    range.setStart(node, index);
+    range.setEnd(node, index);
+
+    const rect = range.getBoundingClientRect();
+    const overflow = reservedBox.width ? overflowWithReservedBox(rect) :
+      overrflowWithoutReservedBox(rect);
+
+    // When we have exactly zero overflow, return a negative value so that the
+    // binary search keeps moving right to find the boundary of where things
+    // overflow. Otherwise, the search would stop immediately. This is the same
+    // as using a binary search that returns the rightmost match.
+    return overflow == 0 ? -Number.MIN_VALUE : overflow;
+  }
+
+  const text = node.textContent;
+  const trimmedText = text.trim();
 
   // We do not want to replace empty text nodes (e.g. at the start of an
   // an element if the developer put a newline before the text) with an
   // ellipsis, so just bail out early.
-  if (!text.trim()) {
+  if (!trimmedText) {
+    return;
+  }
+
+  const range = document.createRange();
+  range.selectNode(node);
+
+  // The whole Text Node overflows if we add the reserved box, so remove all the
+  // text and move on.
+  if (overflowAtPosition(0) > 0) {
+    runMutation(() => {
+      node.textContent = '';
+    });
     return false;
   }
 
-  // The whole Text Node overflows, so remove all the text and move on.
-  if (range.getBoundingClientRect().top >= expectedBox.bottom) {
-    node.textContent = '';
-    return false;
-  }
+  const searchIndex = binarySearch(0, text.length - 1, overflowAtPosition);
+  const boundaryIndex = searchIndex < 0 ? -searchIndex - 1 : searchIndex;
+  const nonOverflowingIndex = overflowAtPosition(boundaryIndex) > 0 ?
+      boundaryIndex - 1 : boundaryIndex;
 
-  // Use a binary search to to find the character that does not overflow. If
-  // the result is negative, then there was no point where the overflow was
-  // exactly zero, the return value is either just before or just after the
-  // overflow. If the value is zero, there may be other characters after that
-  // do not overflow either.
-  let end = binarySearch(0, text.length - 1, getOverflow);
-
-  // We have a negative index, and that index, when negated is one more
-  // than the stopping index. We also need to subtract an additonal one as we
-  // may have stopped right after overflow and not just before.
-  if (end < 0) {
-    end = -end - 2;
-  }
-
-  // Now keep going until we hit a character that overflows.
-  while(getOverflow(end + 1) == 0) {
-    end++;
-  }
-
-  // Always chop off an extra character to make sure things will fit due to
-  // letter spacing.
   // Remove trailing spaces since we do not want to have something like
-  // "Hello world   …".
-  const newText = text.slice(0, end - 1).trim() + '…';
-
+  // "Hello world   …". We need to keep leading spaces since we may be
+  // adjacent to an inline element.
+  // Add a space to the ellipsis to give it space between whatever follows.
+  // This may be collapsed if the next element has leading whitespace.
+  const newText = trimRight(text.slice(0, nonOverflowingIndex)) + '… ';
 
   runMutation(() => {
     node.textContent = newText;
