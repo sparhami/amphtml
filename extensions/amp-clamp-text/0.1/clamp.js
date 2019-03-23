@@ -220,10 +220,6 @@ function trimRight(str) {
 }
 
 function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutation) {
-  function overrflowWithoutReservedBox(rect) {
-    return rect.bottom - expectedBox.bottom;
-  }
-
   function overflowWithReservedBox(rect) {
     const targetRight = expectedBox.right - reservedBox.width - ellipsisBox.width;
     const wraps = targetRight <= rect.right;
@@ -238,8 +234,7 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutat
 
   function overflowAtPosition(index) {
     const rect = getRect(node, index);
-    const overflow = reservedBox.width ? overflowWithReservedBox(rect) :
-      overrflowWithoutReservedBox(rect);
+    const overflow = overflowWithReservedBox(rect);
 
     // When we have exactly zero overflow, return a negative value so that the
     // binary search keeps moving right to find the boundary of where things
@@ -293,14 +288,15 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutat
   const searchIndex = binarySearch(0, trimmedText.length - 1, (index) => {
     return overflowAtPosition(index + startOffset);
   });
+
   // Find the index within the trimmedText, and convert it to the index in the
   // original text. We need to operate on the original text, since leading
   // whitespace is relevant if we are adjacent to another Node with text, as
   // that will result in a space between the Nodes.
   const boundaryIndex = -(searchIndex + 1) + startOffset;
 
-  // Remove trailing spaces since we do not want to have something like
-  // "Hello world   …". We need to keep leading spaces since we may be
+  // Remove trailing whitespace since we do not want to have something like
+  // "Hello world   …". We need to keep leading whitespace since we may be
   // adjacent to an inline element.
   // Add a space to the ellipsis to give it space between whatever follows.
   const newText = trimRight(text.slice(0, boundaryIndex)) + '… ';
