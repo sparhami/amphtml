@@ -41,22 +41,30 @@ export class AmpClampText extends AMP.BaseElement {
   
   /** @override */
   layoutCallback() {
-    const overflowStyleAttr = this.element.getAttribute('overflow-style');
-    const overflowStyle = overflowStyleAttr == 'default' ? 'default' : 'inline';
+    return this.clamp();
+  }
 
-    clamp({
-      element: this.content_,
-      runMutation: (cb) => this.mutateElement(cb),
-      overflowStyle,
-      overflowElement: this.content_.querySelector('.amp-clamp-overflow'),
-    });
+  /** @override */
+  isRelayoutNeeded() {
+    return true;
   }
 
   /** @override */
   isLayoutSupported() {
     return true;
   }
-  
+
+  clamp() {
+    const overflowStyleAttr = this.element.getAttribute('overflow-style');
+    const overflowStyle = overflowStyleAttr == 'default' ? 'default' : 'inline';
+
+    return clamp({
+      element: this.content_,
+      runMutation: (cb) => this.mutateElement(cb),
+      overflowStyle,
+      overflowElement: this.content_.querySelector('.amp-clamp-overflow'),
+    });
+  }
 }
 
 AMP.extension('amp-clamp-text', '0.1', AMP => {
