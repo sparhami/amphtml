@@ -186,16 +186,25 @@ function binarySearch(start, end, condition) {
 }
 
 /**
- * Gets rect at the a given index offset within a Text node.
- * @param {Node} node
- * @param {number} index 
+ * Gets rect at the a given index offset within the text.
+ * @param {*} index 
  */
 function getRect(node, index) {
   const range = document.createRange();
-  range.setStart(node, index);
-  range.setEnd(node, index + 1);
-  
-  return range.getBoundingClientRect();
+  let rect;
+
+  // For Safari: leading whitespace on at the start of a line will return a
+  // zero-size rect. In that case, go backwards to find a character that has
+  // a rect. Since we remove whitespace before adding the ellipsis, these
+  // are equivalent in terms of choosing a point to ellipsize.
+  do {
+    range.setStart(node, index);
+    range.setEnd(node, index + 1);
+    rect = range.getBoundingClientRect();
+    index -= 1;
+  } while(!rect.height && index >= 0);
+
+  return rect;
 }
 
 /**
@@ -211,24 +220,6 @@ function trimRight(str) {
 }
 
 function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutation) {
-  const text = node.data;
-  const trimmedText = text.trim();
-
-  // We do not want to replace empty text nodes (e.g. at the start of an
-  // an element if the developer put a newline before the text) with an
-  // ellipsis, so just bail out early.
-  if (!trimmedText) {
-    return;
-  }
-
-  if (getRect(node, 0).height == 0) {
-    return true;
-  }
-
-  return ellipsizeTextNodeUsingRange(node, expectedBox, ellipsisBox, reservedBox, runMutation);
-}
-
-function ellipsizeTextNodeUsingRange(node, expectedBox, ellipsisBox, reservedBox, runMutation) {
   function overrflowWithoutReservedBox(rect) {
     return rect.bottom - expectedBox.bottom;
   }
@@ -268,29 +259,50 @@ function ellipsizeTextNodeUsingRange(node, expectedBox, ellipsisBox, reservedBox
     });
   }
 
+  const text = node.data;
+  const trimmedText = text.trim();
+
+  // We do not want to replace empty text nodes (e.g. at the start of an
+  // an element if the developer put a newline before the text) with an
+  // ellipsis, so just bail out early.
+  if (!trimmedText) {
+    return false;
+  }
+
+  // For Safari: We need to avoid looking at the starting/trailing whitespace
+  // characters that are collapsed, since they will return zero sized rects.
+  // We instead search across the trimmed text, offseting when we go to check
+  // for overflow.
+  const startOffset = text.indexOf(trimmedText);
+
   // The whole Text Node overflows if we add the reserved box, so remove all the
   // text and move on.
-  if (overflowAtPosition(0) > 0) {
+  if (overflowAtPosition(startOffset) > 0) {
     truncateTo('');
     return false;
   }
 
-  // We could potentially use `caretRangeFromPoint`/`caretPositionFromPoint`,
-  // if available, to skip the binary search. We may still need to fallback, for
-  // example if something is covering the text. The binary search is very fast
-  // so there may be very little value to this.
   // Find the boundary index of where truncation should occur. The binary
   // search will always return a negative value since the overflow
   // function never returns zero.
-  const text = node.data;
-  const searchIndex = binarySearch(0, text.length - 1, overflowAtPosition);
-  const boundaryIndex = -(searchIndex + 1);
+  // We could potentially use `caretRangeFromPoint`/`caretPositionFromPoint`,
+  // if available, to skip the binary search. We may still need to fallback, for
+  // example if something is overlaying the text. The binary search is
+  // extremely fast so there is likely very little value to adding an
+  // additional code path.
+  const searchIndex = binarySearch(0, trimmedText.length - 1, (index) => {
+    return overflowAtPosition(index + startOffset);
+  });
+  // Find the index within the trimmedText, and convert it to the index in the
+  // original text. We need to operate on the original text, since leading
+  // whitespace is relevant if we are adjacent to another Node with text, as
+  // that will result in a space between the Nodes.
+  const boundaryIndex = -(searchIndex + 1) + startOffset;
 
   // Remove trailing spaces since we do not want to have something like
   // "Hello world   …". We need to keep leading spaces since we may be
   // adjacent to an inline element.
   // Add a space to the ellipsis to give it space between whatever follows.
-  // This may be collapsed if the next element has leading whitespace.
   const newText = trimRight(text.slice(0, boundaryIndex)) + '… ';
 
   truncateTo(newText);
