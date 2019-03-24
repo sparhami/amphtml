@@ -68,8 +68,8 @@ export function remove(array, shouldRemove) {
  * Returns the index of the first element matching the predicate.
  * Like Array#findIndex.
  *
- * @param {!Array<T>} array
- * @param {function(T, number, !Array<T>):boolean} predicate
+ * @param {!IArrayLike<T>} array
+ * @param {function(T, number, !IArrayLike<T>):boolean} predicate
  * @return {number}
  * @template T
  */
