@@ -31,8 +31,8 @@ export function binarySearch(
 
   let low = start;
   let high = end;
-  let ceiling = Number.POSITIVE_INFINITY;
   let floor = Number.NEGATIVE_INFINITY;
+  let ceiling = Number.POSITIVE_INFINITY;
   let prefIndex = NaN;
 
   while(high >= low) {

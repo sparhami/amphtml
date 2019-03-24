@@ -1,6 +1,7 @@
 import {BinarySearchPreference, binarySearch} from './binary-search';
 import {setStyle} from '../../../src/style';
 import {devAssert} from '../../../src/log';
+import {trimEnd} from '../../../src/string';
 
 /**
  * @enum {string}
@@ -233,19 +234,6 @@ function getRect(node, offset) {
 }
 
 /**
- * Trims a string on the right, using the native implementation if available.
- * @param {string} str  A string to trim.
- * @return {string} The string, with trailing whitespace removed.
- */
-function trimRight(str) {
-  if (str.trimRight) {
-    return str.trimRight();
-  }
-
-  return ('_' + str).trim().slice(1);
-}
-
-/**
  * @param {!Text} node 
  * @param {!ClientRect} expectedBox 
  * @param {!Dimensions} ellipsisBox 
@@ -302,7 +290,8 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutat
   // Find the boundary index of where truncation should occur. The binary
   // search will always return a negative value since the overflow
   // function never returns zero. We use BinarySearchPreference.HIGH to find
-  // the first index overflows.
+  // the first index overflows. Otherwise, we might end on a non-overflowing
+  // character.
   // We could potentially use `caretRangeFromPoint`/`caretPositionFromPoint`,
   // if available, to skip the binary search. We may still need to fallback, for
   // example if something is overlaying the text. The binary search is
@@ -315,8 +304,8 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutat
 
   // Remove trailing whitespace since we do not want to have something like
   // "Hello world   …". We need to keep leading whitespace since we may be
-  // adjacent to an inline element.
-  const fittingText = trimRight(text.slice(0, firstOverflowingIndex));
+  // adjacent to an inline element, which makes it significant.
+  const fittingText = trimEnd(text.slice(0, firstOverflowingIndex));
   // If no text fits, then do not add an ellipsis.
   // Add a space to the ellipsis to give it space between whatever
   // (if anything) follows. Note we reserved enough space for this when
