@@ -125,7 +125,6 @@ function createEllipsisEl(doc, hasFollowingNode) {
  * This should be called from a place where it is safe to perform mutations.
  * @param {{
  *   element: !Element,
- *   runMutation: function(function()),
  *   overflowElement: ?Element,
  *   overflowStyle: (!OverflowStyle|undefined),
  * }} config
@@ -136,6 +135,9 @@ export function clamp({
   overflowElement = null,
   overflowStyle = OverflowStyle.INLINE,
 } = {}) {
+  let ellipsisEl;
+  let overflowing;
+
   // Mutate, first phase: remove any effects of truncation so that we can see
   // if there is any overflow.
   if (element.hasAttribute(CONTAINER_OVERFLOW_ATTRIBUTE)) {
@@ -145,8 +147,8 @@ export function clamp({
 
   return Promise.resolve().then(() => {
     // Measure, first phase: Check for overflow.
-    return isOverflowing(element);
-  }).then(overflowing => {
+    overflowing = isOverflowing(element);
+  }).then(() => {
     if (!overflowing) {
       return;
     }
@@ -155,11 +157,11 @@ export function clamp({
     // measure their size.
     element.setAttribute(CONTAINER_OVERFLOW_ATTRIBUTE, '');
 
-    const ellipsisEl = createEllipsisEl(
+    ellipsisEl = createEllipsisEl(
         devAssert(element.ownerDocument), !!overflowElement);
-    return element.appendChild(ellipsisEl);
-  }).then(ellipsisEl => {
-    if (!ellipsisEl) {
+    element.appendChild(ellipsisEl);
+  }).then(() => {
+    if (!overflowing) {
       return;
     }
 
@@ -173,7 +175,12 @@ export function clamp({
         ellipsisEl,
         runMutation
     );
-    runMutation(() => element.removeChild(ellipsisEl));
+  }).then(() => {
+    if (!overflowing) {
+      return;
+    }
+
+    element.removeChild(ellipsisEl)
   });
 }
 
@@ -247,7 +254,7 @@ function runTruncation(
     // the height is not a multtiple of the line height.
     if (node.nodeType == Node.ELEMENT_NODE &&
         node.getBoundingClientRect().top > expectedBox.bottom) {
-      runMutation(() => {
+      Promise.resolve().then(() => {
         node.setAttribute(ELEMENT_OVERFLOW_ATTRIBUTE, '');
       });
       continue;
@@ -255,8 +262,7 @@ function runTruncation(
 
     // Truncate the text node. If it got ellipsized, the we are done.
     if (node.nodeType == Node.TEXT_NODE) {
-      done = ellipsizeTextNode(
-          node, expectedBox, ellipsisBox, reservedBox, runMutation);
+      done = ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox);
       continue;
     }
 
@@ -302,12 +308,10 @@ function getRect(node, offset) {
  * @param {!ClientRect} expectedBox
  * @param {!DimensionsDef} ellipsisBox
  * @param {!DimensionsDef} reservedBox
- * @param {function(function())} runMutation
  * @return {boolean} True if the text node was ellipsized, false if all the
  *    it was empty or all the text was removed.
  */
-function ellipsizeTextNode(
-      node, expectedBox, ellipsisBox, reservedBox, runMutation) {
+function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox) {
   /**
    * @param {!ClientRect} rect The rect of the character to evaluate.
    */
@@ -382,7 +386,7 @@ function ellipsizeTextNode(
   // creating the ellipsis element.
   const newText = fittingText ? fittingText + '… ' : '';
 
-  runMutation(() => {
+  Promise.resolve().then(() => {
     node[ORGINAL_DATA_PROPERTY] = text;
     node.data = newText;
   });

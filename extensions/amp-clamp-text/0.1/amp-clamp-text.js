@@ -66,7 +66,6 @@ export class AmpClampText extends AMP.BaseElement {
 
     return clamp({
       element: devAssert(this.content_),
-      runMutation: cb => this.mutateElement(cb),
       overflowStyle,
       overflowElement: this.content_.querySelector('.amp-clamp-overflow'),
     });
