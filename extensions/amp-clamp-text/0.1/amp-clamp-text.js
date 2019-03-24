@@ -69,7 +69,7 @@ export class AmpClampText extends AMP.BaseElement {
       element: devAssert(this.content_),
       overflowStyle,
       overflowElement: this.content_.querySelector('.amp-clamp-overflow'),
-      estimate,
+      estimate: false,
     });
   }
 }

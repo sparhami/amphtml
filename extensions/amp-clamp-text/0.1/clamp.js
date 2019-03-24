@@ -18,6 +18,7 @@ import {BinarySearchPreference, binarySearch} from './binary-search';
 import {computedStyle} from '../../../src/style';
 import {devAssert} from '../../../src/log';
 import {trimEnd} from '../../../src/string';
+import {findIndex} from '../../../src/utils/array';
 
 /**
  * @enum {string}
@@ -81,9 +82,6 @@ function createEllipsisEl(doc, hasFollowingNode) {
   return span;
 }
 
-let start = 0;
-let end = 0;
-
 /**
  * Clamps the text within a given Element. This is *approximate* and could
  * result in too much or too little being ellipsized. This is approximate as
@@ -145,7 +143,8 @@ export function clamp({
   overflowStyle = OverflowStyle.INLINE,
   estimate = true,
 } = {}) {
-  start = start || performance.now();
+  let start =  performance.now();
+  let end;
   let ellipsisEl;
   let overflowing;
 
@@ -436,7 +435,7 @@ function ellipsizeTextNode(
    * @return {number} The amount of underflow, in pixels.
    */
   function underflowAtPositionAccurate(offset) {
-    node.textContent = text.slice(0, offset + 1) + '… ';
+    node.data = text.slice(0, offset + 1) + '… ';
     const underflow = 0 - getOverflow(element);
 
     // Never return zero, return a positive value so we keep looking to the
@@ -450,9 +449,9 @@ function ellipsizeTextNode(
   // We start looking at the start offset rather than the zeroth index.
   // Note that this is different than trimming the start, since trim removes
   // non-breaking spaces.
-  const startOffset = estimate ? Array.prototype.findIndex.call(text, (char) => {
+  const startOffset = findIndex(text, (char) => {
     return !isBreakingWhitespace(char);
-  }) : 0;
+  });
 
   // We do not want to replace empty text nodes (e.g. at the start of an
   // an element if the developer put a newline before the text) with an
