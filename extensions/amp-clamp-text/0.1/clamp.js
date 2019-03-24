@@ -82,6 +82,7 @@ function createEllipsisEl(doc, hasFollowingNode) {
 }
 
 let start = 0;
+let end = 0;
 
 /**
  * Clamps the text within a given Element. This is *approximate* and could
@@ -196,10 +197,9 @@ export function clamp({
       element.removeChild(ellipsisEl);
     }
 
-    const end = performance.now();
-    requestIdleCallback(() => {
-      console.log(end - start);
-    });
+    end = performance.now();
+  }).then(() => {
+    console.log(end - start);
   });
 }
 
@@ -445,19 +445,21 @@ function ellipsizeTextNode(
   }
 
   const text = node.data;
-  const trimmedText = text.trim();
+  // For Safari: We need to avoid looking at the starting/trailing whitespace
+  // characters that are collapsed, since they will return zero sized rects.
+  // We start looking at the start offset rather than the zeroth index.
+  // Note that this is different than trimming the start, since trim removes
+  // non-breaking spaces.
+  const startOffset = estimate ? Array.prototype.findIndex.call(text, (char) => {
+    return !isBreakingWhitespace(char);
+  }) : 0;
 
   // We do not want to replace empty text nodes (e.g. at the start of an
   // an element if the developer put a newline before the text) with an
   // ellipsis, so just bail out early.
-  if (!trimmedText) {
+  if (startOffset < 0) {
     return false;
   }
-
-  // For Safari: We need to avoid looking at the starting/trailing whitespace
-  // characters that are collapsed, since they will return zero sized rects.
-  // We start looking at the start offset rather than the zeroth index.
-  const startOffset = text.indexOf(trimmedText);
 
   // Use the underflow to find the boundary index of where truncation should
   // occur. As long as we have underflow, we will keep looking at a higher
@@ -471,7 +473,7 @@ function ellipsizeTextNode(
   const underflowFunction = estimate ?
       underflowAtPositionEstimate :
       underflowAtPositionAccurate;
-  const searchIndex = binarySearch(0, trimmedText.length - 1, index => {
+  const searchIndex = binarySearch(0, text.length - startOffset - 1, index => {
     // Convert to the index within the Node's text.
     let textIndex = index + startOffset;
 
