@@ -13,21 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-.i-amphtml-clamp-ellipsis {
-  display: inline-block;
-}
-
-.amp-clamp-overflow {
-  margin: 0 !important;
-  white-space: nowrap !important;
-}
-
-.i-amphtml-clamp-text-content:not([i-amphtml-clamp-overflow]) .amp-clamp-overflow {
-  display: none !important;
-}
-
-[i-amphtml-clamp-child-overflow] {
-  display: none !important;
-}
-
