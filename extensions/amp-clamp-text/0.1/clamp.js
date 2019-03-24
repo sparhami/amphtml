@@ -1,3 +1,4 @@
+import {BinarySearchPreference, binarySearch} from './binary-search';
 import {setStyle} from '../../../src/style';
 import {devAssert} from '../../../src/log';
 
@@ -206,41 +207,6 @@ function runTruncation(
 }
 
 /**
- * Does a binary search across a range of values until a condition is met. If
- * the condition is met, the index is returned. If the condition is never met,
- * the negative index, minus one is returned adjacent to where the condition
- * would be met. The condition should callback should return monotonically
- * increasing values across the range.
- * @param {number} start The start value to look at.
- * @param {number} end The end value to look at.
- * @param {function(number): number} condition A condition function, returning
- *    positive values if the top half of the range should be searched, negative
- *    values if the bottom half should be searched, and zero if the value was
- *    found.
- * @return {number} The first value in the range that was found. If no value
- *    was found, 
- */
-function binarySearch(start, end, condition) {
-  let low = start;
-  let high = end;
-
-  while(high >= low) {
-    const mid = low + Math.floor((high - low) / 2);
-    const res = condition(mid);
-
-    if (res == 0) {
-      return mid;
-    } else if (res > 0) {
-      high = mid - 1;
-    } else {
-      low = mid + 1;
-    }
-  }
-
-  return -(low + 1);
-}
-
-/**
  * Gets rect at the a given offset within the text.
  * @param {*} index 
  */
@@ -284,7 +250,9 @@ function trimRight(str) {
  * @param {!ClientRect} expectedBox 
  * @param {!Dimensions} ellipsisBox 
  * @param {!Dimensions} reservedBox 
- * @param {function(function())} runMutation 
+ * @param {function(function())} runMutation
+ * @return {boolean} True if the text node was ellipsized, false if all the
+ *    it was empty or all the text was removed.
  */
 function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutation) {
   function underflowWithReservedBox(rect) {
@@ -333,7 +301,8 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutat
 
   // Find the boundary index of where truncation should occur. The binary
   // search will always return a negative value since the overflow
-  // function never returns zero.
+  // function never returns zero. We use BinarySearchPreference.HIGH to find
+  // the first index overflows.
   // We could potentially use `caretRangeFromPoint`/`caretPositionFromPoint`,
   // if available, to skip the binary search. We may still need to fallback, for
   // example if something is overlaying the text. The binary search is
@@ -341,20 +310,23 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutat
   // additional code path.
   const searchIndex = binarySearch(0, trimmedText.length - 1, (index) => {
     return underflowAtPosition(index + startOffset)
-  });
-  const lastFittingIndex = -(searchIndex + 1) + startOffset;
+  }, BinarySearchPreference.HIGH);
+  const firstOverflowingIndex = -(searchIndex + 1) + startOffset;
 
   // Remove trailing whitespace since we do not want to have something like
   // "Hello world   …". We need to keep leading whitespace since we may be
   // adjacent to an inline element.
-  // Add a space to the ellipsis to give it space between whatever follows.
-  const fittingText = trimRight(text.slice(0, lastFittingIndex));
+  const fittingText = trimRight(text.slice(0, firstOverflowingIndex));
   // If no text fits, then do not add an ellipsis.
+  // Add a space to the ellipsis to give it space between whatever
+  // (if anything) follows. Note we reserved enough space for this when
+  // creating the ellipsis span.
   const newText = fittingText ? fittingText + '… ' : '';
 
   runMutation(() => {
     node[ORGINAL_DATA_PROPERTY] = text;
     node.data = newText;
   });
-  return true;
+  // We are done if we actually truncated.
+  return !!fittingText;
 }
