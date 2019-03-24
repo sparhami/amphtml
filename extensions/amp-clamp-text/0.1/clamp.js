@@ -112,14 +112,14 @@ function createEllipsisEl(doc, hasFollowingNode) {
  *   element: !Element,
  *   runMutation: function(function()),
  *   overflowElement: ?Element,
- *   overflowStyle: !OverflowStyle,
+ *   overflowStyle: (!OverflowStyle|undefined),
  * }} config
  */
 export function clamp({
   element,
   runMutation,
   overflowElement = null,
-  overflowStyle = OverflowStyle,
+  overflowStyle = OverflowStyle.INLINE,
 } = {}) {
   // Mutate, first phase: remove any effects of truncation so that we can see
   // if there is any overflow.
@@ -141,7 +141,7 @@ export function clamp({
     element.setAttribute(CONTAINER_OVERFLOW_ATTRIBUTE, '');
 
     const ellipsisEl = createEllipsisEl(
-        element.ownerDocument, !!overflowElement);
+        devAssert(element.ownerDocument), !!overflowElement);
     return element.appendChild(ellipsisEl);
   }).then(ellipsisEl => {
     if (!ellipsisEl) {
@@ -156,7 +156,7 @@ export function clamp({
         overflowElement,
         overflowStyle,
         ellipsisEl,
-        runMutation,
+        runMutation
     );
     runMutation(() => element.removeChild(ellipsisEl));
   });
@@ -200,7 +200,7 @@ function clearTruncation(node) {
  * @param {!OverflowStyle} overflowStyle How overflowElement is displayed.
  * @param {!Element} ellipsisEl An Element containing an ellipsis used for
  *    measuring the size.
- * @param {function()} runMutation
+ * @param {function(function())} runMutation
  */
 function runTruncation(
   element,

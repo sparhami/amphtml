@@ -4,3 +4,8 @@ amp-clamp-text {
   padding: 0 !important;
   border: none !important;
 }
+
+amp-clamp-text[overflow-style="right"] .amp-clamp-overflow {
+  float: right;
+  height: 100%;
+}
