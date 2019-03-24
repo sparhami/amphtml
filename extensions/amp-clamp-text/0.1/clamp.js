@@ -81,6 +81,8 @@ function createEllipsisEl(doc, hasFollowingNode) {
   return span;
 }
 
+let start = 0;
+
 /**
  * Clamps the text within a given Element. This is *approximate* and could
  * result in too much or too little being ellipsized. This is approximate as
@@ -133,13 +135,16 @@ function createEllipsisEl(doc, hasFollowingNode) {
  *   element: !Element,
  *   overflowElement: ?Element,
  *   overflowStyle: (!OverflowStyle|undefined),
+ *   estimate: boolean,
  * }} config
  */
 export function clamp({
   element,
   overflowElement = null,
   overflowStyle = OverflowStyle.INLINE,
+  estimate = true,
 } = {}) {
+  start = start || performance.now();
   let ellipsisEl;
   let overflowing;
 
@@ -152,7 +157,7 @@ export function clamp({
 
   return Promise.resolve().then(() => {
     // Measure, first phase: Check for overflow.
-    overflowing = isOverflowing(element);
+    overflowing = getOverflow(element) > 0;
   }).then(() => {
     if (!overflowing) {
       return;
@@ -162,9 +167,11 @@ export function clamp({
     // measure their size.
     element.setAttribute(CONTAINER_OVERFLOW_ATTRIBUTE, '');
 
-    ellipsisEl = createEllipsisEl(
-        devAssert(element.ownerDocument), !!overflowElement);
-    element.appendChild(ellipsisEl);
+    if (estimate) {
+      ellipsisEl = createEllipsisEl(
+          devAssert(element.ownerDocument), !!overflowElement);
+      element.appendChild(ellipsisEl);
+    }
   }).then(() => {
     if (!overflowing) {
       return;
@@ -177,24 +184,31 @@ export function clamp({
         element,
         overflowElement,
         overflowStyle,
-        ellipsisEl
+        ellipsisEl,
+        estimate
     );
   }).then(() => {
     if (!overflowing) {
       return;
     }
 
-    element.removeChild(ellipsisEl);
+    if (estimate) {
+      element.removeChild(ellipsisEl);
+    }
+
+    const end = performance.now();
+    requestIdleCallback(() => {
+      console.log(end - start);
+    });
   });
 }
 
 /**
  * @param {!Element} element
- * @return {boolean} True if the Element has vertical overflow, false
- *    otherwise.
+ * @return {number} The overflow in pixels, if any.
  */
-function isOverflowing(element) {
-  return element.scrollHeight > element.offsetHeight;
+function getOverflow(element) {
+  return element.scrollHeight - element.offsetHeight;
 }
 
 /**
@@ -223,17 +237,20 @@ function clearTruncation(node) {
  * @param {?Element} overflowElement An optional Element to show when
  *    overflowing.
  * @param {!OverflowStyle} overflowStyle How overflowElement is displayed.
- * @param {!Element} ellipsisEl An Element containing an ellipsis used for
- *    measuring the size.
+ * @param {?Element} ellipsisEl An Element containing an ellipsis used for
+ *    measuring the size whe estimating.
+ * @param {boolean} estimate Whether to estimate or accurately ellipize.
  */
 function runTruncation(
   element,
   overflowElement,
   overflowStyle,
   ellipsisEl,
+  estimate,
 ) {
   const expectedBox = element.getBoundingClientRect();
-  const ellipsisBox = ellipsisEl.getBoundingClientRect();
+  const ellipsisBox = ellipsisEl ?
+      ellipsisEl.getBoundingClientRect() : zeroSize;
   const reservedBox =
       overflowElement && overflowStyle == OverflowStyle.INLINE ?
         overflowElement.getBoundingClientRect() : zeroSize;
@@ -263,7 +280,8 @@ function runTruncation(
 
     // Truncate the text node. If it got ellipsized, the we are done.
     if (node.nodeType == Node.TEXT_NODE) {
-      done = ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox);
+      done = ellipsizeTextNode(
+          node, expectedBox, ellipsisBox, reservedBox, element, estimate);
       continue;
     }
 
@@ -342,10 +360,13 @@ function isBreakingChar(char, breakOnShyHyphen) {
  * @param {!ClientRect} expectedBox
  * @param {!DimensionsDef} ellipsisBox
  * @param {!DimensionsDef} reservedBox
+ * @param {!Element} element
+ * @param {boolean} estimate
  * @return {boolean} True if the text node was ellipsized, false if all the
  *    it was empty or all the text was removed.
  */
-function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox) {
+function ellipsizeTextNode(
+    node, expectedBox, ellipsisBox, reservedBox, element, estimate) {
   /**
    * @param {number} startOffset The start character offset to look at.
    * @param {number} endOffset The end character offset to look at.
@@ -372,7 +393,7 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox) {
    * @param {number} offset
    * @return {number} The amount of underflow, in pixels.
    */
-  function underflowAtPosition(offset) {
+  function underflowAtPositionEstimate(offset) {
     const rect = getRect(node, offset, offset + 1);
     const textWraps = expectedBox.right - ellipsisBox.width <= rect.right;
     // Note: if we are in an Element with a different font-size, this will not
@@ -407,6 +428,21 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox) {
     return underflow == 0 ? Number.MIN_VALUE : underflow;
   }
 
+  /**
+   * An accurate version of getting the underflow, by mutating the text and
+   * checking for underflow.
+   * @param {number} offset
+   * @return {number} The amount of underflow, in pixels.
+   */
+  function underflowAtPositionAccurate(offset) {
+    node.textContent = text.slice(0, offset + 1) + '… ';
+    const underflow = 0 - getOverflow(element);
+
+    // Never return zero, return a positive value so we keep looking to the
+    // right.
+    return underflow == 0 ? Number.MIN_VALUE : underflow;
+  }
+
   const text = node.data;
   const trimmedText = text.trim();
 
@@ -431,6 +467,9 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox) {
   // example if something is overlaying the text. The binary search is
   // extremely fast so there is likely very little value to adding an
   // additional code path.
+  const underflowFunction = estimate ?
+      underflowAtPositionEstimate :
+      underflowAtPositionAccurate;
   const searchIndex = binarySearch(0, trimmedText.length - 1, index => {
     // Convert to the index within the Node's text.
     let textIndex = index + startOffset;
@@ -443,7 +482,7 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox) {
       textIndex--;
     }
 
-    return underflowAtPosition(textIndex);
+    return underflowFunction(textIndex);
   }, BinarySearchPreference.HIGH);
   const firstOverflowingIndex = -(searchIndex + 1) + startOffset;
 
