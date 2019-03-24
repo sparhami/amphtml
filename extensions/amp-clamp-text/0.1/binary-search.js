@@ -36,8 +36,8 @@ export const BinarySearchPreference = {
  *    positive values if the top half of the range should be searched, negative
  *    values if the bottom half should be searched, and zero if the value was
  *    found.
- * @param {?BinarySearchPreference} preference A preference on whether to end on the high
- *    side, low side, or either when there is no match found.
+ * @param {?BinarySearchPreference} preference A preference on whether to end
+ *    on the high side, low side, or either when there is no match found.
  * @return {number} The first value in the range that was found. If no value
  *    was found,
  */
@@ -55,11 +55,11 @@ export function binarySearch(
 
     if (res == 0) {
       return mid;
-    } else if (res > 0) {
-      prefIndex = preference != BinarySearchPreference.LOW ? mid : prefIndex;
+    } else if (res < 0) {
+      prefIndex = preference == BinarySearchPreference.HIGH ? mid : prefIndex;
       high = mid - 1;
     } else {
-      prefIndex = preference != BinarySearchPreference.HIGH ? mid : prefIndex;
+      prefIndex = preference == BinarySearchPreference.LOW ? mid : prefIndex;
       low = mid + 1;
     }
   }
