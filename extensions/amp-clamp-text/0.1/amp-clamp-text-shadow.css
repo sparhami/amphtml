@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-@import './clamp.css';
+@import './clamp-shadow.css';
 
-amp-clamp-text {
+:host {
   padding: 0 !important;
   border: none !important;
 }
 
-amp-clamp-text[overflow-style="right"] .amp-clamp-overflow {
+:host([overflow-style="right"]) ::slotted(.amp-clamp-overflow) {
   float: right !important;
   height: 100% !important;
 }

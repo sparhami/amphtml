@@ -15,8 +15,10 @@
  */
 
 import {CSS} from '../../../build/amp-clamp-text-0.1.css';
+import {CSS as ShadowCSS} from '../../../build/amp-clamp-text-shadow-0.1.css';
 import {OverflowStyle, clamp} from './clamp.js';
 import {devAssert} from '../../../src/log';
+import {isLayoutSizeDefined} from '../../../src/layout';
 
 export class AmpClampText extends AMP.BaseElement {
 
@@ -30,6 +32,16 @@ export class AmpClampText extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
+    this.useShadow_ = 'attachShadow' in this.element;
+
+    if (this.useShadow_) {
+      this.buildShadow_();
+    } else {
+      this.build_();
+    }
+  }
+
+  build_() {
     this.content_ = this.element.ownerDocument.createElement('div');
     this.content_.className = 'i-amphtml-clamp-text-content';
 
@@ -38,7 +50,24 @@ export class AmpClampText extends AMP.BaseElement {
     });
 
     this.element.appendChild(this.content_);
-    this.applyFillContent(this.content_, /* replacedContent */ true);
+  }
+
+  buildShadow_() {
+    const sizer = this.element.querySelector('i-amphtml-sizer');
+    if (sizer) { 
+      sizer.setAttribute('slot', 'sizer');
+    }
+
+    const sr = this.element.attachShadow({mode: 'open'});
+    sr.innerHTML = `
+      <style>${ShadowCSS}</style>
+      <div class="i-amphtml-clamp-text-content">
+        <slot></slot>
+      </div>
+      <slot name="sizer"></slot>
+    `;
+
+    this.content_ = sr.querySelector('.i-amphtml-clamp-text-content');
   }
 
   /** @override */
@@ -52,8 +81,8 @@ export class AmpClampText extends AMP.BaseElement {
   }
 
   /** @override */
-  isLayoutSupported() {
-    return true;
+  isLayoutSupported(layout) {
+    return isLayoutSizeDefined(layout);
   }
 
   /**
@@ -63,13 +92,18 @@ export class AmpClampText extends AMP.BaseElement {
     const overflowStyleAttr = this.element.getAttribute('overflow-style');
     const overflowStyle = overflowStyleAttr == 'right' ?
       OverflowStyle.RIGHT : OverflowStyle.INLINE;
+    const overflowElement = this.element.querySelector('.amp-clamp-overflow');
     const estimate = this.element.getAttribute('accuracy') != 'high';
+    const contents = this.useShadow_ ?
+        this.content_.firstElementChild.assignedNodes() :
+        [this.content_];
 
     return clamp({
       element: devAssert(this.content_),
+      contents,
       overflowStyle,
-      overflowElement: this.content_.querySelector('.amp-clamp-overflow'),
-      estimate: false,
+      overflowElement,
+      estimate,
     });
   }
 }

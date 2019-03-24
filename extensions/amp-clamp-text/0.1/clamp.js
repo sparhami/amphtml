@@ -132,6 +132,7 @@ function createEllipsisEl(doc, hasFollowingNode) {
  * This should be called from a place where it is safe to perform mutations.
  * @param {{
  *   element: !Element,
+ *   contents: !Array<!Node>,
  *   overflowElement: ?Element,
  *   overflowStyle: (!OverflowStyle|undefined),
  *   estimate: boolean,
@@ -139,6 +140,7 @@ function createEllipsisEl(doc, hasFollowingNode) {
  */
 export function clamp({
   element,
+  contents,
   overflowElement = null,
   overflowStyle = OverflowStyle.INLINE,
   estimate = true,
@@ -152,7 +154,7 @@ export function clamp({
   // if there is any overflow.
   if (element.hasAttribute(CONTAINER_OVERFLOW_ATTRIBUTE)) {
     element.removeAttribute(CONTAINER_OVERFLOW_ATTRIBUTE);
-    clearTruncation(element);
+    contents.forEach(node => clearTruncation(node));
   }
 
   return Promise.resolve().then(() => {
@@ -182,6 +184,7 @@ export function clamp({
     // truncation.
     runTruncation(
         element,
+        contents,
         overflowElement,
         overflowStyle,
         ellipsisEl,
@@ -232,7 +235,8 @@ function clearTruncation(node) {
 /**
  * Runs text truncation for an Element, finding the last node that needs
  * truncation and truncating it.
- * @param {!Element} element The Element to do truncation for,
+ * @param {!Element} element The Element to do truncation for.
+ * @param {!Array<!Node>} contents The contents to do truncation for.
  * @param {?Element} overflowElement An optional Element to show when
  *    overflowing.
  * @param {!OverflowStyle} overflowStyle How overflowElement is displayed.
@@ -242,6 +246,7 @@ function clearTruncation(node) {
  */
 function runTruncation(
   element,
+  contents,
   overflowElement,
   overflowStyle,
   ellipsisEl,
@@ -253,7 +258,7 @@ function runTruncation(
   const reservedBox =
       overflowElement && overflowStyle == OverflowStyle.INLINE ?
         overflowElement.getBoundingClientRect() : zeroSize;
-  const queue = [element];
+  const queue = [].concat(contents);
   let done = false;
 
   // Go through all the child Nodes until we find the node to truncate.

@@ -278,7 +278,13 @@ exports.extensionBundles = [
     name: 'amp-clamp-text',
     version: '0.1',
     latestVersion: '0.1',
-    options: {hasCss: true},
+    options: {
+      hasCss: true,
+      cssBinaries: [
+        'amp-clamp-text',
+        'amp-clamp-text-shadow',
+      ]
+    },
     type: TYPES.MISC,
   },
   {
