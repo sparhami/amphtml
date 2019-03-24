@@ -1,21 +1,30 @@
-import {toArray} from "../../../src/types";
-import {htmlFor} from '../../../src/static-template';
-import {devAssert} from '../../../src/log';
+import {setStyle} from '../../../src/style';
 
 /**
  * @enum {string}
  */
-const OverflowStyle = {
+export const OverflowStyle = {
   INLINE: 'inline',
   DEFAULT: 'default',
 };
 
+/**
+ * @typedef {{
+ *  width: number,
+ *  height: number,
+ * }}
+ */
+let Dimensions;
 
+/**
+ * A zero-size dimension.
+ */
 const zeroSize = {
   width: 0,
   height: 0,
 };
 
+const NON_BREAKING_SPACE = '\xa0';
 const CONTAINER_OVERFLOW_ATTRIBUTE = 'i-amphtml-clamp-overflow';
 const ELEMENT_OVERFLOW_ATTRIBUTE = 'i-amphtml-clamp-child-overflow';
 const ORGINAL_DATA_PROPERTY = '__AMP_CLAMP_TEXT_DATA';
@@ -25,19 +34,23 @@ const ORGINAL_DATA_PROPERTY = '__AMP_CLAMP_TEXT_DATA';
  * for an ellipsis. Assumes that the font size used for the ellipsis here is
  * the same as the ellipsis we add.
  * 
- * - Uses `position: absolute` so that this does not affect layout.
  * - Uses `display: inline-block`, which allows us to measure the full line
  *   height and not just the text height. This is needed by the truncation
  *   code when dealing with overflow elements that are `inline-block`.
- * - Uses a non-breaking space so we can also measure the width of the space
- *   since we always add one (which may collapse with adjacent ones) after
- *   the ellipsis.
+ * - Uses a non-breaking space when we have a following Node. A regular space
+ *   will not allow us to measure the size correctly. When there is no
+ *   following Node, we do not use a non-breaking space, since that will cause
+ *   us to reserve too much space.
+ * 
+ * @param {!Document} doc
+ * @param {boolean} hasFollowingNode
  */
-function createEllipsisSpan(doc) {
-  const html = htmlFor(doc);
-  return html`<span style="position: absolute; display: inline-block;">
-    …&nbsp;
-  </span>`;
+function createEllipsisSpan(doc, hasFollowingNode) {
+  const span = doc.createElement('span');
+  const text = '…' + (hasFollowingNode ? NON_BREAKING_SPACE : '');
+  setStyle(span, 'display', 'inline-block');
+  span.appendChild(doc.createTextNode(text));
+  return span;
 }
 
 export function clamp({
@@ -63,9 +76,8 @@ export function clamp({
     // Mutate, second phase
     element.setAttribute(CONTAINER_OVERFLOW_ATTRIBUTE, '');
 
-    const ellipsisSpan = createEllipsisSpan(element.ownerDocument);
-    element.appendChild(ellipsisSpan);
-    return ellipsisSpan;
+    const ellipsisSpan = createEllipsisSpan(element.ownerDocument, true);
+    return  element.appendChild(ellipsisSpan);
   }).then((ellipsisSpan) => {
     if (!ellipsisSpan) {
       return;
