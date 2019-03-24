@@ -63,11 +63,13 @@ export class AmpClampText extends AMP.BaseElement {
     const overflowStyleAttr = this.element.getAttribute('overflow-style');
     const overflowStyle = overflowStyleAttr == 'right' ?
       OverflowStyle.RIGHT : OverflowStyle.INLINE;
+    const estimate = this.element.getAttribute('accuracy') != 'high';
 
     return clamp({
       element: devAssert(this.content_),
       overflowStyle,
       overflowElement: this.content_.querySelector('.amp-clamp-overflow'),
+      estimate,
     });
   }
 }

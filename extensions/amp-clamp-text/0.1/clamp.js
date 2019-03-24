@@ -192,7 +192,7 @@ export function clamp({
       return;
     }
 
-    if (estimate) {
+    if (ellipsisEl) {
       element.removeChild(ellipsisEl);
     }
 
@@ -293,6 +293,8 @@ function runTruncation(
   }
 }
 
+const range = document.createRange();
+
 /**
  * Gets rect at the for given offsets within a Text Node.
  * @param {!Text} node A Text Node.
@@ -301,7 +303,6 @@ function runTruncation(
  * @param {number} endOffset The offset of the end of the range of characters.
  */
 function getRect(node, startOffset, endOffset) {
-  const range = document.createRange();
   let rect;
 
   // For Safari: leading whitespace on at the start of a line will return a
