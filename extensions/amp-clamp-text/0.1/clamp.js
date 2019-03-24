@@ -1,6 +1,6 @@
 import {BinarySearchPreference, binarySearch} from './binary-search';
-import {setStyle} from '../../../src/style';
 import {devAssert} from '../../../src/log';
+import {setStyle} from '../../../src/style';
 import {trimEnd} from '../../../src/string';
 
 /**
@@ -8,7 +8,7 @@ import {trimEnd} from '../../../src/string';
  */
 export const OverflowStyle = {
   INLINE: 'inline',
-  DEFAULT: 'default',
+  RIGHT: 'right',
 };
 
 /**
@@ -17,7 +17,7 @@ export const OverflowStyle = {
  *  height: number,
  * }}
  */
-let Dimensions;
+let DimensionsDef;
 
 /**
  * A zero-size dimension.
@@ -38,11 +38,11 @@ const ELEMENT_OVERFLOW_ATTRIBUTE = 'i-amphtml-clamp-child-overflow';
 /** Used to save the original Text Node's data. */
 const ORGINAL_DATA_PROPERTY = '__AMP_CLAMP_TEXT_DATA';
 
-/** 
+/**
  * Creates a span with an ellipsis, used to measure how much space we will need
  * for an ellipsis. Assumes that the font size used for the ellipsis here is
  * the same as the ellipsis we add.
- * 
+ *
  * - Uses `display: inline-block`, which allows us to measure the full line
  *   height and not just the text height. This is needed by the truncation
  *   code when dealing with overflow elements that are `inline-block`.
@@ -50,29 +50,70 @@ const ORGINAL_DATA_PROPERTY = '__AMP_CLAMP_TEXT_DATA';
  *   will not allow us to measure the size correctly. When there is no
  *   following Node, we do not use a non-breaking space, since that will cause
  *   us to reserve too much space.
- * 
+ *
  * @param {!Document} doc
  * @param {boolean} hasFollowingNode
  */
-function createEllipsisSpan(doc, hasFollowingNode) {
+function createEllipsisEl(doc, hasFollowingNode) {
   const span = doc.createElement('span');
   const text = '…' + (hasFollowingNode ? NON_BREAKING_SPACE : '');
-  setStyle(span, 'display', 'inline-block');
+  span.className = 'i-amphtml-clamp-ellipsis';
   span.appendChild(doc.createTextNode(text));
   return span;
 }
 
 /**
- * Clamps the text within a given Element.
- * 
- * This code needs to in a single pass to avoid a partial state being shown.
+ * Clamps the text within a given Element. This is *approximate* and could
+ * result in too much or too little being ellipsized. This is approximate as
+ * it avoids forcing layout when determining where to put the ellipsis, as
+ * it is quite expensive. Known limitations:
+ *
+ * - The ellipsis size is estimated by appending it to the container. If the
+ *   ellipsis occurs with an Element that a different font rendering (i.e.
+ *   font-size, font-weight, etc.), we may end up truncating too much or too
+ *   little.
+ *     * We could add another phase after we estimate where to truncate, which
+ *       would add a couple of additional layout passes if this is worth it.
+ * - The the element has a padding . This could proably be
+ *   handled with a few changes.
+ * - OverflowStyle.RIGHT only really supports floating to the right with 100%
+ *   height.
+ * - There is no OverflowStyle.LEFT, but support could be added.
+ * - The overflow element is not allowed to wrap lines.
+ *
+ * This function does not update the truncation when the text content, overflow
+ * element changes, on resizer or any other situation. The caller is
+ * responsible for calling the function again in such situations.
+ *
+ * To make mostly non-destructive changes for DOM diffing libraries, this
+ * clears text from Text nodes rather than removing them. It does not clone
+ * contents in any way so that event listeners and any expando properties are
+ * maintained.
+ *
+ * Unlike CSS text clamping, this actually removes text from the DOM. Text
+ * nodes are cleared and not removed so that almost all DOM diffing libraries
+ * continue to work. One implication of actually removing text is that it is
+ * unavailable to screen readers. This is unfortunate as users would need to
+ * use some sort of developer provided functionality to expand the truncated
+ * text, then have the content re-read.
+ *
+ * This function adds the ellipsis and space to the last Text node, to avoid
+ * confusing libraries that may be managing the DOM. The space should probably
+ * be manually added before the overflow element instead, so that it is not a
+ * part of an `<a>` tag. TODO(sparhami) consider just adding a Text node for
+ * the ellipsis before the overflow Element.
+ *
+ * This code needs to in a single pass to avoid a partial state being shown. It
+ * groups reads/writes into phases so that it does not cause forced layouts
+ * with other calls to clamp. TODO(sparhami) Does this make sense to move into
+ * runtime?
  * This should be called from a place where it is safe to perform mutations.
  * @param {{
  *   element: !Element,
  *   runMutation: function(function()),
  *   overflowElement: ?Element,
  *   overflowStyle: !OverflowStyle,
- * }}
+ * }} config
  */
 export function clamp({
   element,
@@ -90,7 +131,7 @@ export function clamp({
   return Promise.resolve().then(() => {
     // Measure, first phase: Check for overflow.
     return isOverflowing(element);
-  }).then((overflowing) => {
+  }).then(overflowing => {
     if (!overflowing) {
       return;
     }
@@ -99,10 +140,11 @@ export function clamp({
     // measure their size.
     element.setAttribute(CONTAINER_OVERFLOW_ATTRIBUTE, '');
 
-    const ellipsisSpan = createEllipsisSpan(element.ownerDocument, !!overflowElement);
-    return  element.appendChild(ellipsisSpan);
-  }).then((ellipsisSpan) => {
-    if (!ellipsisSpan) {
+    const ellipsisEl = createEllipsisEl(
+        element.ownerDocument, !!overflowElement);
+    return element.appendChild(ellipsisEl);
+  }).then(ellipsisEl => {
+    if (!ellipsisEl) {
       return;
     }
 
@@ -110,18 +152,18 @@ export function clamp({
     // will also run a third phase mutate with any changes necessary for
     // truncation.
     runTruncation(
-      element,
-      overflowElement,
-      overflowStyle,
-      ellipsisSpan,
-      runMutation,
+        element,
+        overflowElement,
+        overflowStyle,
+        ellipsisEl,
+        runMutation,
     );
-    runMutation(() => element.removeChild(ellipsisSpan));
+    runMutation(() => element.removeChild(ellipsisEl));
   });
 }
 
 /**
- * @param {!Element} element 
+ * @param {!Element} element
  * @return {boolean} True if the Element has vertical overflow, false
  *    otherwise.
  */
@@ -140,7 +182,7 @@ function clearTruncation(node) {
   }
 
   if (node.nodeType == Node.ELEMENT_NODE) {
-    node.removeAttribute(CONTAINER_OVERFLOW_ATTRIBUTE);
+    node.removeAttribute(ELEMENT_OVERFLOW_ATTRIBUTE);
   }
 
   for (let child = node.firstChild; child; child = child.nextSibling) {
@@ -150,25 +192,28 @@ function clearTruncation(node) {
 
 
 /**
- * 
- * @param {!Element} element 
- * @param {?Element} overflowElement 
- * @param {!OverflowStyle} overflowStyle 
- * @param {!Element} ellipsisSpan 
- * @param {!function()} runMutation 
+ * Runs text truncation for an Element, finding the last node that needs
+ * truncation and truncating it.
+ * @param {!Element} element The Element to do truncation for,
+ * @param {?Element} overflowElement An optional Element to show when
+ *    overflowing.
+ * @param {!OverflowStyle} overflowStyle How overflowElement is displayed.
+ * @param {!Element} ellipsisEl An Element containing an ellipsis used for
+ *    measuring the size.
+ * @param {function()} runMutation
  */
 function runTruncation(
   element,
   overflowElement,
   overflowStyle,
-  ellipsisSpan,
+  ellipsisEl,
   runMutation
 ) {
   const expectedBox = element.getBoundingClientRect();
-  const ellipsisBox = ellipsisSpan.getBoundingClientRect();
+  const ellipsisBox = ellipsisEl.getBoundingClientRect();
   const reservedBox =
       overflowElement && overflowStyle == OverflowStyle.INLINE ?
-      overflowElement.getBoundingClientRect() : zeroSize;
+        overflowElement.getBoundingClientRect() : zeroSize;
   const queue = [element];
   let done = false;
 
@@ -195,21 +240,23 @@ function runTruncation(
 
     // Truncate the text node. If it got ellipsized, the we are done.
     if (node.nodeType == Node.TEXT_NODE) {
-      done = ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutation);
+      done = ellipsizeTextNode(
+          node, expectedBox, ellipsisBox, reservedBox, runMutation);
       continue;
     }
 
     // By pushing the children to the queue, we traverse in reverse order of
     // children, since we want to truncate later nodes first.
     for (let child = node.firstChild; child; child = child.nextSibling) {
-      queue.push(child);      
+      queue.push(child);
     }
   }
 }
 
 /**
- * Gets rect at the a given offset within the text.
- * @param {*} index 
+ * Gets rect at the a given offset within a Text Node.
+ * @param {!Text} node A Text Node.
+ * @param {number} offset The offset of the character to get the rect for.
  */
 function getRect(node, offset) {
   const range = document.createRange();
@@ -224,7 +271,7 @@ function getRect(node, offset) {
     range.setEnd(node, offset + 1);
     rect = range.getBoundingClientRect();
     offset -= 1;
-  } while(!rect.height && offset >= 0);
+  } while (!rect.height && offset >= 0);
 
   // Since we strip leading/trailing whitespace, there should always be a
   // character with some size prior to leading whitespace on a line.
@@ -234,19 +281,26 @@ function getRect(node, offset) {
 }
 
 /**
- * @param {!Text} node 
- * @param {!ClientRect} expectedBox 
- * @param {!Dimensions} ellipsisBox 
- * @param {!Dimensions} reservedBox 
+ * Ellipsizes a text node or clears the contents if none of the text fits.
+ *
+ * @param {!Text} node
+ * @param {!ClientRect} expectedBox
+ * @param {!DimensionsDef} ellipsisBox
+ * @param {!DimensionsDef} reservedBox
  * @param {function(function())} runMutation
  * @return {boolean} True if the text node was ellipsized, false if all the
  *    it was empty or all the text was removed.
  */
-function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutation) {
+function ellipsizeTextNode(
+      node, expectedBox, ellipsisBox, reservedBox, runMutation) {
+  /**
+   * @param {!ClientRect} rect The rect of the character to evaluate.
+   */
   function underflowWithReservedBox(rect) {
     // The target right coordinate such that the reserved box and ellipsis box
     // both fit.
-    const targetRight = expectedBox.right - reservedBox.width - ellipsisBox.width;
+    const targetRight = expectedBox.right - reservedBox.width -
+        ellipsisBox.width;
     const wraps = targetRight <= rect.right;
     const textLineHeightDifference = (ellipsisBox.height - rect.height);
     const requestedHeight = reservedBox.height - textLineHeightDifference;
@@ -264,6 +318,7 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutat
    * that we keep searching right. This is the same as using a binary search
    * that returns the rightmost match.
    * @param {number} offset
+   * @return {number} The amount of underflow, in pixels.
    */
   function underflowAtPosition(offset) {
     const rect = getRect(node, offset);
@@ -297,8 +352,8 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutat
   // example if something is overlaying the text. The binary search is
   // extremely fast so there is likely very little value to adding an
   // additional code path.
-  const searchIndex = binarySearch(0, trimmedText.length - 1, (index) => {
-    return underflowAtPosition(index + startOffset)
+  const searchIndex = binarySearch(0, trimmedText.length - 1, index => {
+    return underflowAtPosition(index + startOffset);
   }, BinarySearchPreference.HIGH);
   const firstOverflowingIndex = -(searchIndex + 1) + startOffset;
 
@@ -309,7 +364,7 @@ function ellipsizeTextNode(node, expectedBox, ellipsisBox, reservedBox, runMutat
   // If no text fits, then do not add an ellipsis.
   // Add a space to the ellipsis to give it space between whatever
   // (if anything) follows. Note we reserved enough space for this when
-  // creating the ellipsis span.
+  // creating the ellipsis element.
   const newText = fittingText ? fittingText + '… ' : '';
 
   runMutation(() => {

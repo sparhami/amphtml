@@ -15,7 +15,8 @@
  */
 
 import {CSS} from '../../../build/amp-clamp-text-0.1.css';
-import {clamp} from './clamp.js';
+import {OverflowStyle, clamp} from './clamp.js';
+import {devAssert} from '../../../src/log';
 
 export class AmpClampText extends AMP.BaseElement {
 
@@ -23,6 +24,7 @@ export class AmpClampText extends AMP.BaseElement {
   constructor(element) {
     super(element);
 
+    /** @private {?Element} */
     this.content_ = null;
   }
 
@@ -38,10 +40,10 @@ export class AmpClampText extends AMP.BaseElement {
     this.element.appendChild(this.content_);
     this.applyFillContent(this.content_, /* replacedContent */ true);
   }
-  
+
   /** @override */
   layoutCallback() {
-    return this.clamp();
+    return this.clamp_();
   }
 
   /** @override */
@@ -54,13 +56,17 @@ export class AmpClampText extends AMP.BaseElement {
     return true;
   }
 
-  clamp() {
+  /**
+   * @private
+   */
+  clamp_() {
     const overflowStyleAttr = this.element.getAttribute('overflow-style');
-    const overflowStyle = overflowStyleAttr == 'default' ? 'default' : 'inline';
+    const overflowStyle = overflowStyleAttr == 'right' ?
+      OverflowStyle.RIGHT : OverflowStyle.INLINE;
 
     return clamp({
-      element: this.content_,
-      runMutation: (cb) => this.mutateElement(cb),
+      element: devAssert(this.content_),
+      runMutation: cb => this.mutateElement(cb),
       overflowStyle,
       overflowElement: this.content_.querySelector('.amp-clamp-overflow'),
     });

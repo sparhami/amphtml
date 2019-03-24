@@ -19,38 +19,30 @@ export const BinarySearchPreference = {
  * @param {function(number): number} condition A condition function, returning
  *    positive values if the top half of the range should be searched, negative
  *    values if the bottom half should be searched, and zero if the value was
- *    found. This must return montonically decreasing values accross the range.
+ *    found.
  * @param {?BinarySearchPreference} preference A preference on whether to end on the high
  *    side, low side, or either when there is no match found.
  * @return {number} The first value in the range that was found. If no value
- *    was found, 
+ *    was found,
  */
 export function binarySearch(
-    start, end, condition, preference = BinarySearchPreference.NONE) {
+  start, end, condition, preference = BinarySearchPreference.NONE) {
   devAssert(start <= end);
 
   let low = start;
   let high = end;
-  let floor = Number.NEGATIVE_INFINITY;
-  let ceiling = Number.POSITIVE_INFINITY;
   let prefIndex = NaN;
 
-  while(high >= low) {
+  while (high >= low) {
     const mid = low + Math.floor((high - low) / 2);
     const res = condition(mid);
-
-    // Enforce that the values are monotonically decreasing.
-    devAssert(res >= floor);
-    devAssert(res <= ceiling);
 
     if (res == 0) {
       return mid;
     } else if (res > 0) {
-      ceiling = res;
       prefIndex = preference != BinarySearchPreference.LOW ? mid : prefIndex;
       high = mid - 1;
     } else {
-      floor = res;
       prefIndex = preference != BinarySearchPreference.HIGH ? mid : prefIndex;
       low = mid + 1;
     }

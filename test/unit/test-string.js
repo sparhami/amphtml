@@ -153,9 +153,9 @@ describe('trimEnd', () => {
 
   it('should keep leading spaces', () => {
     expect(trimEnd(' abc')).to.equal(' abc');
-  })
-  
+  });
+
   it('should keep leading whitespace characters', () => {
     expect(trimEnd('\n\tabc')).to.equal('\n\tabc');
-  });;
+  });
 });
