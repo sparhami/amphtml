@@ -383,7 +383,7 @@ function ellipsizeTextNode(
     const breakOnShyHyphen = style.hyphens != 'none';
 
     // Go backwards until we find a point where the word would break.
-    while (!isBreakingChar(text[startOffset], breakOnShyHyphen)) {
+    while (startOffset && !isBreakingChar(text[startOffset], breakOnShyHyphen)) {
       startOffset--;
     }
 
