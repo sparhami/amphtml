@@ -16,7 +16,7 @@
 
 import {CSS} from '../../../build/amp-clamp-text-0.1.css';
 import {CSS as ShadowCSS} from '../../../build/amp-clamp-text-shadow-0.1.css';
-import {OverflowStyle, clampText} from './clamp-text';
+import {clampText} from './clamp-text';
 import {devAssert} from '../../../src/log';
 import {isLayoutSizeDefined} from '../../../src/layout';
 
@@ -89,21 +89,15 @@ export class AmpClampText extends AMP.BaseElement {
    * @private
    */
   clamp_() {
-    const overflowStyleAttr = this.element.getAttribute('overflow-style');
-    const overflowStyle = overflowStyleAttr == 'right' ?
-      OverflowStyle.RIGHT : OverflowStyle.INLINE;
-    const overflowElement = this.element.querySelector('.amp-clamp-overflow');
-    const estimate = this.element.getAttribute('accuracy') != 'high';
     const contents = this.useShadow_ ?
         this.content_.firstElementChild.assignedNodes() :
         [this.content_];
+    const overflowElement = this.element.querySelector('.amp-clamp-overflow');
 
     return clampText({
       element: devAssert(this.content_),
       contents,
-      overflowStyle,
       overflowElement,
-      estimate,
     });
   }
 }

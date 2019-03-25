@@ -15,19 +15,8 @@
  */
 
 import {BinarySearchPreference, binarySearch, BinarySearchStop} from './binary-search';
-import {clamp} from '../../../src/utils/math';
-import {computedStyle} from '../../../src/style';
-import {devAssert} from '../../../src/log';
 import {trimEnd} from '../../../src/string';
 import {findIndex} from '../../../src/utils/array';
-
-/**
- * @enum {string}
- */
-export const OverflowStyle = {
-  INLINE: 'inline',
-  RIGHT: 'right',
-};
 
 /**
  * @typedef {{
@@ -37,18 +26,7 @@ export const OverflowStyle = {
  */
 let DimensionsDef;
 
-/**
- * A zero-size dimension.
- */
-const zeroSize = {
-  width: 0,
-  height: 0,
-};
-
 const NON_BREAKING_SPACE = '\u00a0';
-const SHY_HYPHEN = '\u00ad';
-const HYPHEN_MINUS = '\u002d';
-const HYPHEN = '\u2010';
 
 /** The class to add to the container when it has overflow. */
 const CONTAINER_OVERFLOW_ATTRIBUTE = 'i-amphtml-clamp-overflow';
@@ -60,53 +38,7 @@ const ELEMENT_OVERFLOW_ATTRIBUTE = 'i-amphtml-clamp-child-overflow';
 const ORGINAL_DATA_PROPERTY = '__AMP_CLAMP_TEXT_DATA';
 
 /**
- * Creates a span with an ellipsis, used to measure how much space we will need
- * for an ellipsis. Assumes that the font size used for the ellipsis here is
- * the same as the ellipsis we add.
- *
- * - Uses `display: inline-block`, which allows us to measure the full line
- *   height and not just the text height. This is needed by the truncation
- *   code when dealing with overflow elements that are `inline-block`.
- * - Uses a non-breaking space when we have a following Node. A regular space
- *   will not allow us to measure the size correctly. When there is no
- *   following Node, we do not use a non-breaking space, since that will cause
- *   us to reserve too much space.
- *
- * @param {!Document} doc
- * @param {boolean} hasFollowingNode
- */
-function createEllipsisEl(doc, hasFollowingNode) {
-  const span = doc.createElement('span');
-  const text = '…' + (hasFollowingNode ? NON_BREAKING_SPACE : '');
-  span.className = 'i-amphtml-clamp-ellipsis';
-  span.appendChild(doc.createTextNode(text));
-  return span;
-}
-
-/**
- * Clamps the text within a given Element. This is *approximate* and could
- * result in too much or too little being ellipsized. This is approximate as
- * it avoids forcing layout when determining where to put the ellipsis, as
- * it is quite expensive. Known limitations:
- *
- * - The ellipsis size is estimated by appending it to the container. If the
- *   ellipsis occurs with an Element that a different font rendering (i.e.
- *   font-size, font-weight, etc.), we may end up truncating too much or too
- *   little.
- *     * We could add another phase after we estimate where to truncate, which
- *       would add a couple of additional layout passes if this is worth it.
- * - The the element has a padding . This could proably be
- *   handled with a few changes.
- * - OverflowStyle.RIGHT only really supports floating to the right with 100%
- *   height.
- * - There is no OverflowStyle.LEFT, but support could be added.
- * - The overflow element is not allowed to wrap lines.
- * - One extra line of text could be truncated if an ellipsis would cause a
- *   word to wrap.
- *
- * This function does not update the truncation when the text content, overflow
- * element changes, on resizer or any other situation. The caller is
- * responsible for calling the function again in such situations.
+ * Clamps the text within a given Element.
  *
  * To make mostly non-destructive changes for DOM diffing libraries, this
  * clears text from Text nodes rather than removing them. It does not clone
@@ -130,27 +62,19 @@ function createEllipsisEl(doc, hasFollowingNode) {
  * groups reads/writes into phases so that it does not cause forced layouts
  * with other calls to clamp. TODO(sparhami) Does this make sense to move into
  * runtime?
+ * 
  * This should be called from a place where it is safe to perform mutations.
  * @param {{
  *   element: !Element,
  *   contents: !Array<!Node>,
  *   overflowElement: ?Element,
- *   overflowStyle: (!OverflowStyle|undefined),
- *   estimate: boolean,
  * }} config
  */
 export function clampText({
   element,
   contents,
   overflowElement = null,
-  overflowStyle = OverflowStyle.INLINE,
-  estimate = true,
 } = {}) {
-  let start =  performance.now();
-  let end;
-  let ellipsisEl;
-  let overflowing;
-
   // Mutate, first phase: remove any effects of truncation so that we can see
   // if there is any overflow.
   if (element.hasAttribute(CONTAINER_OVERFLOW_ATTRIBUTE)) {
@@ -158,52 +82,13 @@ export function clampText({
     contents.forEach(node => clearTruncation(node));
   }
 
-  return Promise.resolve().then(() => {
-    // Measure, first phase: Check for overflow.
-    overflowing = getOverflow(element) > 0;
-  }).then(() => {
-    if (!overflowing) {
-      return;
-    }
+  const overflowing = getOverflow(element) > 0;
+  if (!overflowing) {
+    return;
+  }
 
-    // Mutate, second phase: Layout the elements for truncation so we can
-    // measure their size.
-    element.setAttribute(CONTAINER_OVERFLOW_ATTRIBUTE, '');
-
-    if (estimate) {
-      ellipsisEl = createEllipsisEl(
-          devAssert(element.ownerDocument), !!overflowElement);
-      element.appendChild(ellipsisEl);
-    }
-  }).then(() => {
-    if (!overflowing) {
-      return;
-    }
-
-    // Measure, second phase; Check the size of the truncation elements, this
-    // will also run a third phase mutate with any changes necessary for
-    // truncation.
-    runTruncation(
-        element,
-        contents,
-        overflowElement,
-        overflowStyle,
-        ellipsisEl,
-        estimate
-    );
-  }).then(() => {
-    if (!overflowing) {
-      return;
-    }
-
-    if (ellipsisEl) {
-      element.removeChild(ellipsisEl);
-    }
-
-    end = performance.now();
-  }).then(() => {
-    console.log(end - start);
-  });
+  element.setAttribute(CONTAINER_OVERFLOW_ATTRIBUTE, '');
+  runTruncation(element, contents, overflowElement);
 }
 
 /**
@@ -240,25 +125,13 @@ function clearTruncation(node) {
  * @param {!Array<!Node>} contents The contents to do truncation for.
  * @param {?Element} overflowElement An optional Element to show when
  *    overflowing.
- * @param {!OverflowStyle} overflowStyle How overflowElement is displayed.
- * @param {?Element} ellipsisEl An Element containing an ellipsis used for
- *    measuring the size whe estimating.
- * @param {boolean} estimate Whether to estimate or accurately ellipize.
  */
 function runTruncation(
   element,
   contents,
   overflowElement,
-  overflowStyle,
-  ellipsisEl,
-  estimate,
 ) {
   const expectedBox = element.getBoundingClientRect();
-  const ellipsisBox = ellipsisEl ?
-      ellipsisEl.getBoundingClientRect() : zeroSize;
-  const reservedBox =
-      overflowElement && overflowStyle == OverflowStyle.INLINE ?
-        overflowElement.getBoundingClientRect() : zeroSize;
   const queue = [].concat(contents);
   let done = false;
 
@@ -277,16 +150,13 @@ function runTruncation(
     // the height is not a multtiple of the line height.
     if (node.nodeType == Node.ELEMENT_NODE &&
         node.getBoundingClientRect().top > expectedBox.bottom) {
-      Promise.resolve().then(() => {
-        node.setAttribute(ELEMENT_OVERFLOW_ATTRIBUTE, '');
-      });
+      node.setAttribute(ELEMENT_OVERFLOW_ATTRIBUTE, '');
       continue;
     }
 
     // Truncate the text node. If it got ellipsized, the we are done.
     if (node.nodeType == Node.TEXT_NODE) {
-      done = ellipsizeTextNode(
-          node, expectedBox, ellipsisBox, reservedBox, element, estimate);
+      done = ellipsizeTextNode(node, element);
       continue;
     }
 
@@ -296,37 +166,6 @@ function runTruncation(
       queue.push(child);
     }
   }
-}
-
-const range = document.createRange();
-
-/**
- * Gets rect at the for given offsets within a Text Node.
- * @param {!Text} node A Text Node.
- * @param {number} startOffset The offset of the start of the range of
- *    characters.
- * @param {number} endOffset The offset of the end of the range of characters.
- */
-function getRect(node, startOffset, endOffset) {
-  let rect;
-
-  // For Safari: leading whitespace on at the start of a line will return a
-  // zero-size rect. In that case, go backwards to find a character that has
-  // a rect. Since we remove whitespace before adding the ellipsis, these
-  // are equivalent in terms of choosing a point to ellipsize. Other browsers
-  // handle this correctly.
-  do {
-    range.setStart(node, startOffset);
-    range.setEnd(node, endOffset);
-    rect = range.getBoundingClientRect();
-    startOffset -= 1;
-  } while (!rect.height && startOffset >= 0);
-
-  // Since we strip leading/trailing whitespace, there should always be a
-  // character with some size prior to leading whitespace on a line.
-  devAssert(rect.height > 0);
-
-  return rect;
 }
 
 /**
@@ -347,104 +186,28 @@ function isBreakingWhitespace(char) {
 }
 
 /**
- * Checks if a characrer would cause a line breaking.
- * @param {string} char A character to check.
- * @param {boolean} breakOnShyHyphen Whether or not to break on a shy hyphen.
- * @return {boolean} True if the character is a breaking character, false
- *    otherwise.
- */
-function isBreakingChar(char, breakOnShyHyphen) {
-  return char == HYPHEN_MINUS ||
-      char == HYPHEN ||
-      (char == SHY_HYPHEN && breakOnShyHyphen) ||
-      isBreakingWhitespace(char);
-}
-
-/**
  * Ellipsizes a text node or clears the contents if none of the text fits.
  * @param {!Text} node
- * @param {!ClientRect} expectedBox
- * @param {!DimensionsDef} ellipsisBox
- * @param {!DimensionsDef} reservedBox
  * @param {!Element} element
- * @param {boolean} estimate
  * @return {boolean} True if the text node was ellipsized, false if all the
  *    it was empty or all the text was removed.
  */
-function ellipsizeTextNode(
-    node, expectedBox, ellipsisBox, reservedBox, element, estimate) {
-  /**
-   * @param {number} startOffset The start character offset to look at.
-   * @param {number} endOffset The end character offset to look at.
-   */
-  function getWrappedWidth(startOffset, endOffset) {
-    const win = node.ownerDocument.defaultView;
-    const style = computedStyle(win, node.parentElement);
-    const breakOnShyHyphen = style.hyphens != 'none';
-
-    // Go backwards until we find a point where the word would break.
-    while (startOffset && !isBreakingChar(text[startOffset], breakOnShyHyphen)) {
-      startOffset--;
-    }
-
-    return getRect(node, startOffset, endOffset).width;
-  }
-
-  /**
-   * Gets the underflow for a given offset within the node.
-   * @param {number} offset
-   * @return {number} The amount of underflow, in pixels.
-   */
-  function underflowAtPositionEstimate(offset) {
-    const rect = getRect(node, offset, offset + 1);
-    const textWraps = expectedBox.right - ellipsisBox.width <= rect.right;
-    // Note: if we are in an Element with a different font-size, this will not
-    // be correct.
-    const lineHeight = ellipsisBox.height;
-
-    // If we wrapped, then we need to adjust the top by one additional line.
-    const lineTop = textWraps ? rect.top + lineHeight : rect.top;
-    const rectWidth = textWraps ?
-      getWrappedWidth(offset, offset + 1) : rect.width;
-
-    // Figure out the total width that we need to fit both ellipsis and the
-    // reserved box, then check if that wraps.
-    const reservedWidth = reservedBox.width + ellipsisBox.width;
-    const reservedBoxWraps = textWraps ?
-      reservedWidth + rectWidth > expectedBox.width :
-      expectedBox.right - reservedWidth <= rect.right;
-
-    // Now figure out how much height we need for the reserved box. If it
-    // wraps, we need to add an additional line worth of height to our
-    // request. When the rect fits on the same line, it can be either taller or
-    // shorter than the current line.
-    const textLineHeightDifference = (lineHeight - rect.height);
-    const reqHeight = reservedBox.height - textLineHeightDifference;
-    const reqBottom = reservedBoxWraps ?
-      lineTop + lineHeight + reqHeight :
-      lineTop + Math.max(rect.height, reqHeight);
-
-    return expectedBox.bottom - reqBottom;
-  }
-
+function ellipsizeTextNode(node, element) {
   /**
    * An accurate version of getting the underflow, by mutating the text and
    * checking for underflow.
    * @param {number} offset
    * @return {number} The amount of underflow, in pixels.
    */
-  function underflowAtPositionAccurate(offset) {
+  function underflowAtPosition(offset) {
     node.data = text.slice(0, offset + 1) + '… ';
 
     return 0 - getOverflow(element);
   }
 
   const text = node.data;
-  // For Safari: We need to avoid looking at the starting/trailing whitespace
-  // characters that are collapsed, since they will return zero sized rects.
-  // We start looking at the start offset rather than the zeroth index.
-  // Note that this is different than trimming the start, since trim removes
-  // non-breaking spaces.
+  // Trim leading non-breaking whitespace. We cannot use the `trimStart` as
+  // `trim` removes non-breaking whitespace.
   const startOffset = findIndex(text, (char) => {
     return !isBreakingWhitespace(char);
   });
@@ -469,9 +232,6 @@ function ellipsizeTextNode(
   //
   // We could potentially use `caretRangeFromPoint`/`caretPositionFromPoint`
   // short cut a lot of work, but needs investigation.
-  const underflowFunction = estimate ?
-      underflowAtPositionEstimate :
-      underflowAtPositionAccurate;
   const searchIndex = binarySearch(startOffset, text.length, index => {
     // Treat whitespace as being the same as the the previous non-whitespace
     // character in terms of truncation. This is necessary as we will strip
@@ -481,7 +241,7 @@ function ellipsizeTextNode(
       index--;
     }
 
-    return underflowFunction(index);
+    return underflowAtPosition(index);
   }, BinarySearchStop.RIGHT, BinarySearchPreference.LOW);
   const firstOverflowingIndex = searchIndex >= 0 ? searchIndex + 1 : -(searchIndex + 1);
 
@@ -495,22 +255,8 @@ function ellipsizeTextNode(
   // creating the ellipsis element.
   const newText = fittingText ? fittingText + '… ' : '';
 
-  /**
-   * Truncates the node's text to the new text.
-   */
-  function truncate() {
-    node[ORGINAL_DATA_PROPERTY] = text;
-    node.data = newText;
-  }
-
-  if (estimate) {
-    // When estimating, we can batch the mutates.
-    Promise.resolve().then(truncate);
-  } else {
-    // When not estimating, we need to clear the node immediately if the text
-    // is empty so that the next node searched has nothing following it.
-    truncate();
-  }
+  node[ORGINAL_DATA_PROPERTY] = text;
+  node.data = newText;
 
   // We are done if we actually truncated.
   return !!fittingText;
