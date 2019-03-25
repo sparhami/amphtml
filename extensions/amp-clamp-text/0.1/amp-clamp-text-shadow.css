@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@import './clamp-shadow.css';
+@import './clamp-text-shadow.css';
 
 :host {
   padding: 0 !important;

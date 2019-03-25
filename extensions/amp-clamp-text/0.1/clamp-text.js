@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import {BinarySearchPreference, binarySearch} from './binary-search';
+import {BinarySearchPreference, binarySearch, BinarySearchStop} from './binary-search';
+import {clamp} from '../../../src/utils/math';
 import {computedStyle} from '../../../src/style';
 import {devAssert} from '../../../src/log';
 import {trimEnd} from '../../../src/string';
@@ -138,7 +139,7 @@ function createEllipsisEl(doc, hasFollowingNode) {
  *   estimate: boolean,
  * }} config
  */
-export function clamp({
+export function clampText({
   element,
   contents,
   overflowElement = null,
@@ -390,11 +391,7 @@ function ellipsizeTextNode(
   }
 
   /**
-   * Gets the underflow for a given offset within the node. This never returns
-   * zero when the text bottoms exactly match, as there could be another later
-   * character that also fits. Instead, it returns a small positive value so
-   * that we keep searching right. This is the same as using a binary search
-   * that returns the rightmost match.
+   * Gets the underflow for a given offset within the node.
    * @param {number} offset
    * @return {number} The amount of underflow, in pixels.
    */
@@ -426,11 +423,8 @@ function ellipsizeTextNode(
     const reqBottom = reservedBoxWraps ?
       lineTop + lineHeight + reqHeight :
       lineTop + Math.max(rect.height, reqHeight);
-    const underflow = expectedBox.bottom - reqBottom;
 
-    // Never return zero, return a positive value so we keep looking to the
-    // right.
-    return underflow == 0 ? Number.MIN_VALUE : underflow;
+    return expectedBox.bottom - reqBottom;
   }
 
   /**
@@ -441,11 +435,8 @@ function ellipsizeTextNode(
    */
   function underflowAtPositionAccurate(offset) {
     node.data = text.slice(0, offset + 1) + '… ';
-    const underflow = 0 - getOverflow(element);
 
-    // Never return zero, return a positive value so we keep looking to the
-    // right.
-    return underflow == 0 ? Number.MIN_VALUE : underflow;
+    return 0 - getOverflow(element);
   }
 
   const text = node.data;
@@ -467,31 +458,32 @@ function ellipsizeTextNode(
 
   // Use the underflow to find the boundary index of where truncation should
   // occur. As long as we have underflow, we will keep looking at a higher
-  // index. We use BinarySearchPreference.HIGH to find  the first index
-  // overflows. Otherwise, we might end on a non-overflowing character.
-  // We could potentially use `caretRangeFromPoint`/`caretPositionFromPoint`,
-  // if available, to skip the binary search. We may still need to fallback, for
-  // example if something is overlaying the text. The binary search is
-  // extremely fast so there is likely very little value to adding an
-  // additional code path.
+  // index. Note:
+  //
+  // - We use BinarySearchPreference.HIGH to find the index that is
+  //   overflowing when the return value is negative. When everything overflows
+  //   overflows, BinarySearchPreference.LOW returns `-0`, so we would need to
+  //   special case that.
+  // - We use BinarySearchStop.RIGHT to find the last index that is not
+  //   overflowing when the return value is positive.
+  //
+  // We could potentially use `caretRangeFromPoint`/`caretPositionFromPoint`
+  // short cut a lot of work, but needs investigation.
   const underflowFunction = estimate ?
       underflowAtPositionEstimate :
       underflowAtPositionAccurate;
-  const searchIndex = binarySearch(0, text.length - startOffset - 1, index => {
-    // Convert to the index within the Node's text.
-    let textIndex = index + startOffset;
-
+  const searchIndex = binarySearch(startOffset, text.length, index => {
     // Treat whitespace as being the same as the the previous non-whitespace
     // character in terms of truncation. This is necessary as we will strip
     // trailing whitespace, so we do not to include its width when considering
     // if we overflow.
-    while (isWhitespace(text[textIndex]) && textIndex > 0) {
-      textIndex--;
+    while (isWhitespace(text[index]) && index > 0) {
+      index--;
     }
 
-    return underflowFunction(textIndex);
-  }, BinarySearchPreference.HIGH);
-  const firstOverflowingIndex = -(searchIndex + 1) + startOffset;
+    return underflowFunction(index);
+  }, BinarySearchStop.RIGHT, BinarySearchPreference.LOW);
+  const firstOverflowingIndex = searchIndex >= 0 ? searchIndex + 1 : -(searchIndex + 1);
 
   // Remove trailing whitespace since we do not want to have something like
   // "Hello world   …". We need to keep leading whitespace since we may be
@@ -503,10 +495,23 @@ function ellipsizeTextNode(
   // creating the ellipsis element.
   const newText = fittingText ? fittingText + '… ' : '';
 
-  Promise.resolve().then(() => {
+  /**
+   * Truncates the node's text to the new text.
+   */
+  function truncate() {
     node[ORGINAL_DATA_PROPERTY] = text;
     node.data = newText;
-  });
+  }
+
+  if (estimate) {
+    // When estimating, we can batch the mutates.
+    Promise.resolve().then(truncate);
+  } else {
+    // When not estimating, we need to clear the node immediately if the text
+    // is empty so that the next node searched has nothing following it.
+    truncate();
+  }
+
   // We are done if we actually truncated.
   return !!fittingText;
 }

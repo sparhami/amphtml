@@ -16,7 +16,7 @@
 
 import {CSS} from '../../../build/amp-clamp-text-0.1.css';
 import {CSS as ShadowCSS} from '../../../build/amp-clamp-text-shadow-0.1.css';
-import {OverflowStyle, clamp} from './clamp.js';
+import {OverflowStyle, clampText} from './clamp-text';
 import {devAssert} from '../../../src/log';
 import {isLayoutSizeDefined} from '../../../src/layout';
 
@@ -98,7 +98,7 @@ export class AmpClampText extends AMP.BaseElement {
         this.content_.firstElementChild.assignedNodes() :
         [this.content_];
 
-    return clamp({
+    return clampText({
       element: devAssert(this.content_),
       contents,
       overflowStyle,
