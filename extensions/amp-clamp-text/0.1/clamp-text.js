@@ -34,8 +34,8 @@ const CONTAINER_OVERFLOW_ATTRIBUTE = 'i-amphtml-clamp-overflow';
 /** The class to add to a descendant element that is overflowing. */
 const ELEMENT_OVERFLOW_ATTRIBUTE = 'i-amphtml-clamp-child-overflow';
 
-/** Used to save the original Text Node's data. */
-const ORGINAL_DATA_PROPERTY = '__AMP_CLAMP_TEXT_DATA';
+/** Used to save the Text Node's data original and modified data.  */
+const TEXT_DATA_PROPERTY = '__AMP_CLAMP_TEXT_DATA';
 
 /**
  * Clamps the text within a given Element.
@@ -105,8 +105,10 @@ function getOverflow(element) {
  * @param {!Node} node The node to restore.
  */
 function clearTruncation(node) {
-  if (node[ORGINAL_DATA_PROPERTY]) {
-    node.data = node[ORGINAL_DATA_PROPERTY];
+  const data = node[TEXT_DATA_PROPERTY];
+
+  if (data && data.modifiedText == node.data) {
+    node.data = data.originalText;
   }
 
   if (node.nodeType == Node.ELEMENT_NODE) {
@@ -255,7 +257,10 @@ function ellipsizeTextNode(node, element) {
   // creating the ellipsis element.
   const newText = fittingText ? fittingText + '… ' : '';
 
-  node[ORGINAL_DATA_PROPERTY] = text;
+  node[TEXT_DATA_PROPERTY] = {
+    originalText: text,
+    modifiedText: newText,
+  };
   node.data = newText;
 
   // We are done if we actually truncated.
