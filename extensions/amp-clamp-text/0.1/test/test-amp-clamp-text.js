@@ -32,7 +32,16 @@ describes.realWin('amp-clamp-text', {
 
   let doc;
   let win;
-  let element;
+
+  function afterRenderPromise() {
+    return new Promise(resolve => {
+      win.requestAnimationFrame(() => {
+        win.setTimeout(() => {
+          resolve();
+        });
+      });
+    });
+  }
 
   beforeEach(() => {
     win = env.win;
@@ -135,7 +144,7 @@ describes.realWin('amp-clamp-text', {
   });
 
   it('should restore text nodes on re-layout', async() => {
-    const element = await createElement(`Hello world`, {
+    const element = await createElement('Hello world', {
       width: 10,
       height: 13,
     });
@@ -179,7 +188,7 @@ describes.realWin('amp-clamp-text', {
   });
 
   it('should clamp again on re-layout', async() => {
-    const element = await createElement(`Hello world`, {
+    const element = await createElement('Hello world', {
       width: 10,
       height: 13,
     });
@@ -197,6 +206,20 @@ describes.realWin('amp-clamp-text', {
     expect(element.textContent).to.match(/… $/);
   });
 
+  it('should clamp again on text changes', async() => {
+    const element = await createElement('Hello world', {
+      width: 10,
+      height: 13,
+    });
+    const childNodes = getChildNodes(element);
+
+    childNodes[0].data = 'Good night and good luck';
+    await element.implementation_.mutateElement(() => {});
+
+    expect(element.scrollHeight).to.equal(13);
+    expect(element.textContent).to.match(/^Good/);
+    expect(element.textContent).to.match(/… $/);
+  });
 
   describe('overflow element', () => {
     it('should be shown when overflowing', async() => {

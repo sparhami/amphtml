@@ -18,16 +18,19 @@ import {CSS} from '../../../build/amp-clamp-text-0.1.css';
 import {CSS as ShadowCSS} from '../../../build/amp-clamp-text-shadow-0.1.css';
 import {clampText} from './clamp-text';
 import {devAssert} from '../../../src/log';
+import {htmlFor} from '../../../src/static-template';
 import {isLayoutSizeDefined} from '../../../src/layout';
 
 export class AmpClampText extends AMP.BaseElement {
-
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
 
     /** @private {?Element} */
     this.content_ = null;
+
+    /** @private {?MutationObserver} */
+    this.mutationObserver_ = null;
   }
 
   /** @override */
@@ -38,6 +41,12 @@ export class AmpClampText extends AMP.BaseElement {
       this.buildShadow_();
     } else {
       this.build_();
+    }
+
+    if ('MutationObserver' in window) {
+      this.mutationObserver_ = new MutationObserver(() => {
+        this.mutateElement(() => this.clamp_());
+      });
     }
   }
 
@@ -53,26 +62,38 @@ export class AmpClampText extends AMP.BaseElement {
   }
 
   buildShadow_() {
+    // TODO(sparhami) Where is the right place to put this? Runtime? What about
+    // SSR?
     const sizer = this.element.querySelector('i-amphtml-sizer');
     if (sizer) { 
       sizer.setAttribute('slot', 'sizer');
     }
 
+    // TODO(sparhami) Is there a shared place to add logic for creating
+    // shadow roots with styles? Might make sense to have it create the style
+    // as well as a slot for the sizer.
     const sr = this.element.attachShadow({mode: 'open'});
-    sr.innerHTML = `
-      <style>${ShadowCSS}</style>
-      <div class="i-amphtml-clamp-text-content">
-        <slot></slot>
+    const style = document.createElement('style');
+    style.textContent = ShadowCSS;
+    const html = htmlFor(this.element);
+    const content = html`
+      <div>
+        <div class="i-amphtml-clamp-text-content">
+          <slot></slot>
+        </div>
+        <slot name="sizer"></slot>
       </div>
-      <slot name="sizer"></slot>
     `;
+    
+    sr.appendChild(style)
+    sr.appendChild(content);
 
     this.content_ = sr.querySelector('.i-amphtml-clamp-text-content');
   }
 
   /** @override */
   layoutCallback() {
-    return this.clamp_();
+    this.clamp_();
   }
 
   /** @override */
@@ -89,16 +110,32 @@ export class AmpClampText extends AMP.BaseElement {
    * @private
    */
   clamp_() {
+    // Make sure mutations from clamping do not trigger clamping.
+    if (this.mutationObserver_) {
+      this.mutationObserver_.disconnect();
+    }
+
     const contents = this.useShadow_ ?
         this.content_.firstElementChild.assignedNodes() :
         [this.content_];
     const overflowElement = this.element.querySelector('.amp-clamp-overflow');
 
-    return clampText({
+    clampText({
       element: devAssert(this.content_),
       contents,
       overflowElement,
     });
+
+    // Listen to all changes, since they may  change layout and require
+    // reclamping.
+    if (this.mutationObserver_) {
+      this.mutationObserver_.observe(this.element, {
+        attributes: true,
+        characterData: true,
+        childList: true,
+        subtree: true,
+      });
+    }
   }
 }
 
