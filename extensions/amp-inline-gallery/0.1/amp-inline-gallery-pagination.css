@@ -1,28 +1,34 @@
+:host {
+  --amp-igp-max-dots-width-percentage: 0.6;
+  --amp-igp-dot-width: 10;
+  --amp-igp-dot-max-spacing: 12;
+  --amp-igp-dot-min-spacing: 8;
+}
+
 .pagination-dots {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   height: 100%;
-  /* Show at most 10 dots */
-  max-width: 160px;
+  max-width: calc(100% * var(--amp-igp-max-dots-width-percentage));
   margin: auto;
   overflow-x: auto;
 }
 
 .pagination-dot-container {
   display: flex;
-  width: 28px;
-  min-width: 16px;
-  /*
-   * Center the pagination dots. Using `justify-content: center`on the parent
-   * results in the dots at the start/end being unable to be scrolled to.
-   */
-  margin: auto;
+  width: calc(
+    1px * var(--amp-igp-dot-max-spacing) +
+    1px * var(--amp-igp-dot-width));
+  min-width: calc(
+    1px * var(--amp-igp-dot-min-spacing) +
+    1px * var(--amp-igp-dot-width));
+  justify-content: center;
 }
 
 .pagination-dot {
   position: relative;
-  overflow: hidden;
   background-color: #aaa;
 }
 
@@ -39,6 +45,22 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
+}
+
+.pagination-numbers {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px;
+}
+
+.pagination-index,
+.pagination-total {
+  padding: 0 3px;
+}
+
+.pagination-dots[hidden],
+.pagination-numbers[hidden] {
+  display: none;
 }
 
 :host([inset]) {

@@ -19,7 +19,7 @@ import {Layout} from '../../../src/layout';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {dict} from '../../../src/utils/object';
 import {htmlFor} from '../../../src/static-template';
-import {setImportantStyles} from '../../../src/style.js';
+import {setImportantStyles, computedStyle} from '../../../src/style.js';
 
 /**
  * Returns a number falling off from one to zero, based on a distance
@@ -41,6 +41,11 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     sr.innerHTML = `
       <style>${CSS}</style>
       <div class="pagination-dots" aria-hidden="true"></div>
+      <div class="pagination-numbers">
+        <span class="pagination-index"></span>
+        /
+        <span class="pagination-total"></span>
+      </div>
     `;
     return sr;
   }
@@ -50,6 +55,8 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     super(element);
 
     this.total_ = 0;
+
+    this.useDots_ = null;
 
     this.paginationDots_ = null;
   }
@@ -66,12 +73,19 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    const shadowRoot = this.createShadowRoot_();
-    this.paginationDots_ = shadowRoot.querySelector('.pagination-dots');
+    const sr = this.createShadowRoot_();
+    this.paginationDots_ = sr.querySelector('.pagination-dots');
+    this.paginationNumbersEl_ = sr.querySelector('.pagination-numbers');
+    this.paginationIndexEl_ = sr.querySelector('.pagination-index');
+    this.paginationTotalEl_ = sr.querySelector('.pagination-total');
 
     this.element.addEventListener('offsetchange-update', event => {
       this.handleIndexChangeUpdate_(event);
     });
+  }
+
+  layoutCallback() {
+    this.updateTotal_(this.total_, true);
   }
 
   createPaginationDot_(index) {
@@ -96,14 +110,39 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     return content;
   }
 
-  updateTotal_(total) {
-    if (total == this.total_) {
+  updateTotal_(total, force = false) {
+    if (total == this.total_ && !force) {
+      return;
+    }
+
+    const style = computedStyle(this.win, this.element);
+    const maxWidthPercentage = Number.parseFloat(
+      style.getPropertyValue('--amp-igp-max-dots-width-percentage'));
+    const dotWidth = Number.parseFloat(
+      style.getPropertyValue('--amp-igp-dot-width'));
+    const dotMinSpacing = Number.parseFloat(
+      style.getPropertyValue('--amp-igp-dot-min-spacing'));
+    const dotWidthTotal = total * dotWidth;
+    const dotSpacingTotal = (total + 1) * dotMinSpacing;
+    const {width} = this.getLayoutBox();
+    const useDots = width * maxWidthPercentage > dotWidthTotal + dotSpacingTotal;
+    const dotCount = useDots ? total : 0;
+
+    if (total == this.total_ && useDots == this.useDots_) {
       return;
     }
 
     this.total_ = total;
+    this.useDots_ = useDots;
+    this.paginationDots_.hidden = !useDots;
+    this.paginationNumbersEl_.hidden = useDots;
+    this.paginationTotalEl_.textContent = total;
+    this.createDots_(dotCount);
+  }
+
+  createDots_(dotCount) {
     this.paginationDots_.innerHTML = '';
-    for (let i = 0; i < total; i++) {
+    for (let i = 0; i < dotCount; i++) {
       this.paginationDots_.appendChild(this.createPaginationDot_(i));
     }
   }
@@ -121,10 +160,10 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
         '--percentage-falloff': percentageFalloff,
       });
     });
+  }
 
-    // TODO(sparhami) Don't use scrollIntoView, since it it causes the page
-    // scroll position to move as well.
-    allDots[index].scrollIntoView();
+  updateIndex_(index) {
+    this.paginationIndexEl_.textContent = index + 1;
   }
 
   handleIndexChangeUpdate_(event) {
@@ -134,6 +173,11 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     const offset = detail['offset'];
 
     this.updateTotal_(total);
-    this.updateDots_(index, offset);
+
+    if (this.useDots_) {
+      this.updateDots_(index, offset);
+    } else {
+      this.updateIndex_(index);
+    }
   }
 }
