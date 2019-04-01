@@ -29,8 +29,19 @@ tags: {  # <amp-clamp-text>
   tag_name: "AMP-CLAMP-TEXT"
   requires_extension: "amp-clamp-text"
   attr_lists: "extended-amp-global"
+  attrs: {
+    name: "overflow-style"
+    value: "right"
+    value: "default"
+  }
   spec_url: "https://www.ampproject.org/docs/reference/components/amp-clamp-text"
   amp_layout: {
+    supported_layouts: FILL
+    supported_layouts: FIXED
+    supported_layouts: FIXED_HEIGHT
+    supported_layouts: FLEX_ITEM
+    supported_layouts: INTRINSIC
+    supported_layouts: NODISPLAY
     supported_layouts: RESPONSIVE
   }
 }

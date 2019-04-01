@@ -17,7 +17,7 @@
 import {CSS} from '../../../build/amp-clamp-text-0.1.css';
 import {CSS as ShadowCSS} from '../../../build/amp-clamp-text-shadow-0.1.css';
 import {clampText} from './clamp-text';
-import {devAssert} from '../../../src/log';
+import {devAssert, userAssert} from '../../../src/log';
 import {htmlFor} from '../../../src/static-template';
 import {isLayoutSizeDefined} from '../../../src/layout';
 
@@ -51,6 +51,10 @@ export class AmpClampText extends AMP.BaseElement {
         this.mutateElement(() => this.clamp_());
       });
     }
+
+    userAssert(
+      this.element.querySelectorAll('.amp-clamp-overflow').length == 1,
+      "Should only have one .amp-clamp-overflow child.");
   }
 
   /**
