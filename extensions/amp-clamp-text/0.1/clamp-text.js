@@ -208,7 +208,7 @@ function ellipsizeTextNode(node, element) {
   }
 
   const text = node.data;
-  // Trim leading non-breaking whitespace. We cannot use the `trimStart` as
+  // Ignore leading non-breaking whitespace. We cannot use the `trimStart` as
   // `trim` removes non-breaking whitespace.
   const startOffset = findIndex(text, (char) => {
     return !isBreakingWhitespace(char);
@@ -263,6 +263,6 @@ function ellipsizeTextNode(node, element) {
   };
   node.data = newText;
 
-  // We are done if we actually truncated.
+  // We are done if we actually ellipsized.
   return !!fittingText;
 }

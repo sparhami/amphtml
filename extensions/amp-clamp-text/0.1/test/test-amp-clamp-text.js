@@ -29,19 +29,8 @@ describes.realWin('amp-clamp-text', {
     extensions: ['amp-clamp-text'],
   },
 }, env => {
-
   let doc;
   let win;
-
-  function afterRenderPromise() {
-    return new Promise(resolve => {
-      win.requestAnimationFrame(() => {
-        win.setTimeout(() => {
-          resolve();
-        });
-      });
-    });
-  }
 
   beforeEach(() => {
     win = env.win;

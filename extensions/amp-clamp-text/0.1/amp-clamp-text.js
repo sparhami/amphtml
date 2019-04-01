@@ -29,6 +29,9 @@ export class AmpClampText extends AMP.BaseElement {
     /** @private {?Element} */
     this.content_ = null;
 
+    /** @private {boolean} */
+    this.useShadow__ = false;
+
     /** @private {?MutationObserver} */
     this.mutationObserver_ = null;
   }
@@ -50,6 +53,9 @@ export class AmpClampText extends AMP.BaseElement {
     }
   }
 
+  /**
+   * Builds the component when not using Shadow DOM.
+   */
   build_() {
     this.content_ = this.element.ownerDocument.createElement('div');
     this.content_.className = 'i-amphtml-clamp-text-content';
@@ -61,6 +67,9 @@ export class AmpClampText extends AMP.BaseElement {
     this.element.appendChild(this.content_);
   }
 
+  /**
+   * Builds the component when using Shadow DOM.
+   */
   buildShadow_() {
     // TODO(sparhami) Where is the right place to put this? Runtime? What about
     // SSR?
@@ -126,7 +135,7 @@ export class AmpClampText extends AMP.BaseElement {
       overflowElement,
     });
 
-    // Listen to all changes, since they may  change layout and require
+    // Listen to all changes, since they may change layout and require
     // reclamping.
     if (this.mutationObserver_) {
       this.mutationObserver_.observe(this.element, {
