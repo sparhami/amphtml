@@ -17,9 +17,9 @@
 import {CSS} from '../../../build/amp-clamp-text-0.1.css';
 import {CSS as ShadowCSS} from '../../../build/amp-clamp-text-shadow-0.1.css';
 import {clampText} from './clamp-text';
-import {devAssert, userAssert} from '../../../src/log';
+import {closestAncestorElementBySelector} from '../../../src/dom';
 import {htmlFor} from '../../../src/static-template';
-import {isLayoutSizeDefined} from '../../../src/layout';
+import {userAssert} from '../../../src/log';
 
 export class AmpClampText extends AMP.BaseElement {
   /** @param {!AmpElement} element */
@@ -30,7 +30,7 @@ export class AmpClampText extends AMP.BaseElement {
     this.content_ = null;
 
     /** @private {boolean} */
-    this.useShadow__ = false;
+    this.useShadow_ = false;
 
     /** @private {?MutationObserver} */
     this.mutationObserver_ = null;
@@ -48,13 +48,15 @@ export class AmpClampText extends AMP.BaseElement {
 
     if ('MutationObserver' in window) {
       this.mutationObserver_ = new MutationObserver(() => {
-        this.mutateElement(() => this.clamp_());
+        this.clamp_();
       });
     }
 
+    this.element.addEventListener('click', e => this.handleClick_(e));
+
     userAssert(
-      this.element.querySelectorAll('.amp-clamp-overflow').length == 1,
-      "Should only have one .amp-clamp-overflow child.");
+        this.element.querySelectorAll('.amp-clamp-overflow').length <= 1,
+        'Should only have at most one .amp-clamp-overflow child.');
   }
 
   /**
@@ -78,7 +80,7 @@ export class AmpClampText extends AMP.BaseElement {
     // TODO(sparhami) Where is the right place to put this? Runtime? What about
     // SSR?
     const sizer = this.element.querySelector('i-amphtml-sizer');
-    if (sizer) { 
+    if (sizer) {
       sizer.setAttribute('slot', 'sizer');
     }
 
@@ -97,11 +99,9 @@ export class AmpClampText extends AMP.BaseElement {
         <slot name="sizer"></slot>
       </div>
     `;
-    
-    sr.appendChild(style)
-    sr.appendChild(content);
 
-    this.content_ = sr.querySelector('.i-amphtml-clamp-text-content');
+    sr.appendChild(style);
+    sr.appendChild(content);
   }
 
   /** @override */
@@ -115,39 +115,68 @@ export class AmpClampText extends AMP.BaseElement {
   }
 
   /** @override */
-  isLayoutSupported(layout) {
-    return isLayoutSizeDefined(layout);
+  isLayoutSupported() {
+    return true;
   }
 
   /**
+   * Clamps the content of the element. This is debounced as runtime will do a
+   * mutation (add a class) right after `layoutCallback`. We want to make sure
+   * we do not clamp twice as a result.
    * @private
    */
   clamp_() {
-    // Make sure mutations from clamping do not trigger clamping.
-    if (this.mutationObserver_) {
-      this.mutationObserver_.disconnect();
+
+    // Debounce the clamp.
+    if (this.clampRequested_) {
+      return;
     }
 
-    const contents = this.useShadow_ ?
-        this.content_.firstElementChild.assignedNodes() :
-        [this.content_];
-    const overflowElement = this.element.querySelector('.amp-clamp-overflow');
+    this.clampRequested_ = true;
+    Promise.resolve().then(() => {
+      this.clampRequested_ = false;
 
-    clampText({
-      element: devAssert(this.content_),
-      contents,
-      overflowElement,
-    });
+      // Make sure mutations from clamping do not trigger clamping.
+      if (this.mutationObserver_) {
+        this.mutationObserver_.disconnect();
+      }
 
-    // Listen to all changes, since they may change layout and require
-    // reclamping.
-    if (this.mutationObserver_) {
-      this.mutationObserver_.observe(this.element, {
-        attributes: true,
-        characterData: true,
-        childList: true,
-        subtree: true,
+      const element = this.useShadow_ ? this.element : this.content_;
+      const overflowElement = this.element.querySelector('.amp-clamp-overflow');
+
+      clampText({
+        element,
+        overflowElement,
       });
+
+      // Listen to all changes, since they may change layout and require
+      // reclamping.
+      if (this.mutationObserver_) {
+        this.mutationObserver_.observe(this.element, {
+          attributes: true,
+          characterData: true,
+          childList: true,
+          subtree: true,
+        });
+      }
+    });
+  }
+
+  /**
+   * Handles a click for expandig/collapsing. This sets/clears an attribute,
+   * which triggers a mutation and thus re-clamping.
+   * @param {!Event} event
+   */
+  handleClick_(event) {
+    const overflowExpand = !!closestAncestorElementBySelector(
+        event.target, '.amp-clamp-expand');
+    const overflowCollapse = !!closestAncestorElementBySelector(
+        event.target, '.amp-clamp-collapse');
+
+    if (overflowExpand) {
+      this.element.setAttribute('i-amphtml-clamp-expanded', '');
+    } else if (overflowCollapse) {
+      this.element.removeAttribute('i-amphtml-clamp-expanded');
     }
   }
 }

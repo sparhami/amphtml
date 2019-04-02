@@ -25,3 +25,15 @@
   float: right !important;
   height: 100% !important;
 }
+
+:host([i-amphtml-clamp-expanded]) {
+  height: auto !important;
+}
+
+:host([i-amphtml-clamp-expanded]) .i-amphtml-clamp-text-content {
+  position: static;
+}
+
+:host(:not([i-amphtml-clamp-expanded])) .amp-clamp-collapse {
+  display: none;
+}

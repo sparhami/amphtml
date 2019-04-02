@@ -58,11 +58,11 @@ export const BinarySearchStop = {
  *    was found,
  */
 export function binarySearch(
-    start,
-    end,
-    condition,
-    stop = BinarySearchStop.IMMEDIATE,
-    preference = BinarySearchPreference.HIGH) {
+  start,
+  end,
+  condition,
+  stop = BinarySearchStop.IMMEDIATE,
+  preference = BinarySearchPreference.HIGH) {
   devAssert(start <= end);
 
   let low = start;
@@ -74,11 +74,11 @@ export function binarySearch(
     const mid = low + Math.floor((high - low) / 2);
     const res = condition(mid);
 
-    if (res > 0 || res == 0 && stop == BinarySearchStop.RIGHT) {
+    if (res > 0 || (res == 0 && stop == BinarySearchStop.RIGHT)) {
       prefIndex = preference == BinarySearchPreference.LOW ? mid : prefIndex;
       match = res == 0 ? mid : match;
       low = mid + 1;
-    } else if (res < 0 || res == 0 && stop == BinarySearchStop.LEFT) {
+    } else if (res < 0 || (res == 0 && stop == BinarySearchStop.LEFT)) {
       prefIndex = preference == BinarySearchPreference.HIGH ? mid : prefIndex;
       match = res == 0 ? mid : match;
       high = mid - 1;

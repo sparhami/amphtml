@@ -283,7 +283,7 @@ exports.extensionBundles = [
       cssBinaries: [
         'amp-clamp-text',
         'amp-clamp-text-shadow',
-      ]
+      ],
     },
     type: TYPES.MISC,
   },

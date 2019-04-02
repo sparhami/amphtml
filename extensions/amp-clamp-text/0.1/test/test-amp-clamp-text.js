@@ -17,12 +17,16 @@
 import '../amp-clamp-text';
 import {setStyles} from '../../../../src/style';
 
-const loremText = `
-  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ullamcorper turpis vel commodo scelerisque. Phasellus
-  luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi sed urna blandit bibendum et sit amet erat.
-  Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
-  Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
-`;
+// Lint complains about a template string due to lines being too long.
+const loremText = '        \r\n' +
+  '   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur ' +
+  'ullamcorper turpis vel commodo scelerisque. Phasellus\r\n' +
+  '   luctus nunc ut elit cursus, et imperdiet diam vehicula. Duis et nisi' +
+  'sed urna blandit bibendum et sit amet erat.\r\n' +
+  '   Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. ' +
+  'Etiam a turpis ac libero varius condimentum.\r\n' +
+  '   Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit ' +
+  'semper.\r\n        ';
 
 describes.realWin('amp-clamp-text', {
   amp: {
@@ -36,6 +40,16 @@ describes.realWin('amp-clamp-text', {
     win = env.win;
     doc = win.document;
   });
+
+  /**
+   * @return {!Promise} A Promise that resolves after the MutationObserver has
+   *    run and we have re-clamped.
+   */
+  function afterMutationAndClamp() {
+    return new Promise(resolve => {
+      setTimeout(resolve);
+    });
+  }
 
   async function createElement(content, {width, height}) {
     const element = win.document.createElement('amp-clamp-text');
@@ -56,11 +70,11 @@ describes.realWin('amp-clamp-text', {
 
   function getChildNodes(element) {
     return 'attachShadow' in element ?
-        element.childNodes :
-        element.querySelector('.i-amphtml-clamp-text-content').childNodes;
+      element.childNodes :
+      element.querySelector('.i-amphtml-clamp-text-content').childNodes;
   }
 
-  it('should clamp text for a single Text Node', async () => {
+  it('should clamp text for a single Text Node', async() => {
     const element = await createElement(loremText, {
       width: 150,
       height: 26,
@@ -70,7 +84,7 @@ describes.realWin('amp-clamp-text', {
     expect(element.textContent).to.match(/… $/);
   });
 
-  it('should not clamp text for short text', async () => {
+  it('should not clamp text for short text', async() => {
     const element = await createElement('\n  Hello world\n  ', {
       width: 150,
       height: 26,
@@ -113,6 +127,22 @@ describes.realWin('amp-clamp-text', {
     expect(childNodes).to.have.length(3);
     expect(button.offsetHeight).to.equal(0);
     expect(element.scrollHeight).to.equal(26);
+  });
+
+  it('should hide elements that do not fit', async() => {
+    const element = await createElement(`
+      hello world
+      <button style="padding: 6px">Hello</button>
+    `, {
+      width: 150,
+      height: 13,
+    });
+    const childNodes = getChildNodes(element);
+    const button = childNodes[1];
+
+    expect(childNodes).to.have.length(3);
+    expect(button.offsetHeight).to.equal(0);
+    expect(element.scrollHeight).to.equal(13);
   });
 
   it('should not ellipsize empty text nodes', async() => {
@@ -167,8 +197,8 @@ describes.realWin('amp-clamp-text', {
     expect(button.offsetWidth).to.equal(0);
 
     setStyles(element, {
-      width: '100px',
-      height: '52px',
+      width: '200px',
+      height: '80px',
     });
     await element.layoutCallback();
 
@@ -214,7 +244,9 @@ describes.realWin('amp-clamp-text', {
     it('should be shown when overflowing', async() => {
       const element = await createElement(`
         ${loremText}
-        <button class="amp-clamp-overflow" style="padding: 6px">See more</button>
+        <button class="amp-clamp-overflow" style="padding: 2px">
+          See more
+        </button>
         world
       `, {
         width: 150,
@@ -223,26 +255,28 @@ describes.realWin('amp-clamp-text', {
       const childNodes = getChildNodes(element);
       const button = childNodes[1];
       const endTextNode = childNodes[2];
-  
+
       expect(childNodes).to.have.length(3);
       expect(endTextNode.textContent.trim()).to.be.empty;
       expect(button.offsetHeight).to.gt(0);
       expect(button.offsetWidth).to.gt(0);
-      expect(button.textContent).to.equal('See more');
+      expect(button.textContent.trim()).to.equal('See more');
       expect(element.scrollHeight).to.equal(26);
     });
-  
+
     it('should be hidden when not overflowing', async() => {
       const element = await createElement(`
         Hello world
-        <button class="amp-clamp-overflow" style="padding: 6px">See more</button>
+        <button class="amp-clamp-overflow" style="padding: 2px">
+          See more
+        </button>
       `, {
         width: 150,
         height: 26,
       });
       const childNodes = getChildNodes(element);
       const button = childNodes[1];
-  
+
       expect(childNodes).to.have.length(3);
       expect(button.offsetHeight).to.equal(0);
       expect(button.offsetWidth).to.equal(0);
@@ -252,7 +286,9 @@ describes.realWin('amp-clamp-text', {
     it('should be hidden when not overflowing after re-layout', async() => {
       const element = await createElement(`
         ${loremText}
-        <button class="amp-clamp-overflow" style="padding: 6px">See more</button>
+        <button class="amp-clamp-overflow" style="padding: 6px">
+          See more
+        </button>
         world
       `, {
         width: 150,
@@ -271,6 +307,67 @@ describes.realWin('amp-clamp-text', {
       expect(button.offsetHeight).to.equal(0);
       expect(button.offsetWidth).to.equal(0);
       expect(element.scrollHeight).to.equal(600);
+    });
+  });
+
+  describe('expand / collapse', () => {
+    it('should hide the collapse element when not overflowing', async() => {
+      const element = await createElement(`
+      ${loremText}
+        <span class="amp-clamp-overflow amp-clamp-expand">See more</span>
+        <span class="amp-clamp-collapse">See more</span>
+      `, {
+        width: 150,
+        height: 26,
+      });
+      const collapseEl = element.querySelector('.amp-clamp-collapse');
+
+      expect(collapseEl.offsetHeight).to.equal(0);
+      expect(collapseEl.offsetWidth).to.equal(0);
+    });
+
+    it('should expand when clicking the expand element', async() => {
+      const element = await createElement(`
+        ${loremText}
+        <span class="amp-clamp-overflow amp-clamp-expand">See more</span>
+        <span class="amp-clamp-collapse">See less</span>
+      `, {
+        width: 150,
+        height: 26,
+      });
+      const expandEl = element.querySelector('.amp-clamp-expand');
+      const collapseEl = element.querySelector('.amp-clamp-collapse');
+
+      expandEl.click();
+      await afterMutationAndClamp();
+
+      expect(element.scrollHeight).to.be.gt(26);
+      expect(element.scrollHeight).to.equal(element.offsetHeight);
+      expect(collapseEl.offsetHeight).to.be.gt(0);
+      expect(collapseEl.offsetWidth).to.be.gt(0);
+    });
+
+    it('should collapse when clicking the collapse element', async() => {
+      const element = await createElement(`
+        ${loremText}
+        <span class="amp-clamp-overflow amp-clamp-expand">See more</span>
+        <span class="amp-clamp-collapse">See more</span>
+      `, {
+        width: 150,
+        height: 26,
+      });
+      const expandEl = element.querySelector('.amp-clamp-expand');
+      const collapseEl = element.querySelector('.amp-clamp-collapse');
+
+      expandEl.click();
+      await afterMutationAndClamp();
+      collapseEl.click();
+      await afterMutationAndClamp();
+
+      expect(element.offsetHeight).to.equal(26);
+      expect(element.scrollHeight).to.equal(26);
+      expect(collapseEl.offsetHeight).to.equal(0);
+      expect(collapseEl.offsetWidth).to.equal(0);
     });
   });
 });

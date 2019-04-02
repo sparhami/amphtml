@@ -25,3 +25,15 @@ amp-clamp-text[overflow-style="right"] .amp-clamp-overflow {
   float: right !important;
   height: 100% !important;
 }
+
+amp-clamp-text[i-amphtml-clamp-expanded] {
+  height: auto !important;
+}
+
+amp-clamp-text[i-amphtml-clamp-expanded] .i-amphtml-clamp-text-content {
+  position: static;
+}
+
+amp-clamp-text:not([i-amphtml-clamp-expanded]) .amp-clamp-collapse {
+  display: none;
+}

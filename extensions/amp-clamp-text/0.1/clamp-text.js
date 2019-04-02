@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-import {BinarySearchPreference, binarySearch, BinarySearchStop} from './binary-search';
-import {trimEnd} from '../../../src/string';
+import {
+  BinarySearchPreference,
+  BinarySearchStop,
+  binarySearch,
+} from './binary-search';
 import {findIndex} from '../../../src/utils/array';
+import {trimEnd} from '../../../src/string';
 
 /**
  * @typedef {{
@@ -62,24 +66,22 @@ const TEXT_DATA_PROPERTY = '__AMP_CLAMP_TEXT_DATA';
  * groups reads/writes into phases so that it does not cause forced layouts
  * with other calls to clamp. TODO(sparhami) Does this make sense to move into
  * runtime?
- * 
+ *
  * This should be called from a place where it is safe to perform mutations.
  * @param {{
  *   element: !Element,
- *   contents: !Array<!Node>,
  *   overflowElement: ?Element,
  * }} config
  */
 export function clampText({
   element,
-  contents,
   overflowElement = null,
 } = {}) {
   // Mutate, first phase: remove any effects of truncation so that we can see
   // if there is any overflow.
   if (element.hasAttribute(CONTAINER_OVERFLOW_ATTRIBUTE)) {
     element.removeAttribute(CONTAINER_OVERFLOW_ATTRIBUTE);
-    contents.forEach(node => clearTruncation(node));
+    clearTruncation(element);
   }
 
   const overflowing = getOverflow(element) > 0;
@@ -88,7 +90,7 @@ export function clampText({
   }
 
   element.setAttribute(CONTAINER_OVERFLOW_ATTRIBUTE, '');
-  runTruncation(element, contents, overflowElement);
+  runTruncation(element, overflowElement);
 }
 
 /**
@@ -121,51 +123,64 @@ function clearTruncation(node) {
 }
 
 /**
+ * @param {!Node} root
+ * @param {!NodeFilter} filter
+ * @return {!Array<Node>} All the nodes in the subtree, including the root.
+ */
+function getAllNodes(root, filter) {
+  // For IE11, it expects the filter argument to be a function and not a
+  // NodeFilter.
+  const ieCompatFilter = filter.acceptNode;
+  ieCompatFilter.acceptNode = filter.acceptNode;
+
+  const walker = document.createTreeWalker(
+      root, NodeFilter.SHOW_ALL, ieCompatFilter, false);
+  const nodes = [];
+
+  do {
+    nodes.push(walker.currentNode);
+  } while (walker.nextNode());
+
+  return nodes;
+}
+
+/**
  * Runs text truncation for an Element, finding the last node that needs
  * truncation and truncating it.
  * @param {!Element} element The Element to do truncation for.
- * @param {!Array<!Node>} contents The contents to do truncation for.
  * @param {?Element} overflowElement An optional Element to show when
  *    overflowing.
  */
 function runTruncation(
   element,
-  contents,
   overflowElement,
 ) {
-  const expectedBox = element.getBoundingClientRect();
-  const queue = [].concat(contents);
-  let done = false;
+  const nodes = getAllNodes(element, {
+    acceptNode: node => {
+      // Skip over the subtree for the overflow element, we do not want to
+      // truncate it.
+      return node == overflowElement ?
+        NodeFilter.FILTER_REJECT :
+        NodeFilter.FILTER_ACCEPT;
+    },
+  });
 
-  // Go through all the child Nodes until we find the node to truncate.
-  while (!done && queue.length) {
-    const node = queue.pop();
+  // Go in reverse order, we want to truncate later nodes first. We also want
+  // to process children before their parents. We never visit index zero as
+  // that is the container itself.
+  for (let i = nodes.length - 1; i > 0; i--) {
+    const node = nodes[i];
 
-    // The overflow element is never truncated.
-    if (node == overflowElement) {
-      continue;
-    }
-
-    // If we have an element that is completely overflowing, we hide it. This
-    // is because it may still take some size even if we clear out all of the
-    // text. This could cause it to poke out from the bottom of the element if
-    // the height is not a multtiple of the line height.
-    if (node.nodeType == Node.ELEMENT_NODE &&
-        node.getBoundingClientRect().top > expectedBox.bottom) {
+    // If we are visiting an Element, everything inside was already cleared,
+    // so we want to hide the whole element in case it has some padding.
+    if (node.nodeType == Node.ELEMENT_NODE) {
       node.setAttribute(ELEMENT_OVERFLOW_ATTRIBUTE, '');
-      continue;
     }
 
     // Truncate the text node. If it got ellipsized, the we are done.
-    if (node.nodeType == Node.TEXT_NODE) {
-      done = ellipsizeTextNode(node, element);
-      continue;
-    }
-
-    // By pushing the children to the queue, we traverse in reverse order of
-    // children, since we want to truncate later nodes first.
-    for (let child = node.firstChild; child; child = child.nextSibling) {
-      queue.push(child);
+    if (node.nodeType == Node.TEXT_NODE &&
+        ellipsizeTextNode(node, element)) {
+      break;
     }
   }
 }
@@ -196,8 +211,7 @@ function isBreakingWhitespace(char) {
  */
 function ellipsizeTextNode(node, element) {
   /**
-   * An accurate version of getting the underflow, by mutating the text and
-   * checking for underflow.
+   * Gets the underflow by mutating the text and checking.
    * @param {number} offset
    * @return {number} The amount of underflow, in pixels.
    */
@@ -210,7 +224,7 @@ function ellipsizeTextNode(node, element) {
   const text = node.data;
   // Ignore leading non-breaking whitespace. We cannot use the `trimStart` as
   // `trim` removes non-breaking whitespace.
-  const startOffset = findIndex(text, (char) => {
+  const startOffset = findIndex(text, char => {
     return !isBreakingWhitespace(char);
   });
 
@@ -244,8 +258,11 @@ function ellipsizeTextNode(node, element) {
     }
 
     return underflowAtPosition(index);
-  }, BinarySearchStop.RIGHT, BinarySearchPreference.LOW);
-  const firstOverflowingIndex = searchIndex >= 0 ? searchIndex + 1 : -(searchIndex + 1);
+  }, BinarySearchStop.RIGHT, BinarySearchPreference.HIGH);
+
+  const firstOverflowingIndex = searchIndex >= 0 ?
+    searchIndex + 1 :
+    -(searchIndex + 1);
 
   // Remove trailing whitespace since we do not want to have something like
   // "Hello world   …". We need to keep leading whitespace since we may be

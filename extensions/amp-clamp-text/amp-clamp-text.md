@@ -13,12 +13,12 @@
   3. And remove this comment! (no empty lines before "---")
 -->
 ---
-$category: presentation
+$category@: presentation
 formats:
   - websites
   - email
 teaser:
-  text: FILL THIS IN.
+  text: Clamps text with an ellipsis, optionally showing an overflow element.
 ---
 <!--
 Copyright 2019 The AMP HTML Authors. All Rights Reserved.
@@ -41,11 +41,11 @@ limitations under the License.
 <table>
   <tr>
     <td width="40%"><strong>Description</strong></td>
-    <td>FILL THIS IN</td>
+    <td>Clamps text within a container with an ellipsis.</td>
   </tr>
   <tr>
     <td width="40%"><strong>Availability</strong></td>
-    <td>FILL THIS IN</td>
+    <td>Stable</td>
   </tr>
   <tr>
     <td width="40%"><strong>Required Script</strong></td>
@@ -53,28 +53,32 @@ limitations under the License.
   </tr>
   <tr>
     <td class="col-fourty"><strong><a href="https://www.ampproject.org/docs/guides/responsive/control_layout.html">Supported Layouts</a></strong></td>
-    <td>FILL THIS IN</td>
-  </tr>
-  <tr>
-    <td width="40%"><strong>Examples</strong></td>
-    <td>FILL THIS IN</td>
+    <td>container, fill, fixed, fixed-height, flex-item, intrinsic, nodisplay, responsive</td>
   </tr>
 </table>
 
 ## Behavior
 
-FILL THIS IN. What does this extension do?
+Clamps text with an ellipsis, optionally showing an overflow element when there is overflow. 
 
 ## Attributes
 
-FILL THIS IN. Does this extension allow for properties to configure?
-
 <table>
   <tr>
-    <td width="40%"><strong>data-my-attribute</strong></td>
-    <td>FILL THIS IN. This table <strong>must</strong> be written in HTML.</td>
+    <td width="40%"><strong>overflow-style</strong></td>
+    <td>Either `right` or `default`, defaults to `default`. When `right`, this makes the overflow element take the full height, and be positioned to the right of the container.</td>
   </tr>
 </table>
+
+## Usage
+
+```html
+<amp-clamp-text layout="fixed-height" height="3em">
+  Some text that may get truncated.
+  <button class="amp-clamp-overflow amp-clamp-expand"> See more</button>
+  <button class="amp-clamp-collapse"> See less</button>
+</amp-clamp-text>
+```
 
 ## Validation
 See [amp-clamp-text rules](https://github.com/ampproject/amphtml/blob/master/extensions/amp-clamp-text/validator-amp-clamp-text.protoascii) in the AMP validator specification.
