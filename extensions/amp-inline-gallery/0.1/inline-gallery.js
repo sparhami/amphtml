@@ -19,8 +19,8 @@ import {
   Axis,
   getDimension,
   getReferencePoint,
-} from "../../amp-base-carousel/0.1/dimensions";
-import {Carousel} from "../../amp-base-carousel/0.1/carousel";
+} from '../../amp-base-carousel/0.1/dimensions';
+import {Carousel} from '../../amp-base-carousel/0.1/carousel';
 import {setImportantStyles} from '../../../src/style.js';
 
 /**
@@ -125,7 +125,7 @@ export class InlineGallery {
 
   /**
    * @param {!Element} slide The slide to get the content for.
-   * @return {!Element} The content for the slide, or the slide itself. 
+   * @return {!Element} The content for the slide, or the slide itself.
    */
   getSlideContent_(slide) {
     return slide.querySelector('.i-amphtml-inline-gallery-slide-content') ||
@@ -166,4 +166,4 @@ export class InlineGallery {
       });
     });
   }
- }
+}

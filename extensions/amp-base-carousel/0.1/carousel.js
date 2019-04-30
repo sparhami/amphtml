@@ -969,7 +969,7 @@ export class Carousel {
     this.runMutate_(() => {
       this.updateRestingIndex_(this.currentIndex_);
       this.updateCurrentElementOffset_(
-        this.currentIndex_, this.currentElementOffset_);
+          this.currentIndex_, this.currentElementOffset_);
       this.resetSlideTransforms_(totalLength);
       this.hideSpacersAndSlides_();
       this.moveSlides_(totalLength);

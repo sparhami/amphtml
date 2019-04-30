@@ -16,10 +16,10 @@
 
 import {CSS} from '../../../build/amp-inline-gallery-pagination-0.1.css';
 import {Layout} from '../../../src/layout';
+import {computedStyle, setImportantStyles} from '../../../src/style.js';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {dict} from '../../../src/utils/object';
 import {htmlFor} from '../../../src/static-template';
-import {setImportantStyles, computedStyle} from '../../../src/style.js';
 
 /**
  * Returns a number falling off from one to zero, based on a distance
@@ -117,11 +117,11 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
 
     const style = computedStyle(this.win, this.element);
     const maxWidthPercentage = Number.parseFloat(
-      style.getPropertyValue('--amp-igp-max-dots-width-percentage'));
+        style.getPropertyValue('--amp-igp-max-dots-width-percentage'));
     const dotWidth = Number.parseFloat(
-      style.getPropertyValue('--amp-igp-dot-width'));
+        style.getPropertyValue('--amp-igp-dot-width'));
     const dotMinSpacing = Number.parseFloat(
-      style.getPropertyValue('--amp-igp-dot-min-spacing'));
+        style.getPropertyValue('--amp-igp-dot-min-spacing'));
     const dotWidthTotal = total * dotWidth;
     const dotSpacingTotal = (total + 1) * dotMinSpacing;
     const {width} = this.getLayoutBox();

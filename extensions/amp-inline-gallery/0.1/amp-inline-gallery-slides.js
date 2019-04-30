@@ -15,8 +15,8 @@
  */
 
 import {CSS} from '../../../build/amp-inline-gallery-slides-0.1.css';
-import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel';
+import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
 import {Layout} from '../../../src/layout';
 import {
   ResponsiveAttributes,

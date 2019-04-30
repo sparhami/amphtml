@@ -16,8 +16,8 @@
 
 import {Alignment, Axis, scrollContainerToElement} from '../../amp-base-carousel/0.1/dimensions';
 import {CSS} from '../../../build/amp-inline-gallery-thumbnails-0.1.css';
-import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel';
+import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
 import {createCustomEvent, getDetail, listenOnce} from '../../../src/event-helper';
 import {dev} from '../../../src/log';
 import {dict} from '../../../src/utils/object';
@@ -139,7 +139,7 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     this.carousel_.updateUi();
     return Promise.resolve();
   }
-  
+
   createThumbnailForElement_(element, index) {
     const html = htmlFor(this.element);
     const content = html `
