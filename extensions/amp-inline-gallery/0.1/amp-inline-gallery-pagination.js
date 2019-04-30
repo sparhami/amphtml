@@ -134,10 +134,13 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
 
     this.total_ = total;
     this.useDots_ = useDots;
-    this.paginationDots_.hidden = !useDots;
-    this.paginationNumbersEl_.hidden = useDots;
-    this.paginationTotalEl_.textContent = total;
-    this.createDots_(dotCount);
+
+    this.mutateElement(() => {
+      this.paginationDots_.hidden = !useDots;
+      this.paginationNumbersEl_.hidden = useDots;
+      this.paginationTotalEl_.textContent = total;
+      this.createDots_(dotCount);
+    });
   }
 
   createDots_(dotCount) {
@@ -174,10 +177,12 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
 
     this.updateTotal_(total);
 
-    if (this.useDots_) {
-      this.updateDots_(index, offset);
-    } else {
-      this.updateIndex_(index);
-    }
+    this.mutateElement(() => {
+      if (this.useDots_) {
+        this.updateDots_(index, offset);
+      } else {
+        this.updateIndex_(index);
+      }
+    });
   }
 }
