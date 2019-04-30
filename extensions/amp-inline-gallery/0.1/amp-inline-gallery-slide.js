@@ -14,82 +14,45 @@
  * limitations under the License.
  */
 
-import {htmlFor} from '../../../src/static-template';
-import {isLayoutSizeDefined} from '../../../src/layout';
-import {toArray} from '../../../src/types';
-
-/**
- * @param {!Element} el The Element to check.
- * @return {boolean} Whether or not the Element is a sizer Element.
- */
-function isSizer(el) {
-  return el.tagName == 'I-AMPHTML-SIZER';
-}
+import {CSS} from '../../../build/amp-inline-gallery-slide-0.1.css';
+import {Layout} from '../../../src/layout';
 
 export class AmpInlineGallerySlide extends AMP.BaseElement {
+  /**
+   * @return {!ShadowRoot}
+   * @private
+   */
+  createShadowRoot_() {
+    const sr = this.element.attachShadow({mode: 'open'});
+    sr.innerHTML = `
+      <style>${CSS}</style>
+      <figure class="container">
+        <div class="content">
+          <slot></slot>
+        </div>
+        <figcaption class="caption">
+          <slot name="caption"></slot>
+        </figcaption>
+      </figure>
+    `;
+    return sr;
+  }
+
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
-
-    /** @private {?Element} */
-    this.contentSlot_ = null;
-
-    /** @private {?Element} */
-    this.captionSlot_ = null;
   }
 
   /** @override */
-  isLayoutSupported(layout) {
-    return isLayoutSizeDefined(layout);
+  isLayoutSupported() {
+    return Layout.FLEX_ITEM;
   }
 
   /** @override */
   buildCallback() {
-    const {element} = this;
-    const children = toArray(element.children);
-    const slideContent = [];
-    const slideCaption = [];
-
-    // Figure out which slot the children go into.
-    children.forEach(c => {
-      const slot = c.getAttribute('slot');
-      if (slot == 'caption') {
-        slideCaption.push(c);
-      } else if (!isSizer(c)) {
-        slideContent.push(c);
-      }
-    });
-
-    // Create the carousel's inner DOM.
-    element.appendChild(this.renderContainerDom_());
-
-    this.contentSlot_ = element.querySelector(
-        '.i-amphtml-inline-gallery-slide-content');
-    this.captionSlot_ = element.querySelector(
-        '.i-amphtml-inline-gallery-slide-caption');
-    slideContent.forEach(el => {
-      el.classList.add('i-amphtml-inline-gallery-slide-slotted');
-      this.contentSlot_.appendChild(el);
-    });
-    slideCaption.forEach(el => {
-      this.captionSlot_.appendChild(el);
-    });
+    this.createShadowRoot_();
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
-  }
-
-  /**
-   * @return {!Element}
-   * @private
-   */
-  renderContainerDom_() {
-    const html = htmlFor(this.element);
-    return html`
-      <figure class="i-amphtml-inline-gallery-slide-container">
-        <div class="i-amphtml-inline-gallery-slide-content"></div>
-        <figcaption class="i-amphtml-inline-gallery-slide-caption"></figcaption>
-      </figure>
-    `;
   }
 }

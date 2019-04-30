@@ -85,14 +85,15 @@ export function getStart(axis, el) {
 }
 
 /**
- * Gets the point of reference along an axis for a desired alignment.
- * @param {!Axis} axis The axis to get the reference point for.
- * @param {!Alignment} alignment The alignment to get the reference point for.
- * @param {!Element} el The element to get the reference point for.
+ * @param {!Axis} axis The Axis to get the position for.
+ * @param {!Alignment} alignment The Alignment to get the position for.
+ * @param {!Element} el The Element to get the position for.
+ * @return {number} The position for the given Element along the given axis for
+ *    the given alignment.
  */
-export function getReferencePoint(axis, alignment, el) {
-  return alignment == Alignment.CENTER ? getCenter(axis, el) :
-      getStart(axis, el);
+export function getPosition(axis, alignment, el) {
+  return alignment == Alignment.START ? getStart(axis, el) :
+    getCenter(axis, el);
 }
 
 /**
@@ -143,7 +144,22 @@ export function setTransformTranslateStyle(axis, el, delta) {
  */
 export function overlaps(axis, el, position) {
   const {start, end} = getDimension(axis, el);
-  return start <= position && position <= end;
+  // Ignore the end point, since that is shared with the adjacent Element.
+  return start <= position && position < end;
+}
+
+/**
+ * @param {!Axis} axis The axis to align on.
+ * @param {!Alignment} alignment The desired alignment.
+ * @param {!Element} container The container to align against.
+ * @param {!Element} el The Element get the offset for.
+ * @return {number} How far el is from alignment, as a percentage of its length.
+ */
+export function getPercentageOffsetFromAlignment(axis, alignment, container, el) {
+  const elPos = getPosition(axis, alignment, el);
+  const containerPos = getPosition(axis, alignment, container);
+  const {length: elLength} = getDimension(axis, el);
+  return (elPos - containerPos) / elLength;
 }
 
 /**
@@ -160,9 +176,7 @@ export function overlaps(axis, el, position) {
  */
 export function findOverlappingIndex(
   axis, alignment, container, children, startIndex) {
-  const pos = alignment == Alignment.START ?
-    getStart(axis, container) + 1 :
-    getCenter(axis, container);
+  const pos = getPosition(axis, alignment, container);
 
   // First look at the start index, since is the most likely to overlap.
   if (overlaps(axis, children[startIndex], pos)) {
@@ -233,12 +247,14 @@ export function updateScrollPosition(axis, el, delta) {
  * @param {!Axis} axis The axis to scroll along.
  * @param {!Alignment} alignment How to align the element within the container.
  */
-export function scrollContainerToElement(el, container, axis, alignment) {
+export function scrollContainerToElement(
+  axis, alignment, container, el, offset = 0) {
   const startAligned = alignment == Alignment.START;
+  const {length} = getDimension(axis, el);
   const snapOffset = startAligned ? getStart(axis, el) : getCenter(axis, el);
   const scrollOffset = startAligned ? getStart(axis, container) :
     getCenter(axis, container);
-  const delta = snapOffset - scrollOffset;
+  const delta = snapOffset - scrollOffset - (offset * length);
 
   updateScrollPosition(axis, container, delta);
 }

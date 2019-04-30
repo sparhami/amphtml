@@ -14,8 +14,10 @@
       background-color: #eee;
     }
 
-    .my-gallery {
-      --amp-gallery-image-aspect-ratio: calc(3 / 2);
+    .caption {
+      height: 2.5em;
+      line-height: 1.25em;
+      font-size: 1em;
     }
   </style>
 </head>
@@ -24,35 +26,55 @@
   <div class="with-background">
     Some content above the carousel.
   </div>
-  <amp-inline-gallery 
-      class="my-gallery"
-      layout="responsive"
-      width="1" height="1"
-      heights="var(--amp-gallery-height)">
-    <amp-inline-gallery-slide layout="flex-item">
-      <amp-img src="../amp-base-carousel/img/redgradient.png" layout="flex-item"></amp-img>
-      <div slot="caption">
-        This is an image with a red gradient. Red is the color of several fruits like strawberries, cherries, tomatoes and apples.
-      </div>
-    </amp-inline-gallery-slide>
-    <amp-inline-gallery-slide layout="flex-item">
-      <amp-img src="../amp-base-carousel/img/greengradient.png" layout="flex-item"></amp-img>
-      <div slot="caption">
-        Notable characters that are green include: Shrek, Kermit the Frog, Yoda, and Hulk. It is also the color of grass and leaves.
-      </div>
-    </amp-inline-gallery-slide>
-    <amp-inline-gallery-slide layout="flex-item">
-      <amp-img src="../amp-base-carousel/img/bluegradient.png" layout="flex-item"></amp-img>
-      <div slot="caption">
-        One of the three primary colors, the color blue symbolizes wisdom and intelligence. Some shades of blue include ultramarine, navy blue, cerulean, and sapphire.
-      </div>
-    </amp-inline-gallery-slide>
-    <amp-inline-gallery-slide layout="flex-item">
-      <amp-img src="../amp-base-carousel/img/orangegradient.png" layout="flex-item"></amp-img>
-      <div slot="caption">
-        The word orange ultimately comes from the Sanskrit नारङ्ग (nāraṅga, “orange tree”).
-      </div>
-    </amp-inline-gallery-slide>
+  <amp-inline-gallery layout="container">
+    <amp-inline-gallery-slides layout="responsive" width="3" height="2">
+      <amp-inline-gallery-slide layout="flex-item">
+        <amp-img src="../amp-base-carousel/img/redgradient.png" layout="fill"></amp-img>
+        <div class="caption" slot="caption">
+          This is an image with a red gradient. Red is the color of several fruits like strawberries, cherries, tomatoes and apples.
+        </div>
+      </amp-inline-gallery-slide>
+      <amp-inline-gallery-slide layout="flex-item">
+        <amp-img src="../amp-base-carousel/img/greengradient.png" layout="fill"></amp-img>
+        <div class="caption" slot="caption">
+          Notable characters that are green include: Shrek, Kermit the Frog, Yoda, and Hulk. It is also the color of grass and leaves.
+        </div>
+      </amp-inline-gallery-slide>
+      <amp-inline-gallery-slide layout="flex-item">
+        <amp-img src="../amp-base-carousel/img/bluegradient.png" layout="fill"></amp-img>
+        <div class="caption" slot="caption">
+          One of the three primary colors, the color blue symbolizes wisdom and intelligence. Some shades of blue include ultramarine, navy blue, cerulean, and sapphire.
+        </div>
+      </amp-inline-gallery-slide>
+      <amp-inline-gallery-slide layout="flex-item">
+        <amp-img src="../amp-base-carousel/img/orangegradient.png" layout="fill"></amp-img>
+        <div class="caption" slot="caption">
+          The word orange ultimately comes from the Sanskrit नारङ्ग (nāraṅga, “orange tree”).
+        </div>
+      </amp-inline-gallery-slide>
+      <amp-inline-gallery-slide>
+        <amp-img src="../amp-base-carousel/img/tealgradient.png" layout="fill"></amp-img>
+      </amp-inline-gallery-slide>
+      <amp-inline-gallery-slide>
+        <amp-img src="../amp-base-carousel/img/lemonyellowgradient.png" layout="fill"></amp-img>
+      </amp-inline-gallery-slide>
+      <amp-inline-gallery-slide>
+        <amp-img src="../amp-base-carousel/img/lilacgradient.png" layout="fill"></amp-img>
+      </amp-inline-gallery-slide>
+    </amp-inline-gallery-slides>
+    <amp-inline-gallery-captions class="caption" layout="container">
+    </amp-inline-gallery-captions>
+    <amp-inline-gallery-pagination layout="fixed-height" height="24">
+    </amp-inline-gallery-pagination>
+    <amp-inline-gallery-thumbnails
+        layout="container"
+        thumbnail-aspect-ratio-width="3"
+        thumbnail-aspect-ratio-height="2"
+        style="--amp-thumbnail-margin: 4px">
+        <div slot="sizer" style="padding: 4px 8px">
+          <div style="padding-top: calc(100% * (2 / 9))"></div>
+        </div>
+    </amp-inline-gallery-thumbnails>
   </amp-inline-gallery>
   <div class="with-background">
     Some content below the carousel.

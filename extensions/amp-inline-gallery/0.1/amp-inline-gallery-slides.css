@@ -1,0 +1,3 @@
+:host {
+  padding-bottom: var(--amp-caption-height, 0px);
+}
