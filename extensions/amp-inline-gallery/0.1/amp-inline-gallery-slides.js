@@ -172,6 +172,7 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
    */
   configureSlides_(slidesSlot) {
     const updateSlides = () => {
+      // Cannot use `assignedElements`
       const slides = Array.from(slidesSlot.assignedNodes()).filter(n => {
         return n.nodeType == 1; // Elements only
       });
