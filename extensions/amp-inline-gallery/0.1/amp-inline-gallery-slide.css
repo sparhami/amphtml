@@ -47,13 +47,6 @@
   opacity: var(--caption-opacity);
 }
 
-::slotted {
+::slotted(*) {
   width: 100%;
-}
-
-::slotted > .i-amphtml-replaced-content {
-  /*
-   * Apply contain object-fit to all replaced content to avoid distorted ratios.
-   */
-  object-fit: contain;
 }
