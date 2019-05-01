@@ -155,7 +155,8 @@ export function overlaps(axis, el, position) {
  * @param {!Element} el The Element get the offset for.
  * @return {number} How far el is from alignment, as a percentage of its length.
  */
-export function getPercentageOffsetFromAlignment(axis, alignment, container, el) {
+export function getPercentageOffsetFromAlignment(
+  axis, alignment, container, el) {
   const elPos = getPosition(axis, alignment, el);
   const containerPos = getPosition(axis, alignment, container);
   const {length: elLength} = getDimension(axis, el);
@@ -242,10 +243,11 @@ export function updateScrollPosition(axis, el, delta) {
  * Scrolls the position within a scrolling container to an Element. Unlike
  * `scrollIntoView`, this function does not scroll the container itself into
  * view.
- * @param {!Element} el The Element to scroll to.
- * @param {!Element} container The scrolling container.
  * @param {!Axis} axis The axis to scroll along.
  * @param {!Alignment} alignment How to align the element within the container.
+ * @param {!Element} container The scrolling container.
+ * @param {!Element} el The Element to scroll to.
+ * @param {number} offset A pixel offset within the element to scroll to.
  */
 export function scrollContainerToElement(
   axis, alignment, container, el, offset = 0) {

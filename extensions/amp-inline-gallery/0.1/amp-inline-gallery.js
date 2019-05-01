@@ -23,6 +23,7 @@ import {CSS} from '../../../build/amp-inline-gallery-0.1.css';
 import {Layout} from '../../../src/layout';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {isExperimentOn} from '../../../src/experiments';
+import {toArray} from '../../../src/types';
 
 class AmpInlineGallery extends AMP.BaseElement {
   /** @param {!AmpElement} element */
@@ -55,7 +56,7 @@ class AmpInlineGallery extends AMP.BaseElement {
    * @private
    */
   dispatchOnChildren_(name, detail) {
-    Array.from(this.element.children).forEach(child => {
+    toArray(this.element.children).forEach(child => {
       child.dispatchEvent(createCustomEvent(this.win, name, detail));
     });
   }

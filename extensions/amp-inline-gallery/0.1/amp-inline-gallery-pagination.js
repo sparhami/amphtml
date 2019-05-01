@@ -116,11 +116,11 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     }
 
     const style = computedStyle(this.win, this.element);
-    const maxWidthPercentage = Number.parseFloat(
+    const maxWidthPercentage = parseFloat(
         style.getPropertyValue('--amp-igp-max-dots-width-percentage'));
-    const dotWidth = Number.parseFloat(
+    const dotWidth = parseFloat(
         style.getPropertyValue('--amp-igp-dot-width'));
-    const dotMinSpacing = Number.parseFloat(
+    const dotMinSpacing = parseFloat(
         style.getPropertyValue('--amp-igp-dot-min-spacing'));
     const dotWidthTotal = total * dotWidth;
     const dotSpacingTotal = (total + 1) * dotMinSpacing;
