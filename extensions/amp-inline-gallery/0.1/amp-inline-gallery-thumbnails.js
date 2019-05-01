@@ -79,6 +79,8 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     this.requestedIndex_ = 0;
 
     this.ignoreScrollUntilSettled_ = false;
+
+    this.keepScrollInSync_ = false;
   }
 
   /** @override */
@@ -117,21 +119,9 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
 
     this.thumbWidth = this.element.getAttribute('thumbnail-aspect-ratio-width') || 1;
     this.thumbHeight = this.element.getAttribute('thumbnail-aspect-ratio-height') || 1;
+    this.keepScrollInSync_ = this.element.hasAttribute('sync-scroll');
 
-    this.element.addEventListener('offsetchange-update', event => {
-      this.handleOffsetChangeUpdate_(event);
-    });
-    this.element.addEventListener('offsetchange', event => {
-      event.stopPropagation();
-    });
-    this.element.addEventListener('indexchange', event => {
-      event.stopPropagation();
-    });
-    this.element.addEventListener('touchstart', event => {
-      this.handleTouchstart_();
-    }, {
-      passive: true,
-    });
+    this.addListeners_();
   }
 
   /** @override */
@@ -161,11 +151,29 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
       this.element.dispatchEvent(event);
       this.requestedIndex_ = index;
       this.ignoreScrollUntilSettled_ = true;
-      runEnablingSmoothScroll(this.thumbnailsContainer_, () => {
-        this.scrollToElement(index);
-      });
+      this.scrollToElement(index, 0, true);
     };
     return content;
+  }
+
+  addListeners_() {
+    this.element.addEventListener('offsetchange-update', event => {
+      this.handleOffsetChangeUpdate_(event);
+    });
+    this.element.addEventListener('offsetchange', event => {
+      event.stopPropagation();
+    });
+    this.element.addEventListener('indexchange-update', event => {
+      this.handleIndexChangeUpdate_(event);
+    });
+    this.element.addEventListener('indexchange', event => {
+      event.stopPropagation();
+    });
+    this.element.addEventListener('touchstart', event => {
+      this.handleTouchstart_();
+    }, {
+      passive: true,
+    });
   }
 
   createDefaultThumbnail_() {
@@ -192,16 +200,25 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     return img;
   }
 
-  scrollToElement(index, offset = 0) {
+  scrollToElement(index, offset = 0, smooth) {
     const thumbnail = this.thumbnails_[index];
+    const {thumbnailsContainer_} = this;
 
-    scrollContainerToElement(
-        Axis.X,
-        Alignment.CENTER,
-        this.thumbnailsContainer_,
-        thumbnail,
-        offset
-    );
+    function runner() {
+      scrollContainerToElement(
+          Axis.X,
+          Alignment.CENTER,
+          thumbnailsContainer_,
+          thumbnail,
+          offset
+      );
+    }
+
+    if (smooth) {
+      runEnablingSmoothScroll(thumbnailsContainer_, runner);
+    } else {
+      runner();
+    }
   }
 
   createThumbnail_(slide, index) {
@@ -231,18 +248,18 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     });
   }
 
-  updateOffset_(index, offset) {
+  updateOffset_(index, offset, smooth) {
     if (this.touching_ || this.userScrolling_) {
       return;
     }
 
-    this.ignoreScrollUntilSettled_ = !this.isScrollSettled_(index, offset);
+
 
     if (this.ignoreScrollUntilSettled_) {
       return;
     }
 
-    this.scrollToElement(index, offset);
+    this.scrollToElement(index, offset, smooth);
   }
 
   handleTouchstart_() {
@@ -277,6 +294,24 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     const offset = detail['offset'];
 
     this.updateSlides_(slides);
-    this.updateOffset_(index, offset);
+    this.ignoreScrollUntilSettled_ = !this.isScrollSettled_(index, offset);
+
+    if (this.keepScrollInSync_) {
+      this.updateOffset_(index, offset, false);
+    }
+  }
+
+  handleIndexChangeUpdate_(event) {
+    const detail = getDetail(event);
+    const index = detail['index'];
+    const slides = detail['slides'];
+    const offset = 0;
+
+    this.updateSlides_(slides);
+    this.ignoreScrollUntilSettled_ = !this.isScrollSettled_(index, offset);
+
+    if (!this.keepScrollInSync_) {
+      this.updateOffset_(index, offset, true);
+    }
   }
 }
