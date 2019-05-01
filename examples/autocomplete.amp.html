@@ -16,6 +16,10 @@
         padding-top: 4px;
         font: 8pt 'Courier New', Courier, monospace;
     }
+
+    input[name=favoriteState] {
+      width: 2em;
+    }
   </style>
   <script>
       (self.AMP=self.AMP||[]).push((AMP) => {
@@ -29,11 +33,11 @@
     <p>form has no autocomplete attr</p>
     <form method="post" action-xhr="/form/echo-json/post" target="_blank">
       <label for="frmEmailA">Personal Email</label>
-      <input type="email" name="email" id="frmEmailA" placeholder="name@example.com" required autocomplete="email"><br>
+      <input type="text" name="email" id="frmEmailA" placeholder="name@example.com" required autocomplete="email"><br>
 
       <label for="frmEmailB">Autocomplete Email</label>
       <amp-autocomplete filter="substring" min-characters="0">
-        <input type="email" name="email" id="frmEmailB" placeholder="name@example.com" required autocomplete="email">  
+        <input type="text" name="email" id="frmEmailB" placeholder="name@example.com" required autocomplete="email">  
         <script type="application/json">
           { "items" : ["Email 1", "Email 2", "Email 3"]}
         </script>
@@ -44,11 +48,11 @@
     <p>form has autocomplete="on"</p>
     <form method="post" action-xhr="/form/echo-json/post" target="_blank" autocomplete="on">
       <label for="frmEmailC">Personal Email</label>
-      <input type="email" name="email" id="frmEmailC" placeholder="name@example.com" required autocomplete="email"><br>
+      <input type="text" name="email" id="frmEmailC" placeholder="name@example.com" required autocomplete="email"><br>
 
       <label for="frmEmailD">Autocomplete Email</label>
       <amp-autocomplete filter="substring" min-characters="0">
-        <input type="email" name="email" id="frmEmailD" placeholder="name@example.com" required autocomplete="email">  
+        <input type="text" name="email" id="frmEmailD" placeholder="name@example.com" required autocomplete="email">  
         <script type="application/json">
           { "items" : ["Email 1", "Email 2", "Email 3"]}
         </script>
@@ -59,11 +63,11 @@
     <p>form and input have autocomplete="off"</p>
     <form method="post" action-xhr="/form/echo-json/post" target="_blank" autocomplete="off">
       <label for="frmEmailE">Personal Email</label>
-      <input type="email" name="email" id="frmEmailE" placeholder="name@example.com" required autocomplete="off"><br>
+      <input type="text" name="email" id="frmEmailE" placeholder="name@example.com" required autocomplete="off"><br>
 
       <label for="frmEmailF">Autocomplete Email</label>
       <amp-autocomplete filter="substring" min-characters="0">
-        <input type="email" name="email" id="frmEmailF" placeholder="name@example.com" required autocomplete="email">  
+        <input type="text" name="email" id="frmEmailF" placeholder="name@example.com" required autocomplete="email">  
         <script type="application/json">
           { "items" : ["Email 1", "Email 2", "Email 3"]}
         </script>
@@ -198,8 +202,8 @@
     <form method="post" action-xhr="/form/echo-json/post" target="_blank">
       <amp-autocomplete filter="none" min-characters="0"
         [src]="manualFilterData" submit-on-enter>
-          <input type="text" name="input10" required 
-            on="input-debounced:AMP.setState({ manualFilterData: 
+          <input type="text" name="input10" required
+            on="input-debounced:AMP.setState({ manualFilterData:
               { 'items' : [event.value + ' 1', event.value + ' 2', event.value + ' 3'] } })">
           <script type=application/json>
            { "items" : [] }
@@ -218,7 +222,7 @@
       <amp-autocomplete filter="none" min-characters="0"
         src="/form/autocomplete/query"
         [src]="'/form/autocomplete/query?q=' + (query || '')" submit-on-enter>
-          <input type="text" name="input11" required 
+          <input type="text" name="input11" required
             on="input-debounced:AMP.setState({ query: event.value })">
       </amp-autocomplete>
       <input name="submit-button" type="submit" value="Submit">
@@ -269,7 +273,7 @@
         </div>
     </form>
 
-    <p>Remote data</p>
+    <p>Remote data (with small data)</p>
     <form method="post"
         action-xhr="/form/echo-json/post"
         target="_blank">
@@ -279,6 +283,13 @@
                 <amp-autocomplete filter="substring" min-characters="0"
                     src="autocomplete-cities.example.json">
                     <input type="text" name="city" required>
+                </amp-autocomplete>
+            </label>
+            <label>
+                <span>Favorite state</span>
+                <amp-autocomplete filter="substring" min-characters="0"
+                    src="autocomplete-states.example.json">
+                    <input type="text" name="favoriteState" required>
                 </amp-autocomplete>
             </label>
             <input name="submit-button" type="submit" value="Submit">
@@ -464,9 +475,9 @@
                         ] }
                     </script>
                     <template type="amp-mustache" id="amp-template-default">
-                        <div class="city-item" value="{{value}}">
+                        <div class="city-item" data-value="{{value}}">
                             <div>{{value}}</div>
-                            <div class="custom-population">Population: {{population}}</div>        
+                            <div class="custom-population">Population: {{population}}</div>
                         </div>
                         </template>
                 </amp-autocomplete>
@@ -491,7 +502,7 @@
                         { "items" : [
                             {
                                 "city" : "Albany",
-                                "state" : "New York", 
+                                "state" : "New York",
                                 "areaCode" : 518,
                                 "population" : 98251
                             }, {
@@ -508,9 +519,9 @@
                         ] }
                     </script>
                     <template type="amp-mustache" id="amp-template-custom">
-                        <div class="city-item" value="{{city}}, {{state}}">
+                        <div class="city-item" data-value="{{city}}, {{state}}">
                             <div>{{city}}, {{state}}</div>
-                            <div class="custom-population">Population: {{population}}</div>        
+                            <div class="custom-population">Population: {{population}}</div>
                         </div>
                     </template>
                 </amp-autocomplete>
