@@ -309,7 +309,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
       this.element.appendChild(this.container_);
       this.manager_.maybeInit();
       this.registerDefaultAction(
-          invocation => this.open_(invocation),
+          invocation => this.handleOpenAction_(invocation),
           'open');
     });
   }
@@ -1051,6 +1051,19 @@ export class AmpLightboxGallery extends AMP.BaseElement {
   }
 
   /**
+   * @param {!Element} element The element to open a lightbox for.
+   * @return {!Promise<undefined>} A Promise that resolves once the open has
+   *    completed.
+   */
+  open(element) {
+    return this.openLightboxGallery_(dev().assertElement(element)).then(() => {
+      return this.history_.push(this.close_.bind(this));
+    }).then(historyId => {
+      this.historyId_ = historyId;
+    });
+  }
+
+  /**
    * Opens the lightbox-gallery with either the invocation source or
    * the element referenced by the `id` argument.
    * Examples:
@@ -1062,7 +1075,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    * @param {!../../../src/service/action-impl.ActionInvocation} invocation
    * @private
    */
-  open_(invocation) {
+  handleOpenAction_(invocation) {
     let target = invocation.caller;
     if (invocation.args && invocation.args['id']) {
       const targetId = invocation.args['id'];
@@ -1070,11 +1083,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
       userAssert(target,
           'amp-lightbox-gallery.open: element with id: %s not found', targetId);
     }
-    this.openLightboxGallery_(dev().assertElement(target)).then(() => {
-      return this.history_.push(this.close_.bind(this));
-    }).then(historyId => {
-      this.historyId_ = historyId;
-    });
+    this.open(target);
   }
 
   /**

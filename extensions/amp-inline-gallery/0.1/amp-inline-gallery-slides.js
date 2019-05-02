@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {AutoLightboxEvents} from '../../../src/auto-lightbox';
 import {CSS} from '../../../build/amp-inline-gallery-slides-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel';
 import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
@@ -23,6 +24,7 @@ import {
 } from '../../amp-base-carousel/0.1/responsive-attributes';
 import {dev} from '../../../src/log';
 import {getDetail} from '../../../src/event-helper';
+import {iterateCursor} from '../../../src/dom';
 import {toArray} from '../../../src/types';
 
 /**
@@ -32,6 +34,8 @@ import {toArray} from '../../../src/types';
 function isSizer(el) {
   return el.tagName == 'I-AMPHTML-SIZER';
 }
+
+let uid = 0;
 
 export class AmpInlineGallerySlides extends AMP.BaseElement {
   /**
@@ -74,6 +78,8 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
 
     /** @private {?Carousel} */
     this.carousel_ = null;
+
+    this.lightboxId_ = 'amp-inline-gallery-slides: ' + uid++;
   }
 
   /** @override */
@@ -175,6 +181,15 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       // Cannot use `assignedElements`
       const slides = Array.from(slidesSlot.assignedNodes()).filter(n => {
         return n.nodeType == 1; // Elements only
+      });
+      slides.forEach(slide => {
+        // Set on the slide itself, support opening slides in gallery.
+        const ampImg = slide.querySelector('amp-img');
+        if (!ampImg || ampImg.hasAttribute('lightbox')) {
+          return;
+        }
+        ampImg.setAttribute('lightbox', this.lightboxId);
+        ampImg.dispatchCustomEvent(AutoLightboxEvents.NEWLY_SET);
       });
       this.carousel_.updateSlides(slides);
     };

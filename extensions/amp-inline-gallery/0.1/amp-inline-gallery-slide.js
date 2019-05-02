@@ -16,6 +16,7 @@
 
 import {CSS} from '../../../build/amp-inline-gallery-slide-0.1.css';
 import {Layout} from '../../../src/layout';
+import {Services} from '../../../src/services';
 
 export class AmpInlineGallerySlide extends AMP.BaseElement {
   /**
@@ -38,12 +39,31 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
         </figcaption>
       </figure>
     `;
+    const expand = sr.querySelector('[slot="expand"]');
+    expand.addEventListener('click', e => {
+      this.openLightbox();
+      e.stopPropagation();
+    });
+
     return sr;
   }
 
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
+  }
+
+  openLightbox() {
+    Services.extensionsFor(this.win)
+        .installExtensionForDoc(this.getAmpDoc(), 'amp-lightbox-gallery')
+        .then(() => {
+          const el = document.querySelector('amp-lightbox-gallery');
+          return el.getImpl();
+        })
+        .then((impl) => {
+          const img = this.element.querySelector('amp-img');
+          impl.openLightboxGallery_(img);
+        });
   }
 
   /** @override */
