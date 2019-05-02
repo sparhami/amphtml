@@ -31,7 +31,10 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
           <slot></slot>
         </div>
         <figcaption class="caption">
-          <slot name="caption"></slot>
+          <amp-truncate-text layout="fill">
+            <slot name="caption"></slot>
+            <button slot="expand">See more</button>
+          </amp-truncate-text>
         </figcaption>
       </figure>
     `;
