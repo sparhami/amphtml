@@ -52,12 +52,14 @@ import {reportError} from '../../../src/error';
 import {setStyle, setStyles, toggle} from '../../../src/style';
 import {toArray} from '../../../src/types';
 import {triggerAnalyticsEvent} from '../../../src/analytics';
+import { findIndex } from '../../../src/utils/array';
 
 /** @const */
 const TAG = 'amp-lightbox-gallery';
 const DEFAULT_GALLERY_ID = 'amp-lightbox-gallery';
 const SLIDE_ITEM_SELECTOR =
-    '.i-amphtml-slide-item, .i-amphtml-carousel-slotted';
+    '.i-amphtml-slide-item, .i-amphtml-carousel-slotted, ' +
+    '> :not([slot])';
 
 /**
  * Set of namespaces that indicate the lightbox controls mode.
@@ -1472,7 +1474,9 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     // TODO(#13011): change to a tag selector after `<amp-carousel>`
     // type='carousel' starts supporting goToSlide.
     return closestAncestorElementBySelector(
-        sourceElement, 'amp-carousel[type="slides"], amp-base-carousel');
+        sourceElement,
+        'amp-carousel[type="slides"], amp-base-carousel, '+
+        'amp-inline-gallery-slides');
   }
 
   /**
@@ -1486,9 +1490,9 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     if (parentCarousel) {
       const allSlides = toArray(
           scopedQuerySelectorAll(parentCarousel, SLIDE_ITEM_SELECTOR));
-      const targetSlide = dev().assertElement(
-          closestAncestorElementBySelector(target, SLIDE_ITEM_SELECTOR));
-      const targetSlideIndex = allSlides.indexOf(targetSlide);
+      const targetSlideIndex = findIndex(allSlides, slide => {
+        return slide.contains(target);
+      });
       devAssert(parentCarousel).getImpl()
           .then(carousel => carousel.goToSlide(targetSlideIndex));
     }

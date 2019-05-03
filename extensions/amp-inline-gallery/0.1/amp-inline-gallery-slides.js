@@ -146,6 +146,13 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
   }
 
   /**
+   * @param {number} index 
+   */
+  goToSlide(index) {
+    this.carousel_.goToSlide(index, {smoothScroll: false});
+  }
+
+  /**
    * @private
    */
   installAdditionalExtensions_() {
