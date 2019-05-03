@@ -176,6 +176,20 @@ export function truncateText({
   runTruncation(container, containerRect, overflowElement);
 }
 
+export function getNonTruncatedTextContent(container, filter) {
+  function combinedFilter(node) {
+    return node.nodeType == Node.TEXT_NODE || filter(node);
+  }
+
+  return getAllNodes(container, combinedFilter)
+      .filter(node => node.nodeType == Node.TEXT_NODE)
+      .map(node => {
+        const data = node[TEXT_DATA_PROPERTY];
+        return data ? data.originalText : node.data;
+      })
+      .join('');
+}
+
 /**
  * Gets all the nodes within a subtree that match a filter.
  * @param {!Node} root The root of the subtree.

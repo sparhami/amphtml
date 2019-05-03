@@ -79,7 +79,7 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
     /** @private {?Carousel} */
     this.carousel_ = null;
 
-    this.lightboxId_ = 'amp-inline-gallery-slides: ' + uid++;
+    this.lightboxId_ = 'amp-inline-gallery-slides:' + uid++;
   }
 
   /** @override */
@@ -174,6 +174,22 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
   }
 
   /**
+   * @param {!Array<!Element>} slides 
+   * @private
+   */
+  lightboxSlides_(slides) {
+    slides
+      .filter(slide => {
+        return !slide.hasAttribute('lightbox') && 
+            slide.dispatchCustomEvent;
+      })
+      .forEach(slide => {
+        slide.setAttribute('lightbox', this.lightboxId_);
+        slide.dispatchCustomEvent(AutoLightboxEvents.NEWLY_SET);
+      });
+  }
+
+  /**
    * @param {!Element} slidesSlot
    */
   configureSlides_(slidesSlot) {
@@ -182,15 +198,7 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       const slides = Array.from(slidesSlot.assignedNodes()).filter(n => {
         return n.nodeType == 1; // Elements only
       });
-      slides.forEach(slide => {
-        // Set on the slide itself, support opening slides in gallery.
-        const ampImg = slide.querySelector('amp-img');
-        if (!ampImg || ampImg.hasAttribute('lightbox')) {
-          return;
-        }
-        ampImg.setAttribute('lightbox', this.lightboxId);
-        ampImg.dispatchCustomEvent(AutoLightboxEvents.NEWLY_SET);
-      });
+      this.lightboxSlides_(slides);
       this.carousel_.updateSlides(slides);
     };
 

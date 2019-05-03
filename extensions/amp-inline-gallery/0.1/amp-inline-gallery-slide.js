@@ -51,6 +51,10 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
+
+    this.sr_ = null;
+
+    element['getCaptionContent'] = () => this.getCaptionContent();
   }
 
   openLightbox() {
@@ -62,8 +66,13 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
         })
         .then((impl) => {
           const img = this.element.querySelector('amp-img');
-          impl.openLightboxGallery_(img);
+          impl.open(img, true);
         });
+  }
+
+  getCaptionContent() {
+    const truncateText = this.sr_.querySelector('amp-truncate-text');
+    return truncateText.getTextContent();
   }
 
   /** @override */
@@ -73,7 +82,7 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    this.createShadowRoot_();
+    this.sr_ = this.createShadowRoot_();
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});

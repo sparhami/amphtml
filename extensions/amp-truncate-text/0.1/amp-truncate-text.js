@@ -22,7 +22,10 @@ import {devAssert} from '../../../src/log';
 import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
 import {iterateCursor} from '../../../src/dom';
-import {truncateText} from './truncate-text';
+import {
+  getNonTruncatedTextContent,
+  truncateText,
+} from './truncate-text';
 
 /**
  * TODO(sparhami) List of stuff to do / consider:
@@ -62,6 +65,8 @@ export class AmpTruncateText extends AMP.BaseElement {
 
     /** @private {boolean} */
     this.truncateRequested_ = false;
+
+    element['getTextContent'] = () => this.getTextContent();
   }
 
   /** @override */
@@ -237,6 +242,14 @@ export class AmpTruncateText extends AMP.BaseElement {
           // retruncateing.
           this.listenForMutations_();
         });
+  }
+
+  getTextContent() {
+    return getNonTruncatedTextContent(this.element, node => {
+      return node.nodeType == Node.ELEMENT_NODE &&
+          node.parentNode != this.element || 
+          !node.hasAttribute('slot');
+    });
   }
 
   /**
