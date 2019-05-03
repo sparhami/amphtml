@@ -1229,6 +1229,10 @@ export class AmpLightboxGallery extends AMP.BaseElement {
   transitionImg_(sourceElement, enter) {
     return this.getCurrentElement_().imageViewer.getImpl()
         .then(imageViewer => {
+          return imageViewer.resetImageDimensions().then(() => {
+            return imageViewer;
+          });
+        }).then(imageViewer => {
           const {width, height} = imageViewer.getImageBoxWithOffset() || {};
 
           // Check if our imageBox has a width or height. We may be in the

@@ -155,7 +155,7 @@ export class AmpImageViewer extends AMP.BaseElement {
     }
 
     if (this.loadPromise_) {
-      this.loadPromise_.then(() => this.resetImageDimensions_());
+      this.loadPromise_.then(() => this.resetImageDimensions());
     }
   }
 
@@ -192,7 +192,7 @@ export class AmpImageViewer extends AMP.BaseElement {
 
     this.loadPromise_ = laidOutPromise
         .then(() => this.init_())
-        .then(() => this.resetImageDimensions_())
+        .then(() => this.resetImageDimensions())
         .then(() => this.setupGestures_());
     return this.loadPromise_;
   }
@@ -203,7 +203,7 @@ export class AmpImageViewer extends AMP.BaseElement {
       return;
     }
     this.loadPromise_.then(() => {
-      this.resetImageDimensions_();
+      this.resetImageDimensions();
       this.cleanupGestures_();
     });
   }
@@ -214,7 +214,7 @@ export class AmpImageViewer extends AMP.BaseElement {
       return;
     }
     this.loadPromise_.then(() => {
-      this.resetImageDimensions_();
+      this.resetImageDimensions();
       this.setupGestures_();
     });
   }
@@ -375,7 +375,7 @@ export class AmpImageViewer extends AMP.BaseElement {
    * dimensions changes.
    * @return {!Promise}
    */
-  resetImageDimensions_() {
+  resetImageDimensions() {
     return this.measureElement(() => this.measure_()).then(() => {
       const image = dev().assertElement(this.image_);
       return this.mutateElement(() => {
