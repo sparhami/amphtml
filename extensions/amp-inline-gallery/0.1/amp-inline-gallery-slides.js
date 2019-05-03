@@ -22,9 +22,9 @@ import {Layout} from '../../../src/layout';
 import {
   ResponsiveAttributes,
 } from '../../amp-base-carousel/0.1/responsive-attributes';
+import {Services} from '../../../src/services';
 import {dev} from '../../../src/log';
 import {getDetail} from '../../../src/event-helper';
-import {iterateCursor} from '../../../src/dom';
 import {toArray} from '../../../src/types';
 
 /**
@@ -88,6 +88,11 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
   }
 
   /** @override */
+  preconnectCallback() {
+    this.installAdditionalExtensions_();
+  }
+
+  /** @override */
   buildCallback() {
     Array.from(this.element.children).forEach(c => {
       if (isSizer(c)) {
@@ -138,6 +143,14 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       // may not (e.g. value could be a Number).
       this.attributeMutated_(key, String(mutations[key]));
     }
+  }
+
+  /**
+   * @private
+   */
+  installAdditionalExtensions_() {
+    Services.extensionsFor(this.win)
+        .installExtensionForDoc(this.getAmpDoc(), 'amp-lightbox-gallery');
   }
 
   /**
