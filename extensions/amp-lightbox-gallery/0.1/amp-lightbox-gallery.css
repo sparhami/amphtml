@@ -157,32 +157,56 @@ amp-lightbox-gallery amp-carousel {
   animation: fadeIn ease-in 0.4s 1 forwards;
 }
 
-.i-amphtml-lbg-controls.i-amphtml-lbg-fade-out
- {
+.i-amphtml-lbg-controls.i-amphtml-lbg-fade-out {
   animation: fadeOut linear 0.4s 1 forwards;
 }
 
+/* Start description styles */
 .i-amphtml-lbg-desc-box {
   position: absolute !important;
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
   z-index: 1;
+  /* 
+   * Make sure we do not overlap with the buttons. This is not applied to
+   * `.i-amphtml-lbg-desc-text` to avoid expanding the hit area when collapsed.
+   */
+  padding-top: 40px !important;
+  box-sizing: border-box !important;
   color: #ffffff;
-}
+  text-shadow: 1px 0 5px rgba(0, 0, 0, 0.4) !important;
 
-.i-amphtml-lbg-desc-box.i-amphtml-lbg-standard {
-  background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.5));
-  max-height: 6rem !important;
-  transition: max-height ease-out 0.3s !important;
   overflow: hidden !important;
+  max-height: calc(80px + 3rem) !important;
+  transition: max-height ease-out 0.3s !important;
 }
 
-.i-amphtml-lbg-desc-box.i-amphtml-lbg-overflow {
+.i-amphtml-lbg-desc-text {
+  padding: 20px !important;
+}
+
+.i-amphtml-lbg-desc-box:empty {
+  display: none !important;
+}
+
+[i-amphtml-lbg-overflow-state="clip"] {
+  /* Fade out the text, using an approximated exponential gradient. */
+  mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.0) 0rem,
+    rgba(0, 0, 0, 0.2) 1rem,
+    rgba(0, 0, 0, 0.55) 2rem,
+    rgba(0, 0, 0, 1.0) 3rem
+  );
+}
+
+[i-amphtml-lbg-overflow-state="expand"]  {
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
   max-height: 100% !important;
   transition: max-height ease-out 0.7s !important;
+  /* Fade out the text, using an approximated exponential gradient. */
   mask-image: linear-gradient(
     rgba(0, 0, 0, 0.0) 0px,
     rgba(0, 0, 0, 0.2) 20px,
@@ -192,34 +216,25 @@ amp-lightbox-gallery amp-carousel {
 }
 
 .i-amphtml-lbg-desc-mask {
+  min-height: 1rem;
   width: 100% !important;
   position: fixed !important;
   bottom: 0 !important;
 }
 
-.i-amphtml-lbg-desc-text {
-  padding: 20px !important;
-  position: relative !important;
+[i-amphtml-lbg-overflow-state="clip"] + .i-amphtml-lbg-desc-mask {
   z-index: 1 !important;
-}
-
-.i-amphtml-lbg-desc-box.i-amphtml-lbg-overflow .i-amphtml-lbg-desc-text {
-  padding-top: 60px !important;
-}
-
-.i-amphtml-lbg-desc-box.i-amphtml-lbg-standard + .i-amphtml-lbg-desc-mask {
-  z-index: 1 !important;
-  height: 1rem !important;
-  background: linear-gradient(transparent, rgba(0,0,0,0.9));
+  background: transparent !important;
   transition: background-color ease-out 0.5s !important;
 }
 
-.i-amphtml-lbg-desc-box.i-amphtml-lbg-overflow + .i-amphtml-lbg-desc-mask {
+[i-amphtml-lbg-overflow-state="expand"] + .i-amphtml-lbg-desc-mask {
   background-color: rgba(0,0,0,0.4) !important;
   top: 0 !important;
   z-index: 0 !important;
   transition: background-color ease-in 0.4s !important;
 }
+/* End description styles */
 
 .i-amphtml-lbg[gallery-view] .i-amphtml-lbg-gallery {
   display: grid !important;
@@ -321,7 +336,9 @@ amp-lightbox-gallery .i-amphtml-slide-item > * {
 }
 
 @keyframes slideUp {
-  from { max-height: 6rem; }
+  from {
+    max-height: calc(80px + 3rem);
+  }
   to {
     max-height: 100%;
   }

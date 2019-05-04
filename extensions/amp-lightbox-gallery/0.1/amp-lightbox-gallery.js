@@ -73,6 +73,15 @@ const LightboxControlsModes = {
 };
 
 /**
+ * @enum {string}
+ */
+const DescriptionOverflowState = {
+  NONE: 'none',
+  CLIP: 'clip',
+  EXPAND: 'expand',
+}
+
+/**
  * The number of pixels of movement to go from the darkest to lightest overlay
  * while doing a swipe to close gesture.
  */
@@ -502,7 +511,15 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    * @private
    */
   slideChangeHandler_(event) {
-    this.currentElemId_ = getData(event)['index'];
+    const index = getData(event)['index'];
+
+    // Avoid updating the description box unless the slide actually changed.
+    // That would collapse it if we opened it with an expanded state.
+    if (index == this.currentElemId_) {
+      return;
+    }
+
+    this.currentElemId_ = index;
     this.updateDescriptionBox_();
   }
 
@@ -512,7 +529,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    */
   buildDescriptionBox_() {
     this.descriptionBox_ = htmlFor(this.doc_)`
-      <div class="i-amphtml-lbg-desc-box i-amphtml-lbg-standard">
+      <div class="i-amphtml-lbg-desc-box">
         <div class="i-amphtml-lbg-desc-text"></div>
       </div>`;
 
@@ -523,18 +540,27 @@ export class AmpLightboxGallery extends AMP.BaseElement {
       <div class="i-amphtml-lbg-desc-mask"></div>
     `;
 
-    this.descriptionBox_.addEventListener('click', event => {
-      this.toggleDescriptionOverflow_();
-      event.stopPropagation();
+    this.descriptionTextArea_.addEventListener('click', event => {
+      this.handleDescriptionClick_(event);
     });
     
     this.descriptionOverflowMask_.addEventListener('click', event => {
-      this.toggleDescriptionOverflow_();
-      event.stopPropagation();
+      this.handleDescriptionClick_(event);
     });
 
     this.controlsContainer_.appendChild(this.descriptionBox_);
     this.controlsContainer_.appendChild(this.descriptionOverflowMask_);
+  }
+
+  /**
+   * Handles a click on the description, toggling the expanded state.
+   * @param {!Event} event 
+   */
+  handleDescriptionClick_(event) {
+    triggerAnalyticsEvent(this.element, 'descriptionOverflowToggled', dict({}));
+    this.toggleDescriptionOverflow_();
+    event.stopPropagation();
+    event.preventDefault();
   }
 
   /**
@@ -543,103 +569,97 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    */
   updateDescriptionBox_(expandDescription = false) {
     const descText = this.getCurrentElement_().descriptionText;
-    if (!descText) {
-      this.mutateElement(() => {
-        toggle(dev().assertElement(this.descriptionBox_), false);
-      });
-    } else {
-      this.mutateElement(() => {
-        // The problem with setting innerText is that it not only removes child
-        // nodes from the element, but also permanently destroys all descendant
-        // text nodes. It is okay in this case because the description text area
-        // is a div that does not contain descendant elements.
-        this.descriptionTextArea_./*OK*/innerText = descText;
 
-        // Avoid flickering out if transitioning from a slide with no text
-        this.descriptionBox_.classList.remove('i-amphtml-lbg-fade-out');
-        toggle(dev().assertElement(this.descriptionBox_), true);
+    this.mutateElement(() => {
+      // The problem with setting innerText is that it not only removes child
+      // nodes from the element, but also permanently destroys all descendant
+      // text nodes. It is okay in this case because the description text area
+      // is a div that does not contain descendant elements.
+      this.descriptionTextArea_./*OK*/innerText = descText;
 
-      }).then(() => {
-        let descriptionOverflows, isInOverflowMode;
-
-        const measureOverflowState = () => {
-          // The height of the description without overflow is set to 4 rem.
-          // The height of the overflow mask is set to 1 rem. We allow 3 lines
-          // for the description and consider it to have overflow if more than 3
-          // lines of text.
-          descriptionOverflows = this.descriptionBox_./*OK*/scrollHeight
-              - this.descriptionBox_./*OK*/clientHeight
-              >= this.descriptionOverflowMask_./*OK*/clientHeight;
-
-          isInOverflowMode = this.descriptionBox_.classList
-              .contains('i-amphtml-lbg-overflow');
-        };
-
-        const mutateOverflowState = () => {
-          // We toggle visibility instead of display because we rely on the
-          // height of this element to measure 1 rem.
-          setStyles(dev().assertElement(this.descriptionOverflowMask_), {
-            visibility: descriptionOverflows || isInOverflowMode
-              ? 'visible' : 'hidden',
-          });
-
-          if (expandDescription) {
-            this.toggleDescriptionOverflow_();
-          }
-        };
-
-        this.measureMutateElement(measureOverflowState, mutateOverflowState);
-      });
-    }
+      // Avoid flickering out if transitioning from a slide with no text
+      this.descriptionBox_.classList.remove('i-amphtml-lbg-fade-out');
+      // Avoid flickering the bottom of the text if the new text is clipped.
+      this.setDescriptionOverflowState_(DescriptionOverflowState.CLIP);
+      toggle(dev().assertElement(this.descriptionBox_), true);
+    }).then(() => {
+      this.toggleDescriptionOverflow_(expandDescription);
+    });
   }
 
   /**
-   * Toggle the overflow state of description box
-   * @private
+   * Gets the `DescriptionOverflowState` to use,
+   * @param {string} overflowState The current overflow state.
+   * @param {boolean} overflows Whether or not the description overflows its
+   *    container.
+   * @param {boolean?} requestExpansion The requested expansion state.
+   * @return {!DescriptionOverflowState} The new state.
    */
-  toggleDescriptionOverflow_() {
-    triggerAnalyticsEvent(this.element, 'descriptionOverflowToggled', dict({}));
-    let isInStandardMode, isInOverflowMode, descriptionOverflows;
-    const measureOverflowState = () => {
-      isInStandardMode = this.descriptionBox_.classList
-          .contains('i-amphtml-lbg-standard');
-      isInOverflowMode = this.descriptionBox_.classList
-          .contains('i-amphtml-lbg-overflow');
+  nextDescriptionOverflowState_(
+    overflowState,
+    overflows,
+    requestExpansion
+  ) {
+    const isExpanded = overflowState == DescriptionOverflowState.EXPAND;
+    const expand = requestExpansion !== undefined ?
+        requestExpansion :
+        !isExpanded;
+    // If we are already expanded, we know we have some overflow, even if
+    // we are not currently "overflowing".
+    const hasOverflow = isExpanded || overflows;
 
+    if (!hasOverflow) {
+      return DescriptionOverflowState.NONE;
+    }
+
+    return expand ?
+        DescriptionOverflowState.EXPAND :
+        DescriptionOverflowState.CLIP;
+  }
+
+  /**
+   * @param {!DescriptionOverflowState} state 
+   */
+  setDescriptionOverflowState_(state) {
+    this.descriptionBox_.setAttribute('i-amphtml-lbg-overflow-state', state);
+  }
+
+  /**
+   * @return {!DescriptionOverflowState} state 
+   */
+  getDescriptionOverflowState_() {
+    return this.descriptionBox_.getAttribute('i-amphtml-lbg-overflow-state');
+  }
+
+  toggleDescriptionOverflow_(requestExpansion) {
+    const {
+      descriptionBox_,
+      descriptionOverflowMask_,
+    } = this;
+    let descriptionOverflows;
+
+    const measureOverflowState = () => {
       // The height of the description without overflow is set to 4 rem.
       // The height of the overflow mask is set to 1 rem. We allow 3 lines
       // for the description and consider it to have overflow if more than 3
       // lines of text.
-      descriptionOverflows = this.descriptionBox_./*OK*/scrollHeight
-          - this.descriptionBox_./*OK*/clientHeight
-          >= this.descriptionOverflowMask_./*OK*/clientHeight;
+      descriptionOverflows = descriptionBox_./*OK*/scrollHeight
+          - descriptionBox_./*OK*/clientHeight
+          >= descriptionOverflowMask_./*OK*/clientHeight;
     };
 
     const mutateOverflowState = () => {
-      if (isInStandardMode && descriptionOverflows) {
-        this.descriptionBox_.classList.remove('i-amphtml-lbg-standard');
-        this.descriptionBox_.classList.add('i-amphtml-lbg-overflow');
-        toggle(user().assertElement(this.navControls_,
-            'E#19457 this.navControls_'), false);
-      } else if (isInOverflowMode) {
-        this.clearDescOverflowState_();
+      const overflowState = this.getDescriptionOverflowState_();
+      const newState = this.nextDescriptionOverflowState_(
+        overflowState, descriptionOverflows, requestExpansion);
+
+      this.setDescriptionOverflowState_(newState);
+      if (newState != DescriptionOverflowState.EXPAND) {
+        descriptionBox_./*OK*/scrollTop = 0;
       }
     };
 
     this.measureMutateElement(measureOverflowState, mutateOverflowState);
-  }
-
-  /**
-   * @private
-   */
-  clearDescOverflowState_() {
-    this.descriptionBox_./*OK*/scrollTop = 0;
-    this.descriptionBox_.classList.remove('i-amphtml-lbg-overflow');
-    this.descriptionBox_.classList.add('i-amphtml-lbg-standard');
-    toggle(user().assertElement(this.navControls_,
-        'E#19457 this.navControls_'), true);
-    toggle(user().assertElement(this.topBar_,
-        'E#19457 this.topBar_'), true);
   }
 
   /**
@@ -781,10 +801,6 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     this.controlsContainer_.classList.remove('i-amphtml-lbg-fade-out');
     this.controlsContainer_.classList.remove('i-amphtml-lbg-hidden');
     this.controlsContainer_.classList.add('i-amphtml-lbg-fade-in');
-
-    if (!this.container_.hasAttribute('gallery-view')) {
-      this.updateDescriptionBox_();
-    }
     this.controlsMode_ = LightboxControlsModes.CONTROLS_DISPLAYED;
   }
 
@@ -1105,6 +1121,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     this.sourceElement_ = element;
     const lightboxGroupId = element.getAttribute('lightbox')
       || 'default';
+    this.currentElemId_ = element.lightboxItemId;
     this.currentLightboxGroupId_ = lightboxGroupId;
     this.hasVerticalScrollbarWidth_ =
         this.getViewport().getVerticalScrollbarWidth() > 0;
@@ -1135,26 +1152,28 @@ export class AmpLightboxGallery extends AMP.BaseElement {
       this.setupEventListeners_();
 
       return this.carousel_.signals().whenSignal(CommonSignals.LOAD_END);
-    }).then(() => this.openLightboxForElement_(element, expandDescription))
-        .then(() => {
-          setStyle(this.element, 'opacity', '');
-          this.showControls_();
-          triggerAnalyticsEvent(this.element, 'lightboxOpened', dict({}));
-        });
+    })
+    .then(() => {
+      return this.openLightboxForIndex_(this.currentElemId_, expandDescription);
+    })
+    .then(() => {
+      setStyle(this.element, 'opacity', '');
+      this.showControls_();
+      triggerAnalyticsEvent(this.element, 'lightboxOpened', dict({}));
+    });
   }
 
   /**
-   * Given a single lightbox element, opens the internal carousel slide
-   * associated with said element, updates the description, and initializes
+   * Given a lightbox element index, opens the internal carousel slide
+   * associated with said index, updates the description, and initializes
    * the image viewer if the element is an amp-img.
-   * @param {!Element} element
+   * @param {number} index
    * @return {!Promise}
    * @private
    */
-  openLightboxForElement_(element, expandDescription = false) {
-    this.currentElemId_ = element.lightboxItemId;
+  openLightboxForIndex_(index, expandDescription = false) {
     devAssert(this.carousel_).getImpl()
-        .then(carousel => carousel.goToSlide(this.currentElemId_));
+        .then(carousel => carousel.goToSlide(index));
     this.updateDescriptionBox_(expandDescription);
     return this.enter_();
   }
@@ -1523,6 +1542,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     const gestures = Gestures.get(dev().assertElement(this.carousel_));
     gestures.cleanup();
 
+    this.toggleDescriptionOverflow_(false);
     return this.mutateElement(() => {
       // If we do not have a vertical scrollbar taking width, immediately
       // leave lightbox mode so that the user can scroll the page. This makes
@@ -1542,7 +1562,6 @@ export class AmpLightboxGallery extends AMP.BaseElement {
         this.gallery_.classList.add('i-amphtml-ghost');
         this.gallery_ = null;
       }
-      this.clearDescOverflowState_();
     }).then(() => this.exit_())
         .then(() => {
           // Leave lightbox mode now that it will not affect the animation.
@@ -1607,8 +1626,8 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     if (!this.gallery_) {
       this.findOrBuildGallery_();
     }
+    this.toggleDescriptionOverflow_(false);
     this.mutateElement(() => {
-      this.clearDescOverflowState_();
       this.container_.setAttribute('gallery-view', '');
       toggle(dev().assertElement(this.navControls_), false);
       toggle(dev().assertElement(this.carousel_), false);
