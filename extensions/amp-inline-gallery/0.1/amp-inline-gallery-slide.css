@@ -27,6 +27,15 @@ amp-truncate-text {
   right: 0;
 }
 
+amp-truncate-text button {
+  border: 0;
+  background-color: transparent;
+  padding: 0;
+  outline: none;
+  color: #48f;
+  float: right;
+}
+
 .container {
   width: 100%;
   height: 100%;
