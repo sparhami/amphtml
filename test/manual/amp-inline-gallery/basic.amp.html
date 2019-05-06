@@ -20,6 +20,24 @@
       line-height: 1.25em;
       font-size: 1em;
     }
+
+    .prev-arrow,
+    .next-arrow {
+      filter: drop-shadow(0px 1px 2px #4a4a4a);
+      width: 40px;
+      height: 40px;
+      padding: 20px;
+      background-color: transparent;
+      border: none;
+      outline: none;
+    }
+
+    .prev-arrow > svg,
+    .next-arrow > svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
   </style>
 </head>
 <body>
@@ -29,6 +47,12 @@
   </div>
   <amp-inline-gallery layout="container">
     <amp-inline-gallery-slides layout="responsive" width="3" height="2">
+      <button class="prev-arrow" slot="prev-arrow">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path  d="M14,7.4 L9.4,12 L14,16.6" fill="none" stroke="#fff" stroke-width="2px" stroke-linejoin="round" stroke-linecap="round" /></svg>
+      </button>
+      <button class="next-arrow" slot="next-arrow">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path  d="M10,7.4 L14.6,12 L10,16.6" fill="none" stroke="#fff" stroke-width="2px" stroke-linejoin="round" stroke-linecap="round" /></svg>
+      </button>
       <amp-inline-gallery-slide layout="flex-item">
         <amp-img src="../amp-base-carousel/img/redgradient.png" layout="fill"></amp-img>
         <span class="caption" slot="caption">

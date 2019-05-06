@@ -15,6 +15,7 @@
  */
 
 import {AutoLightboxEvents} from '../../../src/auto-lightbox';
+import {ActionSource} from '../../amp-base-carousel/0.1/action-source';
 import {CSS} from '../../../build/amp-inline-gallery-slides-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel';
 import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
@@ -48,11 +49,17 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       <style>${CarouselCSS + CSS}</style>
       <slot name="sizer"></slot>
       <div class="i-amphtml-carousel-content">
+        <div class="i-amphtml-inline-gallery-slides-arrows">
+          <slot name="prev-arrow"></slot>
+          <slot name="next-arrow"></slot>
+        </div>
         <div class="i-amphtml-carousel-scroll">
           <slot></slot>
         </div>
       </div>
     `;
+    this.prevArrowSlot_ = sr.querySelector('slot[name="prev-arrow"]');
+    this.nextArrowSlot_ = sr.querySelector('slot[name="next-arrow"]');
     return sr;
   }
 
@@ -78,6 +85,10 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
 
     /** @private {?Carousel} */
     this.carousel_ = null;
+
+    this.prevArrowSlot_ = null;
+
+    this.nextArrowSlot_ = null;
 
     this.lightboxId_ = 'amp-inline-gallery-slides:' + uid++;
   }
@@ -116,13 +127,23 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
 
     this.configureInitialAttributes_();
     this.configureSlides_(slideSlot);
+    this.setupListeners_();
+
+    // Signal for runtime to check children for layout.
+    return this.mutateElement(() => {});
+  }
+
+  setupListeners_() {
     this.element.addEventListener('goToSlide', event => {
       const detail = getDetail(event);
       this.carousel_.goToSlide(detail['index']);
     });
-
-    // Signal for runtime to check children for layout.
-    return this.mutateElement(() => {});
+    this.prevArrowSlot_.addEventListener('click', () => {
+      this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
+    });
+    this.nextArrowSlot_.addEventListener('click', () => {
+      this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
+    });
   }
 
   /** @override */
