@@ -28,12 +28,16 @@ amp-truncate-text {
 }
 
 amp-truncate-text button {
-  border: 0;
-  background-color: transparent;
-  padding: 0;
-  outline: none;
-  color: #48f;
   float: right;
+  padding: 0;
+  padding-left: 6px;
+  border: 0;
+  color: #48f;
+  background-color: transparent;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.25em;
 }
 
 .container {
@@ -56,8 +60,8 @@ amp-truncate-text button {
 
 .caption {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 6px;
+  right: 6px;
   margin-top: var(--amp-caption-margin-top);
   height: var(--amp-caption-height, 0);
   overflow: hidden;

@@ -220,13 +220,13 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
    */
   lightboxSlides_(slides) {
     slides
-      .filter(slide => {
-        return !slide.hasAttribute('lightbox') && 
-            slide.dispatchCustomEvent;
+      .map(slide => {
+        return slide.querySelector('amp-img');
       })
-      .forEach(slide => {
-        slide.setAttribute('lightbox', this.lightboxId_);
-        slide.dispatchCustomEvent(AutoLightboxEvents.NEWLY_SET);
+      .filter(ampImg => ampImg && !ampImg.hasAttribute('lightbox'))
+      .forEach(ampImg => {
+        ampImg.setAttribute('lightbox', this.lightboxId_);
+        ampImg.dispatchCustomEvent(AutoLightboxEvents.NEWLY_SET);
       });
   }
 

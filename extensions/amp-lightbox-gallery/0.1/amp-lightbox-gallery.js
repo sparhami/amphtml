@@ -223,6 +223,9 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     /** @private {function(!Event)} */
     this.boundOnKeyDown_ = this.onKeyDown_.bind(this);
 
+    /** @private {function(!Event)} */
+    this.boundSlideChangeHandler_ = this.slideChangeHandler_.bind(this);
+
     /**
      * @private {?./service/lightbox-manager-impl.LightboxManager}
      */
@@ -1121,11 +1124,10 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     this.sourceElement_ = element;
     const lightboxGroupId = element.getAttribute('lightbox')
       || 'default';
-    this.currentElemId_ = element.lightboxItemId;
+
     this.currentLightboxGroupId_ = lightboxGroupId;
     this.hasVerticalScrollbarWidth_ =
         this.getViewport().getVerticalScrollbarWidth() > 0;
-
     return this.findOrInitializeLightbox_(lightboxGroupId).then(() => {
       return this.getViewport().enterLightboxMode();
     }).then(() => {
@@ -1145,8 +1147,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
           'keydown', this.boundOnKeyDown_);
 
       this.carousel_.addEventListener(
-          'slideChange', event => this.slideChangeHandler_(event)
-      );
+          'slideChange', this.boundSlideChangeHandler_);
 
       this.setupGestures_();
       this.setupEventListeners_();
@@ -1154,6 +1155,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
       return this.carousel_.signals().whenSignal(CommonSignals.LOAD_END);
     })
     .then(() => {
+      this.currentElemId_ = element.lightboxItemId;
       return this.openLightboxForIndex_(this.currentElemId_, expandDescription);
     })
     .then(() => {
@@ -1172,10 +1174,12 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    * @private
    */
   openLightboxForIndex_(index, expandDescription = false) {
-    devAssert(this.carousel_).getImpl()
-        .then(carousel => carousel.goToSlide(index));
-    this.updateDescriptionBox_(expandDescription);
-    return this.enter_();
+    return devAssert(this.carousel_).getImpl()
+        .then(carousel => carousel.goToSlide(index))
+        .then(() => {
+          this.updateDescriptionBox_(expandDescription);
+          return this.enter_();
+        });
   }
 
   /**
@@ -1537,7 +1541,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
         'keydown', this.boundOnKeyDown_);
 
     this.carousel_.removeEventListener(
-        'slideChange', event => {this.slideChangeHandler_(event);});
+        'slideChange', this.boundSlideChangeHandler_);
 
     const gestures = Gestures.get(dev().assertElement(this.carousel_));
     gestures.cleanup();
