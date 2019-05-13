@@ -15,8 +15,10 @@
  */
 
 import {SwipeDef} from '../../../src/gesture-recognizers';
+import {darkenMetaThemeColor} from './meta-theme';
 import {delayAfterDeferringToEventLoop} from './utils';
 import {dev} from '../../../src/log';
+import {lerp} from '../../../src/utils/math';
 import {listen} from '../../../src/event-helper';
 import {setStyle, setStyles} from '../../../src/style';
 
@@ -80,17 +82,6 @@ function calculateDistance(x1, y1, x2, y2) {
   return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
 
-/**
- * A linear interpolation.
- * TODO(#21104) Refactor.
- * @param {number} start
- * @param {number} end
- * @param {number} percentage
- * @return {number} The value percentage of the way between start and end.
- */
-function lerp(start, end, percentage) {
-  return start + (end - start) * percentage;
-}
 
 /**
  * Maintains state and updates the UI for a swipe to dismiss gesture.
@@ -105,6 +96,9 @@ export class SwipeToDismiss {
   constructor(win, element, mutateElement, onclose) {
     /** @private @const */
     this.win_ = win;
+
+    /** @private @const */
+    this.doc_ = win.document;
 
     /** @private @const */
     this.element_ = element;
@@ -295,11 +289,14 @@ export class SwipeToDismiss {
     // the resting point to decide if we should snap back or close.
     return this.carrySwipeMomentum_(scale, finalDeltaX, finalDeltaY, velocity)
         .then(() => {
+
           if (finalDistance < SWIPE_TO_CLOSE_DISTANCE_THRESHOLD &&
               velocity < SWIPE_TO_CLOSE_VELOCITY_THRESHOLD) {
+            darkenMetaThemeColor(this.doc_, 1);
             return this.snapBackFromSwipe_(finalDistance);
           }
 
+          darkenMetaThemeColor(this.doc_, 0);
           return this.onclose_();
         });
   }
@@ -371,6 +368,7 @@ export class SwipeToDismiss {
         return;
       }
 
+      darkenMetaThemeColor(this.doc_, maskOpacity);
       this.adjustForSwipePosition_(
           `scale(${scale}) translate(${deltaX}px, ${deltaY}px)`,
           maskOpacity,

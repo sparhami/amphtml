@@ -41,6 +41,7 @@ import {
   toggleAttribute,
 } from '../../../src/dom';
 import {clamp} from '../../../src/utils/math';
+import {darkenMetaThemeColor, restoreMetaThemeColor} from './meta-theme';
 import {
   delayAfterDeferringToEventLoop,
   secondsToTimestampString,
@@ -999,7 +1000,10 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    * @return {!Promise}
    * @private
    */
-  enter_() { // TODO (cathyxz): make this generalizable to more than just images
+  enter_() {
+    darkenMetaThemeColor(this.doc_);
+
+    // TODO (cathyxz): make this generalizable to more than just images
     const {sourceElement} = this.getCurrentElement_();
     if (!this.elementTypeCanBeAnimated_(sourceElement)) {
       return this.fade_(/*fadeIn*/true);
@@ -1016,6 +1020,8 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    * @private
    */
   exit_() {
+    restoreMetaThemeColor(this.doc_);
+
     const {sourceElement} = this.getCurrentElement_();
     if (!this.shouldAnimateOut_()) {
       return this.fade_(/*fadeIn*/false);

@@ -95,3 +95,14 @@ export function mod(a, b) {
 export function clamp(val, min, max) {
   return Math.min(Math.max(val, min), max);
 }
+
+/**
+ * A linear interpolation.
+ * @param {number} start
+ * @param {number} end
+ * @param {number} percentage
+ * @return {number} The value percentage of the way between start and end.
+ */
+export function lerp(start, end, percentage) {
+  return start + (end - start) * percentage;
+}
