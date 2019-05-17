@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-import {ActionSource} from './action-source';
+import {ActionSource} from '../../amp-base-carousel/0.1/action-source';
 import {ActionTrust} from '../../../src/action-constants';
-import {CSS} from '../../../build/amp-base-carousel-0.1.css';
-import {Carousel} from './carousel.js';
+import {CSS} from '../../../build/amp-stream-gallery-0.1.css';
+import {Carousel} from '../../amp-base-carousel/0.1/carousel.js';
+import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
 import {
   ResponsiveAttributes,
   getResponsiveAttributeValue,
-} from './responsive-attributes';
+} from '../../amp-base-carousel/0.1/responsive-attributes';
 import {Services} from '../../../src/services';
 import {
   closestAncestorElementBySelector,
@@ -29,7 +30,7 @@ import {
   toggleAttribute,
 } from '../../../src/dom';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
-import {dev} from '../../../src/log';
+import {dev, user} from '../../../src/log';
 import {dict} from '../../../src/utils/object';
 import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
@@ -44,13 +45,10 @@ function isSizer(el) {
   return el.tagName == 'I-AMPHTML-SIZER';
 }
 
-class AmpCarousel extends AMP.BaseElement {
+class AmpStreamGallery extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
-
-    /** @private {number} */
-    this.advanceCount_ = 1;
 
     /** @private {?Carousel} */
     this.carousel_ = null;
@@ -76,14 +74,8 @@ class AmpCarousel extends AMP.BaseElement {
 
     /** @private @const */
     this.responsiveAttributes_ = new ResponsiveAttributes({
-      'advance-count': newValue => {
-        this.carousel_.updateAdvanceCount(Number(newValue) || 0);
-      },
       'auto-advance': newValue => {
         this.carousel_.updateAutoAdvance(newValue == 'true');
-      },
-      'auto-advance-count': newValue => {
-        this.carousel_.updateAutoAdvanceCount(Number(newValue) || 0);
       },
       'auto-advance-interval': newValue => {
         this.carousel_.updateAutoAdvanceInterval(Number(newValue) || 0);
@@ -91,31 +83,33 @@ class AmpCarousel extends AMP.BaseElement {
       'auto-advance-loops': newValue => {
         this.carousel_.updateAutoAdvanceLoops(Number(newValue) || 0);
       },
-      'horizontal': newValue => {
-        this.carousel_.updateHorizontal(newValue == 'true');
-      },
       'loop': newValue => {
         this.carousel_.updateLoop(newValue == 'true');
-      },
-      'mixed-length': newValue => {
-        this.carousel_.updateMixedLength(newValue == 'true');
       },
       'slide': newValue => {
         this.carousel_.goToSlide(Number(newValue));
       },
       'snap': newValue => {
-        this.carousel_.updateSnap(newValue == 'true');
+        this.carousel_.updateSnap(newValue != 'false');
       },
       'snap-align': newValue => {
         this.carousel_.updateAlignment(newValue);
       },
-      'snap-by': newValue => {
-        this.carousel_.updateSnapBy(Number(newValue) || 0);
-      },
       'visible-count': newValue => {
-        this.carousel_.updateVisibleCount(Number(newValue) || 0);
+        this.updateVisibleCount_(Number(newValue) || 0);
       },
     });
+  }
+
+  /**
+   * @param {number} visibleCount
+   */
+  updateVisibleCount_(visibleCount) {
+    const advanceCount = Math.floor(visibleCount);
+    this.carousel_.updateAdvanceCount(advanceCount);
+    this.carousel_.updateAutoAdvanceCount(advanceCount);
+    this.carousel_.updateSnapBy(advanceCount);
+    this.carousel_.updateVisibleCount(visibleCount);
   }
 
   /** @override */
@@ -125,6 +119,12 @@ class AmpCarousel extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
+    user().assert(
+      isExperimentOn(AMP.win, 'amp-stream-gallery'),
+      'The amp-stream-gallery experiment must be enabled to use the ' +
+        'component'
+    );
+
     this.action_ = Services.actionServiceForDoc(this.element);
 
     const {element, win} = this;
@@ -156,6 +156,7 @@ class AmpCarousel extends AMP.BaseElement {
       initialIndex: this.getInitialIndex_(),
       runMutate: cb => this.mutateElement(cb),
     });
+    this.carousel_.updateSnap(false);
 
     // Do some manual "slot" distribution
     this.slides_.forEach(slide => {
@@ -163,10 +164,10 @@ class AmpCarousel extends AMP.BaseElement {
       scrollContainer.appendChild(slide);
     });
     this.prevArrowSlot_ = this.element.querySelector(
-      '.i-amphtml-carousel-arrow-prev-slot'
+      '.i-amphtml-stream-gallery-arrow-prev-slot'
     );
     this.nextArrowSlot_ = this.element.querySelector(
-      '.i-amphtml-carousel-arrow-next-slot'
+      '.i-amphtml-stream-gallery-arrow-next-slot'
     );
     // Slot the arrows, with defaults
     this.prevArrowSlot_.appendChild(prevArrow || this.createPrevArrow_());
@@ -181,6 +182,9 @@ class AmpCarousel extends AMP.BaseElement {
     this.setupActions_();
     this.element.addEventListener('indexchange', event => {
       this.onIndexChanged_(event);
+    });
+    this.element.addEventListener('scrollpositionchange', () => {
+      this.updateUi_();
     });
     this.prevArrowSlot_.addEventListener('click', event => {
       if (event.target != event.currentTarget) {
@@ -270,8 +274,8 @@ class AmpCarousel extends AMP.BaseElement {
     return html`
       <div class="i-amphtml-carousel-content">
         <div class="i-amphtml-carousel-scroll"></div>
-        <div class="i-amphtml-carousel-arrow-prev-slot"></div>
-        <div class="i-amphtml-carousel-arrow-next-slot"></div>
+        <div class="i-amphtml-stream-gallery-arrow-prev-slot"></div>
+        <div class="i-amphtml-stream-gallery-arrow-next-slot"></div>
       </div>
     `;
   }
@@ -283,10 +287,7 @@ class AmpCarousel extends AMP.BaseElement {
   createNextArrow_() {
     const html = htmlFor(this.element);
     return html`
-      <button
-        class="i-amphtml-carousel-next"
-        aria-label="Next item in carousel"
-      ></button>
+      <button class="i-amphtml-stream-gallery-next" aria-hidden="true"></button>
     `;
   }
 
@@ -297,10 +298,7 @@ class AmpCarousel extends AMP.BaseElement {
   createPrevArrow_() {
     const html = htmlFor(this.element);
     return html`
-      <button
-        class="i-amphtml-carousel-prev"
-        aria-label="Previous item in carousel"
-      ></button>
+      <button class="i-amphtml-stream-gallery-prev" aria-hidden="true"></button>
     `;
   }
 
@@ -350,21 +348,17 @@ class AmpCarousel extends AMP.BaseElement {
    * @private
    */
   updateUi_() {
-    const index = this.carousel_.getCurrentIndex();
-    const loop = this.carousel_.getLoop();
     // TODO(sparhami) for Shadow DOM, we will need to get the assigned nodes
     // instead.
     iterateCursor(this.prevArrowSlot_.children, child => {
-      const disabled = !loop && index == 0;
-      toggleAttribute(child, 'disabled', disabled);
+      toggleAttribute(child, 'disabled', this.carousel_.isAtStart());
     });
     iterateCursor(this.nextArrowSlot_.children, child => {
-      const disabled = !loop && index == this.slides_.length - 1;
-      toggleAttribute(child, 'disabled', disabled);
+      toggleAttribute(child, 'disabled', this.carousel_.isAtEnd());
     });
     toggleAttribute(
       this.element,
-      'i-amphtml-carousel-hide-buttons',
+      'i-amphtml-stream-gallery-hide-buttons',
       this.hadTouch_
     );
   }
@@ -404,7 +398,7 @@ class AmpCarousel extends AMP.BaseElement {
     const isHighTrust = this.isHighTrustActionSource_(actionSource);
     const trust = isHighTrust ? ActionTrust.HIGH : ActionTrust.LOW;
 
-    const action = createCustomEvent(this.win, `slidescroll.${name}`, data);
+    const action = createCustomEvent(this.win, `streamGallery.${name}`, data);
     this.action_.trigger(this.element, name, action, trust);
     this.element.dispatchCustomEvent(name, data);
     this.hadTouch_ = this.hadTouch_ || actionSource == ActionSource.TOUCH;
@@ -421,13 +415,10 @@ class AmpCarousel extends AMP.BaseElement {
   }
 }
 
-AMP.extension('amp-base-carousel', '0.1', AMP => {
-  if (
-    !isExperimentOn(AMP.win, 'amp-base-carousel') &&
-    !isExperimentOn(AMP.win, 'amp-lightbox-gallery-base-carousel')
-  ) {
-    return;
-  }
-
-  AMP.registerElement('amp-base-carousel', AmpCarousel, CSS);
+AMP.extension('amp-stream-gallery', '0.1', AMP => {
+  AMP.registerElement(
+    'amp-stream-gallery',
+    AmpStreamGallery,
+    CarouselCSS + CSS
+  );
 });

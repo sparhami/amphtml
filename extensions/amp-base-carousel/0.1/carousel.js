@@ -307,6 +307,11 @@ export class Carousel {
       true
     );
     this.scrollContainer_.addEventListener(
+      'scrollend',
+      () => this.handleScrollEnd_(),
+      true
+    );
+    this.scrollContainer_.addEventListener(
       'touchstart',
       () => this.handleTouchStart_(),
       true
@@ -641,6 +646,17 @@ export class Carousel {
   }
 
   /**
+   * Fires an event when the scroll position has changed, once scrolling has
+   * settled. In some situations, the index may not change, but you still want
+   * to react to the scroll position changing.
+   */
+  notifyScrollPositionChanged_() {
+    this.element_.dispatchEvent(
+      createCustomEvent(this.win_, 'scrollpositionchange')
+    );
+  }
+
+  /**
    * Handles a touch start, preventing `resetScrollReferencePoint_` from
    * running until the user stops touching.
    * @private
@@ -689,6 +705,15 @@ export class Carousel {
   }
 
   /**
+   * For browsers that support the scrollend event, reset the reference point
+   * immediately. This prevents users from hitting the wrapping point while
+   * scrolling continually.
+   */
+  handleScrollEnd_() {
+    this.resetScrollReferencePoint_();
+  }
+
+  /**
    * @return {boolean} Whether or not the user is scrolling. For example, the
    *    user flicked the carousel and there is a momentum scroll in progress.
    */
@@ -732,6 +757,23 @@ export class Carousel {
    */
   getSlideLengths_() {
     return this.slides_.map(s => getDimension(this.axis_, s).length);
+  }
+
+  /**
+   * @return {boolean} True if the carousel is not looping, and is at the
+   *    start, false otherwise.
+   */
+  isAtEnd() {
+    const el = this.scrollContainer_;
+    return !this.loop_ && el.scrollLeft + el.offsetWidth >= el.scrollWidth;
+  }
+
+  /**
+   * @return {boolean} True if the carousel is not looping, and is at the
+   *    end, false otherwise.
+   */
+  isAtStart() {
+    return !this.loop_ && this.scrollContainer_.scrollLeft <= 0;
   }
 
   /**
@@ -931,6 +973,9 @@ export class Carousel {
    */
   resetScrollReferencePoint_(force = false) {
     this.scrolling_ = false;
+    this.runMutate_(() => {
+      this.notifyScrollPositionChanged_();
+    });
 
     // Make sure if the user is in the middle of a drag, we do not move
     // anything.
@@ -944,7 +989,7 @@ export class Carousel {
     // to that index.
     if (
       this.restingIndex_ == this.currentIndex_ &&
-      this.requestedIndex_ != null &&
+      this.requestedIndex_ == null &&
       !force
     ) {
       return;
@@ -1060,11 +1105,6 @@ export class Carousel {
    * @private
    */
   moveSlides_(totalLength) {
-    // TODO(sparhami) We could only the number of slides needed to have enough
-    // buffer between scrolls. One thing we need to look out for is to make
-    // sure the mixed length and visibleCount cases are handled correctly.
-    const count = (this.slides_.length - 1) / 2;
-
     if (!this.loop_) {
       return;
     }
@@ -1073,8 +1113,19 @@ export class Carousel {
       return;
     }
 
-    this.moveSlidesBeforeOrAfter__(totalLength, Math.floor(count), false);
-    this.moveSlidesBeforeOrAfter__(totalLength, Math.ceil(count), true);
+    // TODO(sparhami) We could only the number of slides needed to have enough
+    // buffer between scrolls. One thing we need to look out for is to make
+    // sure the mixed length and visibleCount cases are handled correctly.
+    // TODO(sparhami) The current approach of moving a set number of slides
+    // does not work well for the mixed length use case.
+    const {alignment_, slides_, visibleCount_} = this;
+    const count = (slides_.length - 1) / 2;
+    const isStartAligned = alignment_ == Alignment.START;
+    const beforeCount = isStartAligned ? count - visibleCount_ / 2 : count;
+    const afterCount = isStartAligned ? count + visibleCount_ / 2 : count;
+
+    this.moveSlidesBeforeOrAfter__(totalLength, Math.round(beforeCount), false);
+    this.moveSlidesBeforeOrAfter__(totalLength, Math.round(afterCount), true);
   }
 
   /**
