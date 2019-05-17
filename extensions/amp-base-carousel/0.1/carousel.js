@@ -20,7 +20,7 @@ import {
   Axis,
   findOverlappingIndex,
   getDimension,
-  getOffsetStart,
+  getScrollPosition,
   scrollContainerToElement,
   setScrollPosition,
   setTransformTranslateStyle,
@@ -1030,14 +1030,17 @@ export class Carousel {
       slides_,
     } = this;
     const currentElement = slides_[currentIndex_];
-    const {length, start} = getDimension(axis_, scrollContainer_);
-    const currentElementStart =
-      Math.abs(currentElementOffset_) <= length ? currentElementOffset_ : 0;
-    // Use the offsetStart to figure out the scroll position of the current
-    // element. Note that this only works because the element is not translated
-    // at this point.
-    const offsetStart = getOffsetStart(axis_, currentElement);
-    const pos = offsetStart - currentElementStart + start;
+    const {length: containerLength, start: containerStart} = getDimension(
+      axis_,
+      scrollContainer_
+    );
+    const {start: elementStart} = getDimension(axis_, currentElement);
+    const scrollPos = getScrollPosition(axis_, scrollContainer_);
+    const offset =
+      Math.abs(currentElementOffset_) <= containerLength
+        ? currentElementOffset_
+        : 0;
+    const pos = elementStart - offset - containerStart + scrollPos;
 
     this.ignoreNextScroll_ = true;
     runDisablingSmoothScroll(scrollContainer_, () => {
