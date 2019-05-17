@@ -920,8 +920,8 @@ export class Carousel {
       alignment_,
       axis_,
       currentIndex_,
-      element_,
       loop_,
+      scrollContainer_,
       slides_,
     } = this;
     const totalLength = sum(this.getSlideLengths_());
@@ -934,7 +934,7 @@ export class Carousel {
     const overlappingIndex = findOverlappingIndex(
       axis_,
       alignment_,
-      element_,
+      scrollContainer_,
       items,
       startIndex
     );

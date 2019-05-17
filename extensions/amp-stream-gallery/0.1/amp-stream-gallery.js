@@ -273,7 +273,9 @@ class AmpStreamGallery extends AMP.BaseElement {
     const html = htmlFor(this.element);
     return html`
       <div class="i-amphtml-carousel-content">
-        <div class="i-amphtml-carousel-scroll"></div>
+        <div class="i-amphtml-stream-gallery-slides">
+          <div class="i-amphtml-carousel-scroll"></div>
+        </div>
         <div class="i-amphtml-stream-gallery-arrow-prev-slot"></div>
         <div class="i-amphtml-stream-gallery-arrow-next-slot"></div>
       </div>

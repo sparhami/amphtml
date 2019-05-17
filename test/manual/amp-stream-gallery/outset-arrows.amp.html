@@ -1,0 +1,78 @@
+<!doctype html>
+<html ⚡>
+<head>
+  <meta charset="utf-8">
+  <title>Basic Carousel</title>
+  <link rel="canonical" href="amps.html" >
+  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+  <link href='https://fonts.googleapis.com/css?family=Questrial' rel='stylesheet' type='text/css'>
+  <script async custom-element="amp-stream-gallery" src="https://cdn.ampproject.org/v0/amp-stream-gallery-0.1.js"></script>
+  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+  <style amp-custom>
+    .item {
+      display: flex;
+      padding: 0 5px
+    }
+
+    .gallery-container {
+      position: relative;
+    }
+  </style>
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+</head>
+<body>
+  <h1>Stream gallery with spacing between items, no looping</h1>
+  <p>
+    This shows exactly 2.5 items at a time, with 10px of spacing between each
+    item, while preserving a 3:2 aspect ratio for each item.
+  </p>
+  <div class="gallery-container">
+    <!--
+      a_w: arrow width - defaults to 48px
+      m_h: margin between items
+      n: number of visible slides
+      ar_h: aspect ratio height
+      ar_w: aspect ratio width
+
+      <div slot="sizer" style="padding: 0  calc(a_w + (floor(n) + 1) * m / 2)">
+        <div style="padding-top: calc(100% * (ar_h / (n * ar_w))))"></div>
+      </div>
+    -->
+    <!--
+      For this example: m = 10px, n = 2.5, ar_h = 2 and ar_w = 3
+    -->
+    
+    <!-- Create an outer container with padding, to account for the spacing between the items-->
+    <div style="padding: 0 calc(48px + (2 + 1) * 10px / 2)">
+      <div style="padding-top: calc(100% * (2 / (2.5 * 3)))"></div>
+    </div>
+    <amp-stream-gallery id="carousel-1" layout="fill"
+        loop="false"
+        snap="true"
+        inset-arrows="false"
+        visible-count="2.5">
+      <div class="item">
+        <amp-img src="../amp-base-carousel/img/redgradient.png" layout="flex-item"></amp-img>
+      </div>
+      <div class="item">
+        <amp-img src="../amp-base-carousel/img/greengradient.png" layout="flex-item"></amp-img>
+      </div>
+      <div class="item">
+        <amp-img src="../amp-base-carousel/img/bluegradient.png" layout="flex-item"></amp-img>
+      </div>
+      <div class="item">
+        <amp-img src="../amp-base-carousel/img/orangegradient.png" layout="flex-item"></amp-img>
+      </div>
+      <div class="item">
+        <amp-img src="../amp-base-carousel/img/tealgradient.png" layout="flex-item"></amp-img>
+      </div>
+      <div class="item">
+        <amp-img src="../amp-base-carousel/img/lemonyellowgradient.png" layout="flex-item"></amp-img>
+      </div>
+      <div class="item">
+        <amp-img src="../amp-base-carousel/img/lilacgradient.png" layout="flex-item"></amp-img>
+      </div>
+    </amp-stream-gallery>
+  </div>
+</body>
+</html>
