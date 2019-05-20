@@ -950,8 +950,10 @@ export class Carousel {
     // Update the current offset on each scroll so that we have it up to date
     // in case of a resize.
     const currentElement = slides_[newIndex];
-    const dimension = getDimension(axis_, currentElement);
-    this.currentElementOffset_ = dimension.start;
+    const {start: elementStart} = getDimension(axis_, currentElement);
+    const {start: containerStart} = getDimension(axis_, scrollContainer_);
+    
+    this.currentElementOffset_ = elementStart - containerStart;
 
     // We did not move at all.
     if (newIndex == currentIndex_) {
