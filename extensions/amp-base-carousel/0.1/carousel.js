@@ -289,7 +289,11 @@ export class Carousel {
      */
     this.currentIndex_ = 0;
 
-    /** @private {boolean} */
+    /**
+     * Whether or not looping is requested. Do not use directly, but rather use
+     * `isLooping` instead. 
+     * @private {boolean}
+     */
     this.loop_ = false;
 
     /** @private {boolean} */
@@ -376,7 +380,7 @@ export class Carousel {
     const passingEnd = newIndex > endIndex;
 
     let slideIndex;
-    if (this.loop_) {
+    if (this.isLooping()) {
       slideIndex = mod(newIndex, endIndex + 1);
     } else if (
       delta > 0 &&
@@ -421,10 +425,12 @@ export class Carousel {
   }
 
   /**
+   * Checks whether or not looping is enabled. This requires that looping is
+   * configured and that there are enough slides to do looping.
    * @return {boolean} Whether or not looping is enabled.
    */
-  getLoop() {
-    return this.loop_;
+  isLooping() {
+    return this.loop_ && (this.slides_.length / this.visibleCount_) >= 3;
   }
 
   /**
@@ -595,7 +601,7 @@ export class Carousel {
         this.userScrollable_
       );
       this.scrollContainer_.setAttribute('horizontal', this.axis_ == Axis.X);
-      this.scrollContainer_.setAttribute('loop', this.loop_);
+      this.scrollContainer_.setAttribute('loop', this.isLooping());
       this.scrollContainer_.setAttribute('snap', this.snap_);
       // TODO(sparhami) Do not use CSS custom property
       setImportantStyles(this.scrollContainer_, {
@@ -765,7 +771,8 @@ export class Carousel {
    */
   isAtEnd() {
     const el = this.scrollContainer_;
-    return !this.loop_ && el.scrollLeft + el.offsetWidth >= el.scrollWidth;
+    return !this.isLooping() &&
+        el.scrollLeft + el.offsetWidth >= el.scrollWidth;
   }
 
   /**
@@ -773,7 +780,7 @@ export class Carousel {
    *    end, false otherwise.
    */
   isAtStart() {
-    return !this.loop_ && this.scrollContainer_.scrollLeft <= 0;
+    return !this.isLooping() && this.scrollContainer_.scrollLeft <= 0;
   }
 
   /**
@@ -799,7 +806,7 @@ export class Carousel {
     const {axis_, slides_} = this;
     const slideLengths = this.getSlideLengths_();
     const totalLength = sum(slideLengths);
-    const count = this.loop_ ? slides_.length : 0;
+    const count = this.isLooping() ? slides_.length : 0;
 
     // Replace the before spacers.
     this.beforeSpacers_.forEach(spacer => {
@@ -920,17 +927,17 @@ export class Carousel {
       alignment_,
       axis_,
       currentIndex_,
-      loop_,
       scrollContainer_,
       slides_,
     } = this;
+    const loop = this.isLooping();
     const totalLength = sum(this.getSlideLengths_());
     // When looping, we translate the slides, but the slides might decide to
     // translate their content instead of the whole slide. As a result, we need
     // to use the spacers to figure out where we are rather than the slides
     // themselves.
-    const items = loop_ ? allSpacers_ : slides_;
-    const startIndex = loop_ ? currentIndex_ + slides_.length : currentIndex_;
+    const items = loop ? allSpacers_ : slides_;
+    const startIndex = loop ? currentIndex_ + slides_.length : currentIndex_;
     const overlappingIndex = findOverlappingIndex(
       axis_,
       alignment_,
@@ -952,7 +959,7 @@ export class Carousel {
     const currentElement = slides_[newIndex];
     const {start: elementStart} = getDimension(axis_, currentElement);
     const {start: containerStart} = getDimension(axis_, scrollContainer_);
-    
+
     this.currentElementOffset_ = elementStart - containerStart;
 
     // We did not move at all.
@@ -1110,11 +1117,7 @@ export class Carousel {
    * @private
    */
   moveSlides_(totalLength) {
-    if (!this.loop_) {
-      return;
-    }
-
-    if (this.slides_.length <= 2) {
+    if (!this.isLooping()) {
       return;
     }
 
@@ -1124,10 +1127,13 @@ export class Carousel {
     // TODO(sparhami) The current approach of moving a set number of slides
     // does not work well for the mixed length use case.
     const {alignment_, slides_, visibleCount_} = this;
-    const count = (slides_.length - 1) / 2;
     const isStartAligned = alignment_ == Alignment.START;
-    const beforeCount = isStartAligned ? count - visibleCount_ / 2 : count;
-    const afterCount = isStartAligned ? count + visibleCount_ / 2 : count;
+    // How many slides fit into the current "window" of slides. When center
+    // aligning, we can ignore this as we want to have the same amount on both
+    // sides.
+    const windowSlideCount = isStartAligned ? visibleCount_ - 1 : 0;
+    const beforeCount = (slides_.length - 1 - windowSlideCount) / 2;
+    const afterCount = (slides_.length - 1 + windowSlideCount) / 2;
 
     this.moveSlidesBeforeOrAfter__(totalLength, Math.round(beforeCount), false);
     this.moveSlidesBeforeOrAfter__(totalLength, Math.round(afterCount), true);

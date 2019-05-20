@@ -44,8 +44,8 @@ amp-stream-gallery[inset-arrows="false"] .i-amphtml-stream-gallery-arrow-next-sl
   width: 48px;
 }
 
-amp-stream-gallery[loop="false"][inset-arrows="false"] .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
-amp-stream-gallery[loop="false"][inset-arrows="false"] .i-amphtml-stream-gallery-arrow-next-slot > [disabled] {
+amp-stream-gallery[inset-arrows="false"] .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
+amp-stream-gallery[inset-arrows="false"] .i-amphtml-stream-gallery-arrow-next-slot > [disabled] {
   opacity: 0.4;
 }
 
@@ -69,8 +69,8 @@ amp-stream-gallery:not([inset-arrows="false"]) .i-amphtml-stream-gallery-arrow-n
 }
 
 
-amp-stream-gallery[loop="false"]:not([inset-arrows="false"]) .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
-amp-stream-gallery[loop="false"]:not([inset-arrows="false"]) .i-amphtml-stream-gallery-arrow-next-slot > [disabled],
+amp-stream-gallery:not([inset-arrows="false"]) .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
+amp-stream-gallery:not([inset-arrows="false"]) .i-amphtml-stream-gallery-arrow-next-slot > [disabled],
 amp-stream-gallery[i-amphtml-stream-gallery-hide-buttons]:not([inset-arrows="false"]) .i-amphtml-stream-gallery-arrow-prev-slot,
 amp-stream-gallery[i-amphtml-stream-gallery-hide-buttons]:not([inset-arrows="false"]) .i-amphtml-stream-gallery-arrow-next-slot {
   opacity: 0;
