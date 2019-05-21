@@ -28,6 +28,7 @@ import {
   closestAncestorElementBySelector,
   iterateCursor,
   toggleAttribute,
+  scopedQuerySelectorAll,
 } from '../../../src/dom';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {dev, user} from '../../../src/log';
@@ -49,6 +50,9 @@ class AmpStreamGallery extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
+
+    /** @private {?Element} */
+    this.scrollContainer_ = null;
 
     /** @private {?Carousel} */
     this.carousel_ = null;
@@ -101,15 +105,27 @@ class AmpStreamGallery extends AMP.BaseElement {
     });
   }
 
+
   /**
-   * @param {number} visibleCount
+   * Moves the Carousel to a given index.
+   * @param {number} index
    */
-  updateVisibleCount_(visibleCount) {
-    const advanceCount = Math.floor(visibleCount);
-    this.carousel_.updateAdvanceCount(advanceCount);
-    this.carousel_.updateAutoAdvanceCount(advanceCount);
-    this.carousel_.updateSnapBy(advanceCount);
-    this.carousel_.updateVisibleCount(visibleCount);
+  goToSlide(index) {
+    this.carousel_.goToSlide(index, {smoothScroll: false});
+  }
+
+  /**
+   * Goes to the next slide. This should be called from a user interaction.
+   */
+  interactionNext() {
+    this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
+  }
+
+  /**
+   * Goes to the previous slide. This should be called from a user interaction.
+   */
+  interactionPrev() {
+    this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
   }
 
   /** @override */
@@ -145,14 +161,13 @@ class AmpStreamGallery extends AMP.BaseElement {
     // Create the carousel's inner DOM.
     element.appendChild(this.renderContainerDom_());
 
-    const scrollContainer = dev().assertElement(
+    this.scrollContainer_ = dev().assertElement(
       this.element.querySelector('.i-amphtml-carousel-scroll')
     );
-
     this.carousel_ = new Carousel({
       win,
       element,
-      scrollContainer,
+      scrollContainer: this.scrollContainer_,
       initialIndex: this.getInitialIndex_(),
       runMutate: cb => this.mutateElement(cb),
     });
@@ -161,7 +176,7 @@ class AmpStreamGallery extends AMP.BaseElement {
     // Do some manual "slot" distribution
     this.slides_.forEach(slide => {
       slide.classList.add('i-amphtml-carousel-slotted');
-      scrollContainer.appendChild(slide);
+      this.scrollContainer_.appendChild(slide);
     });
     this.prevArrowSlot_ = this.element.querySelector(
       '.i-amphtml-stream-gallery-arrow-prev-slot'
@@ -178,27 +193,11 @@ class AmpStreamGallery extends AMP.BaseElement {
       this.attributeMutated_(attr.name, attr.value);
     });
 
-    // Setup actions and listeners
     this.setupActions_();
-    this.element.addEventListener('indexchange', event => {
-      this.onIndexChanged_(event);
-    });
-    this.element.addEventListener('scrollpositionchange', () => {
-      this.updateUi_();
-    });
-    this.prevArrowSlot_.addEventListener('click', event => {
-      if (event.target != event.currentTarget) {
-        this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
-      }
-    });
-    this.nextArrowSlot_.addEventListener('click', event => {
-      if (event.target != event.currentTarget) {
-        this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
-      }
-    });
-
-    this.carousel_.updateSlides(this.slides_);
+    this.setupListeners_();
+    this.updateSlides_();
     this.updateUi_();
+
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
   }
@@ -244,28 +243,6 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
-   * Moves the Carousel to a given index.
-   * @param {number} index
-   */
-  goToSlide(index) {
-    this.carousel_.goToSlide(index, {smoothScroll: false});
-  }
-
-  /**
-   * Goes to the next slide. This should be called from a user interaction.
-   */
-  interactionNext() {
-    this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
-  }
-
-  /**
-   * Goes to the previous slide. This should be called from a user interaction.
-   */
-  interactionPrev() {
-    this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
-  }
-
-  /**
    * @return {!Element}
    * @private
    */
@@ -308,6 +285,7 @@ class AmpStreamGallery extends AMP.BaseElement {
    * Gets the ActionSource to use for a given ActionTrust.
    * @param {!ActionTrust} trust
    * @return {!ActionSource}
+   * @private
    */
   getActionSource_(trust) {
     return trust == ActionTrust.HIGH
@@ -345,6 +323,40 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
+   * @private
+   */
+  setupListeners_() {
+    this.element.addEventListener('indexchange', event => {
+      this.onIndexChanged_(event);
+    });
+    this.element.addEventListener('scrollpositionchange', () => {
+      this.updateUi_();
+    });
+    this.prevArrowSlot_.addEventListener('click', event => {
+      if (event.target != event.currentTarget) {
+        this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
+      }
+    });
+    this.nextArrowSlot_.addEventListener('click', event => {
+      if (event.target != event.currentTarget) {
+        this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
+      }
+    });
+  }
+
+  /**
+   * @param {number} visibleCount
+   * @private
+   */
+  updateVisibleCount_(visibleCount) {
+    const advanceCount = Math.floor(visibleCount);
+    this.carousel_.updateAdvanceCount(advanceCount);
+    this.carousel_.updateAutoAdvanceCount(advanceCount);
+    this.carousel_.updateSnapBy(advanceCount);
+    this.carousel_.updateVisibleCount(visibleCount);
+  }
+
+  /**
    * Updates the UI of the <amp-base-carousel> itself, but not the internal
    * implementation.
    * @private
@@ -363,6 +375,13 @@ class AmpStreamGallery extends AMP.BaseElement {
       'i-amphtml-stream-gallery-hide-buttons',
       this.hadTouch_
     );
+  }
+
+  /**
+   * @private
+   */
+  updateSlides_() {
+    this.carousel_.updateSlides(this.slides_);
   }
 
   /**
@@ -388,8 +407,8 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
-   * @private
    * @param {!Event} event
+   * @private
    */
   onIndexChanged_(event) {
     const detail = getDetail(event);
