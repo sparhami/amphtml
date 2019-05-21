@@ -220,7 +220,10 @@ export class AutoAdvance {
       return;
     }
 
-    this.advanceable_.advance(this.autoAdvanceCount_, ActionSource.AUTOPLAY);
+    this.advanceable_.advance(this.autoAdvanceCount_, {
+      actionSource: ActionSource.AUTOPLAY,
+      allowWrap: true,
+    });
     this.advances_ += this.autoAdvanceCount_;
   }
 

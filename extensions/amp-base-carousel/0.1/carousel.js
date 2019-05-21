@@ -39,7 +39,7 @@ import {
   setStyles,
 } from '../../../src/style';
 import {iterateCursor} from '../../../src/dom';
-import {mod} from '../../../src/utils/math';
+import {mod, clamp} from '../../../src/utils/math';
 
 /**
  * How long to wait prior to resetting the scrolling position after the last
@@ -332,7 +332,7 @@ export class Carousel {
    * @param {!ActionSource=} actionSource
    */
   next(actionSource) {
-    this.advance(this.advanceCount_, actionSource);
+    this.advance(this.advanceCount_, {actionSource});
   }
 
   /**
@@ -340,7 +340,7 @@ export class Carousel {
    * @param {!ActionSource=} actionSource
    */
   prev(actionSource) {
-    this.advance(-this.advanceCount_, actionSource);
+    this.advance(-this.advanceCount_, {actionSource});
   }
 
   /**
@@ -363,9 +363,12 @@ export class Carousel {
    *
    * TODO(sparhami) How can we make this work well for accessibility?
    * @param {number} delta
-   * @param {!ActionSource=} actionSource
+   * @param {{
+   *   actionSource: !ActionSource=,
+   *   allowWrap: boolean=,
+   * }=} options
    */
-  advance(delta, actionSource) {
+  advance(delta, {actionSource, allowWrap = false} = {}) {
     const {slides_, currentIndex_, requestedIndex_} = this;
 
     // If we have a requested index, use that as the reference point. The
@@ -382,6 +385,8 @@ export class Carousel {
     let slideIndex;
     if (this.isLooping()) {
       slideIndex = mod(newIndex, endIndex + 1);
+    } else if (!allowWrap) {
+      slideIndex = clamp(0, newIndex, endIndex);
     } else if (
       delta > 0 &&
       this.inLastWindow_(index) &&
@@ -422,6 +427,13 @@ export class Carousel {
    */
   getCurrentIndex() {
     return this.currentIndex_;
+  }
+
+  /**
+   * @return {number} The number of items visible at a time.
+   */
+  getVisibleCount() {
+    return this.visibleCount_;
   }
 
   /**
