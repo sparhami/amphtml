@@ -13,13 +13,14 @@
       display: flex;
       padding: 0 5px
     }
-    
+
     .item img {
       object-fit: contain;
     }
 
     .gallery-container {
       position: relative;
+      max-width: 1024px;
     }
   </style>
   <script async src="https://cdn.ampproject.org/v0.js"></script>
@@ -39,16 +40,17 @@
       </div>
     -->
     <!--
-      For this example: a_w = 48px, m = 10px, n = 3, ar_h = 2 and ar_w = 3
+      For this example: a_w = 0 (inset), m = 10px, n = 2.5, ar_h = 2 and ar_w = 3
     -->
-    <div style="padding: 0 calc(48px + 3 * 10px / 2)">
-      <div style="padding-top: calc(100% * (2 / (3 * 3)))"></div>
+    <div style="padding: 0 calc(2 * 10px / 2)">
+      <div style="padding-top: calc(100% * (2 / (2.5 * 3)))"></div>
     </div>
-    <amp-stream-gallery id="carousel-1" layout="fill"
-        loop="true"
+    <amp-stream-gallery
+        class="gallery"
+        layout="fill"
+        loop="false"
         snap="true"
-        outset-arrows="true"
-        visible-count="3">
+        visible-count="(min-width: 600px) 5, 2.5">
       <div class="item">
         <amp-img src="../amp-base-carousel/img/redgradient.png" layout="flex-item"></amp-img>
       </div>
@@ -70,22 +72,15 @@
       <div class="item">
         <amp-img src="../amp-base-carousel/img/lilacgradient.png" layout="flex-item"></amp-img>
       </div>
-      <div></div>
-      <div></div>
     </amp-stream-gallery>
   </div>
   <p>Configuration:</p>
   <ul>
-    <li>Looping</li>
+    <li>Non-looping</li>
     <li>Snapping</li>
-    <li>Outset arrows</li>
-    <li>Showing 3 items at a time</li>
+    <li>Showing 5 items for (min-width: 600px), 2.5 items otherwise</li>
     <li>3:2 aspect ratio of slides</li>
     <li>10px spacing between items</li>
-    <li>Exact sizing of component</li>
   </ul>
-  <p>
-    Note: there are two intentionally blank slides at the end. We need at least 9 slides to enable looping.
-  </p>
 </body>
 </html>

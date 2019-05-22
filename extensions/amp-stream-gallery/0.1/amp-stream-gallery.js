@@ -28,7 +28,6 @@ import {
   closestAncestorElementBySelector,
   iterateCursor,
   toggleAttribute,
-  scopedQuerySelectorAll,
 } from '../../../src/dom';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {dev, user} from '../../../src/log';
@@ -37,6 +36,13 @@ import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
 import {isLayoutSizeDefined} from '../../../src/layout';
 import {toArray} from '../../../src/types';
+
+/** @enum {number} */
+const ArrowVisibility = {
+  NEVER: 0,
+  AUTO: 1,
+  ALWAYS: 2,
+};
 
 /**
  * @param {!Element} el The Element to check.
@@ -52,6 +58,9 @@ class AmpStreamGallery extends AMP.BaseElement {
     super(element);
 
     /** @private {?Element} */
+    this.content_ = null;
+
+    /** @private {?Element} */
     this.scrollContainer_ = null;
 
     /** @private {?Carousel} */
@@ -65,6 +74,15 @@ class AmpStreamGallery extends AMP.BaseElement {
 
     /** @private {?Element} */
     this.prevArrowSlot_ = null;
+
+    /** @private {boolean} */
+    this.outsetArrows_ = false;
+
+    /** @private {number} */
+    this.visibleCount_ = 1;
+
+    /** @private {!ArrowVisibility} */
+    this.insetArrowVisibility_ = ArrowVisibility.AUTO;
 
     /**
      * Whether or not the user has interacted with the carousel using touch in
@@ -89,6 +107,12 @@ class AmpStreamGallery extends AMP.BaseElement {
       },
       'loop': newValue => {
         this.carousel_.updateLoop(newValue == 'true');
+      },
+      'outset-arrows': newValue => {
+        this.updateOutsetArrows_(newValue == 'true');
+      },
+      'inset-arrow-visibility': newValue => {
+        this.updateInsetArrowVisibility_(newValue);
       },
       'slide': newValue => {
         this.carousel_.goToSlide(Number(newValue));
@@ -163,6 +187,9 @@ class AmpStreamGallery extends AMP.BaseElement {
 
     this.scrollContainer_ = dev().assertElement(
       this.element.querySelector('.i-amphtml-carousel-scroll')
+    );
+    this.content_ = dev().assertElement(
+      this.element.querySelector('.i-amphtml-carousel-content')
     );
     this.carousel_ = new Carousel({
       win,
@@ -354,6 +381,47 @@ class AmpStreamGallery extends AMP.BaseElement {
     this.carousel_.updateAutoAdvanceCount(advanceCount);
     this.carousel_.updateSnapBy(advanceCount);
     this.carousel_.updateVisibleCount(visibleCount);
+
+    this.visibleCount_ = visibleCount;
+    this.updateUi_();
+  }
+
+  /**
+   * @param {boolean} outsetArrows
+   * @private
+   */
+  updateOutsetArrows_(outsetArrows) {
+    this.outsetArrows_ = outsetArrows;
+    this.updateUi_();
+  }
+
+  /**
+   * @param {string} insetArrowVisibility
+   * @private
+   */
+  updateInsetArrowVisibility_(insetArrowVisibility) {
+    this.insetArrowVisibility_ =
+        insetArrowVisibility == 'always' ? ArrowVisibility.ALWAYS :
+        insetArrowVisibility == 'never' ? ArrowVisibility.NEVER :
+        ArrowVisibility.AUTO;
+    this.updateUi_();
+  }
+
+  /**
+   * @return {boolean}
+   * @private
+   */
+  shouldHideButtons_() {
+    if (this.insetArrowVisibility_ == ArrowVisibility.ALWAYS) {
+      return false;
+    }
+
+    if (this.insetArrowVisibility_ == ArrowVisibility.NEVER) {
+      return true;
+    }
+
+    const peeking = Math.round(this.visibleCount_) != this.visibleCount_;
+    return this.hadTouch_ || peeking;
   }
 
   /**
@@ -371,9 +439,14 @@ class AmpStreamGallery extends AMP.BaseElement {
       toggleAttribute(child, 'disabled', this.carousel_.isAtEnd());
     });
     toggleAttribute(
-      this.element,
+      this.content_,
       'i-amphtml-stream-gallery-hide-buttons',
-      this.hadTouch_
+      this.shouldHideButtons_()
+    );
+    toggleAttribute(
+      this.content_,
+      'i-amphtml-stream-gallery-outset-arrows',
+      this.outsetArrows_
     );
   }
 
