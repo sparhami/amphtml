@@ -153,6 +153,8 @@ function updateTint(metaInfo, startColor, endColor, config) {
 
       el.content = computedStyle(win, el)['backgroundColor'];
 
+      // Play state can be pending if there was another animation already
+      // running.
       if (anim.playState == 'running' || anim.playState == 'pending') {
         requestAnimationFrame(step);
       }
