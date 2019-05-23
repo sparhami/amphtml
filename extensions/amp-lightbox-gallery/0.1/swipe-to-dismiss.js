@@ -18,7 +18,7 @@ import {SwipeDef} from '../../../src/gesture-recognizers';
 import {darkenMetaThemeColor, setMetaThemeColorToBlack} from './meta-theme';
 import {delayAfterDeferringToEventLoop} from './utils';
 import {dev} from '../../../src/log';
-import {lerp} from '../../../src/utils/math';
+import {distance, lerp, magnitude} from '../../../src/utils/math';
 import {listen} from '../../../src/event-helper';
 import {setStyle, setStyles} from '../../../src/style';
 
@@ -68,20 +68,6 @@ const SWIPE_TO_CLOSE_SNAP_BACK_TIME_FACTOR = 5;
  * close gesture. This closely approximates an expontential decay of velocity.
  */
 const SWIPE_TO_CLOSE_MOMENTUM_TIMING = 'cubic-bezier(0.15, .55, .3, 0.95)';
-
-/**
- * Calculates the distance between two points in two dimensions.
- * TODO(#21104) Refactor.
- * @param {number} x1 The x coordinate of the first point.
- * @param {number} y1 The y coordinate of the first point.
- * @param {number} x2 The x coordinate of the second point.
- * @param {number} y2 The y coordinate of the second point.
- * @return {number} The distance.
- */
-function calculateDistance(x1, y1, x2, y2) {
-  return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
-}
-
 
 /**
  * Maintains state and updates the UI for a swipe to dismiss gesture.
@@ -151,12 +137,7 @@ export class SwipeToDismiss {
    *   overlay: !Element,
    * }} config
    */
-  startSwipe({
-    swipeElement,
-    hiddenElement,
-    mask,
-    overlay,
-  }) {
+  startSwipe({swipeElement, hiddenElement, mask, overlay}) {
     this.swipeElement_ = swipeElement;
     this.hiddenElement_ = hiddenElement;
     this.mask_ = mask;
@@ -247,7 +228,10 @@ export class SwipeToDismiss {
    * @private
    */
   adjustForSwipePosition_(
-    swipeElementTransform = '', maskOpacity = '', overlayOpacity = '') {
+    swipeElementTransform = '',
+    maskOpacity = '',
+    overlayOpacity = ''
+  ) {
     setStyles(dev().assertElement(this.swipeElement_), {
       transform: swipeElementTransform,
       transition: '',
@@ -277,7 +261,7 @@ export class SwipeToDismiss {
    * @private
    */
   releaseSwipe_(scale, velocityX, velocityY, deltaX, deltaY) {
-    const velocity = calculateDistance(0, 0, velocityX, velocityY);
+    const velocity = magnitude(velocityX, velocityY);
     const distanceX = velocityX * SWIPE_TO_CLOSE_VELOCITY_TO_DISTANCE_FACTOR;
     const distanceY = velocityY * SWIPE_TO_CLOSE_VELOCITY_TO_DISTANCE_FACTOR;
     const finalDeltaX = distanceX + deltaX;
@@ -286,20 +270,25 @@ export class SwipeToDismiss {
     // flicked the lightbox and use that to determine we should animate to. We
     // will then use that resting position to determine if we should snap back
     // or close.
-    const finalDistance = calculateDistance(0, 0, finalDeltaX, finalDeltaY);
+    const finalDistance = magnitude(finalDeltaX, finalDeltaY);
 
     // We always want to carry momentum from the swipe forward, and then use
     // the resting point to decide if we should snap back or close.
-    return this.carrySwipeMomentum_(scale, finalDeltaX, finalDeltaY, velocity)
-        .then(() => {
+    return this.carrySwipeMomentum_(
+      scale,
+      finalDeltaX,
+      finalDeltaY,
+      velocity
+    ).then(() => {
+      if (
+        finalDistance < SWIPE_TO_CLOSE_DISTANCE_THRESHOLD &&
+        velocity < SWIPE_TO_CLOSE_VELOCITY_THRESHOLD
+      ) {
+        return this.snapBackFromSwipe_(finalDistance);
+      }
 
-          if (finalDistance < SWIPE_TO_CLOSE_DISTANCE_THRESHOLD &&
-              velocity < SWIPE_TO_CLOSE_VELOCITY_THRESHOLD) {
-            return this.snapBackFromSwipe_(finalDistance);
-          }
-
-          return this.onclose_();
-        });
+      return this.onclose_();
+    });
   }
 
   /**
@@ -314,12 +303,15 @@ export class SwipeToDismiss {
     // We do not want the user dragging around to make the carousel think that
     // a scroll happened.
     this.preventScrollUnlistener_ = listen(
-        dev().assertElement(this.swipeElement_),
-        'scroll', event => {
-          event.stopPropagation();
-        }, {
-          capture: true,
-        });
+      dev().assertElement(this.swipeElement_),
+      'scroll',
+      event => {
+        event.stopPropagation();
+      },
+      {
+        capture: true,
+      }
+    );
     // TODO(sparhami) #19259 Tracks a more generic way to do this. Remove once
     // we have something better.
     this.element_.setAttribute('i-amphtml-scale-animation', '');
@@ -339,7 +331,6 @@ export class SwipeToDismiss {
     setStyle(this.overlay_, 'animationFillMode', '');
   }
 
-
   /**
    *
    * @param {!SwipeDef} data The data for the swipe.
@@ -348,32 +339,36 @@ export class SwipeToDismiss {
   swipeMove_(data, isLast) {
     const {deltaX, deltaY, velocityX, velocityY} = data;
     // Need to capture these as they will no longer be available after closing.
-    const distance = calculateDistance(0, 0, deltaX, deltaY);
+    const distance = magnitude(deltaX, deltaY);
     const releasePercentage = Math.min(distance / SWIPE_TO_CLOSE_DISTANCE, 1);
-    const hideOverlayPercentage =
-        Math.min(distance / SWIPE_TO_HIDE_OVERLAY_DISTANCE, 1);
+    const hideOverlayPercentage = Math.min(
+      distance / SWIPE_TO_HIDE_OVERLAY_DISTANCE,
+      1
+    );
     const scale = lerp(1, SWIPE_TO_CLOSE_MIN_SCALE, releasePercentage);
     const maskOpacity = lerp(1, SWIPE_TO_CLOSE_MIN_OPACITY, releasePercentage);
     const overlayOpacity = lerp(1, 0, hideOverlayPercentage);
 
     this.mutateElement_(() => {
       if (isLast) {
-        this.releaseSwipe_(scale, velocityX, velocityY, deltaX, deltaY)
-            .then(() => {
-              // TODO(sparhami) These should be called in a `mutateElement`,
-              // but we are already in an animationFrame, and waiting for the
-              // next one will cause the UI to flicker.
-              this.adjustForSwipePosition_();
-              this.endSwipeToDismiss_();
-            });
+        this.releaseSwipe_(scale, velocityX, velocityY, deltaX, deltaY).then(
+          () => {
+            // TODO(sparhami) These should be called in a `mutateElement`,
+            // but we are already in an animationFrame, and waiting for the
+            // next one will cause the UI to flicker.
+            this.adjustForSwipePosition_();
+            this.endSwipeToDismiss_();
+          }
+        );
         return;
       }
 
       darkenMetaThemeColor(this.doc_, maskOpacity);
       this.adjustForSwipePosition_(
-          `scale(${scale}) translate(${deltaX}px, ${deltaY}px)`,
-          maskOpacity,
-          overlayOpacity);
+        `scale(${scale}) translate(${deltaX}px, ${deltaY}px)`,
+        maskOpacity,
+        overlayOpacity
+      );
     });
   }
 }
