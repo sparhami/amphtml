@@ -109,59 +109,55 @@ function updateTint(metaInfo, startColor, endColor, config) {
     return;
   }
 
-  try {
-    const anim = el.animate(
-      [
-        {
-          backgroundColor: startColor,
-        },
-        {
-          backgroundColor: endColor,
-        },
-      ],
+  const anim = el.animate(
+    [
       {
-        duration: config.duration,
-        // Negative delays do not appear to work (like animationDelay), so only set
-        // a delay if it is positive. The delay is set as the currentTime if it is
-        // negative.
-        delay: Math.max(config.delay, 0),
-        fill: 'forwards',
-      }
-    );
-
-    if (config.delay < 0) {
-      anim.currentTime = -config.delay;
+        backgroundColor: startColor,
+      },
+      {
+        backgroundColor: endColor,
+      },
+    ],
+    {
+      duration: config.duration,
+      // Negative delays do not appear to work (like animationDelay), so only set
+      // a delay if it is positive. The delay is set as the currentTime if it is
+      // negative.
+      delay: Math.max(config.delay, 0),
+      fill: 'forwards',
     }
+  );
 
-    // We want to use `currentTime` to interpolate a value, so we simply pause
-    // the animation at the desired time to read the value.
-    if (config.currentTime) {
-      anim.currentTime = config.currentTime;
-      anim.pause();
-    }
-
-    // As long as the animation is running, read the computed background color
-    // and set it on the meta element.
-    requestAnimationFrame(function step() {
-      const win = el.ownerDocument.defaultView;
-
-      // `devAssert` and casting does not seem to make Closure Compiler happy
-      // enough, still thinks it can be `null`?
-      if (!win) {
-        return;
-      }
-
-      el.content = computedStyle(win, el)['backgroundColor'];
-
-      // Play state can be pending if there was another animation already
-      // running.
-      if (anim.playState == 'running' || anim.playState == 'pending') {
-        requestAnimationFrame(step);
-      }
-    });
-  } catch (e) {
-    // The animation could fail, if a bad color was specified.
+  if (config.delay < 0) {
+    anim.currentTime = -config.delay;
   }
+
+  // We want to use `currentTime` to interpolate a value, so we simply pause
+  // the animation at the desired time to read the value.
+  if (config.currentTime) {
+    anim.currentTime = config.currentTime;
+    anim.pause();
+  }
+
+  // As long as the animation is running, read the computed background color
+  // and set it on the meta element.
+  requestAnimationFrame(function step() {
+    const win = el.ownerDocument.defaultView;
+
+    // `devAssert` and casting does not seem to make Closure Compiler happy
+    // enough, still thinks it can be `null`?
+    if (!win) {
+      return;
+    }
+
+    el.content = computedStyle(win, el)['backgroundColor'];
+
+    // Play state can be pending if there was another animation already
+    // running.
+    if (anim.playState == 'running' || anim.playState == 'pending') {
+      requestAnimationFrame(step);
+    }
+  });
 }
 
 /**
