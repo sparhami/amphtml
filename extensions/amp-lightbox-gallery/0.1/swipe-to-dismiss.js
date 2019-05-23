@@ -15,7 +15,7 @@
  */
 
 import {SwipeDef} from '../../../src/gesture-recognizers';
-import {darkenMetaThemeColor} from './meta-theme';
+import {darkenMetaThemeColor, setMetaThemeColorToBlack} from './meta-theme';
 import {delayAfterDeferringToEventLoop} from './utils';
 import {dev} from '../../../src/log';
 import {lerp} from '../../../src/utils/math';
@@ -215,6 +215,9 @@ export class SwipeToDismiss {
   snapBackFromSwipe_(finalDistance) {
     const duration = finalDistance * SWIPE_TO_CLOSE_SNAP_BACK_TIME_FACTOR;
 
+    setMetaThemeColorToBlack(this.doc_, {
+      duration,
+    });
     return this.mutateElement_(() => {
       setStyles(dev().assertElement(this.swipeElement_), {
         transform: '',
@@ -292,11 +295,9 @@ export class SwipeToDismiss {
 
           if (finalDistance < SWIPE_TO_CLOSE_DISTANCE_THRESHOLD &&
               velocity < SWIPE_TO_CLOSE_VELOCITY_THRESHOLD) {
-            darkenMetaThemeColor(this.doc_, 1);
             return this.snapBackFromSwipe_(finalDistance);
           }
 
-          darkenMetaThemeColor(this.doc_, 0);
           return this.onclose_();
         });
   }

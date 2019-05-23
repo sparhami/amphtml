@@ -41,7 +41,6 @@ import {
   toggleAttribute,
 } from '../../../src/dom';
 import {clamp} from '../../../src/utils/math';
-import {darkenMetaThemeColor, restoreMetaThemeColor} from './meta-theme';
 import {
   delayAfterDeferringToEventLoop,
   secondsToTimestampString,
@@ -59,6 +58,7 @@ import {
   prepareImageAnimation,
 } from '@ampproject/animations/dist/animations.mjs';
 import {reportError} from '../../../src/error';
+import {restoreMetaThemeColor, setMetaThemeColorToBlack} from './meta-theme';
 import {setStyle, setStyles, toggle} from '../../../src/style';
 import {toArray} from '../../../src/types';
 import {triggerAnalyticsEvent} from '../../../src/analytics';
@@ -82,6 +82,8 @@ const LightboxControlsModes = {
 
 // Use S Curves for entry and exit animations
 const TRANSITION_CURVE = {x1: 0.8, y1: 0, x2: 0.2, y2: 1};
+
+const TRANSITION_CURVE_STRING = `cubic-bezier(${TRANSITION_CURVE.X1}, ${TRANSITION_CURVE.Y1}, ${TRANSITION_CURVE.X2}, ${TRANSITION_CURVE.Y2})`;
 
 // Keep in sync with [i-amphtml-lbg-fade]'s animation duration
 const FADE_DURATION = 400; // ms;
@@ -907,13 +909,15 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     };
 
     const mutate = () => {
+      this.fadeMetaThemeColor_(enter, duration);
+
       toggle(carousel, enter);
       // Undo opacity 0 from `openLightboxGallery_`
       setStyle(this.element, 'opacity', '');
       // Fade in/out the background in sync with the motion.
       setStyles(container, {
         animationName: enter ? 'fadeIn' : 'fadeOut',
-        animationTimingFunction: 'cubic-bezier(0.8, 0, 0.2, 1)',
+        animationTimingFunction: TRANSITION_CURVE_STRING,
         animationDuration: `${motionDuration}ms`,
         animationFillMode: 'forwards',
       });
@@ -977,6 +981,8 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    */
   fade_(fadeIn) {
     return this.mutateElement(() => {
+      this.fadeMetaThemeColor_(fadeIn, FADE_DURATION);
+
       if (fadeIn) {
         toggle(dev().assertElement(this.carousel_), true);
         toggle(this.element, true);
@@ -996,13 +1002,26 @@ export class AmpLightboxGallery extends AMP.BaseElement {
   }
 
   /**
+   * Fades the meta theme color, by interpolating between the configured value
+   * and black, depending on the direction of the fade.
+   * @param {boolean} fadeIn Whether the lighbox is fading in or out.
+   * @param {number} duration How long to fade for.
+   */
+  fadeMetaThemeColor_(fadeIn, duration) {
+    const fn = fadeIn ? setMetaThemeColorToBlack : restoreMetaThemeColor;
+
+    fn(this.doc_, {
+      timing: TRANSITION_CURVE_STRING,
+      duration,
+    });
+  }
+
+  /**
    * Entry animation to transition in a lightboxable image
    * @return {!Promise}
    * @private
    */
   enter_() {
-    darkenMetaThemeColor(this.doc_);
-
     // TODO (cathyxz): make this generalizable to more than just images
     const {sourceElement} = this.getCurrentElement_();
     if (!this.elementTypeCanBeAnimated_(sourceElement)) {
@@ -1020,8 +1039,6 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    * @private
    */
   exit_() {
-    restoreMetaThemeColor(this.doc_);
-
     const {sourceElement} = this.getCurrentElement_();
     if (!this.shouldAnimateOut_()) {
       return this.fade_(/*fadeIn*/false);

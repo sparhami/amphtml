@@ -15,59 +15,21 @@
  */
 
 import {devAssert} from '../../../src/log';
-import {getStyle, setStyle} from '../../../src/style';
-import {lerp} from '../../../src/utils/math';
+import { computedStyle } from '../../../src/style';
 
 /**
- * @typedef {{
- *   r: number,
- *   b: number,
- *   g: number,
- * }}
+ * @type {{
+ *  element: HTMLMetaElement,
+ *  originalContent: ?string,
+ *  rgb: ?RgbDef,
+ * }} 
  */
-let RgbDef;
+let MetaInfo;
 
 /**
  * Used to store / retrieve the meta theme color info for a document.
  */
 const META_THEME_COLOR_INFO = '__AMP_META_THEME_COLOR_INFO';
-
-/**
- * Matches rgb(r, g, b... or rgba(r, g, b... and gets the r, g and b values
- * as groups.
- */
-const CSS_RGB_REGEX = /rgba?\((\d+), (\d+), (\d+)/;
-
-/**
- * Uses the browser to parse a color string into an rgb value. This ignores the
- * alpha channel, if specified. Unfortunately, CSS Typed OM does not support
- * color parsing, so we use an element to normalize to rgb(a). Since this
- * uses `hidden`, it does not cause a layout. It can cause a style however.
- * @param {string} color An input color string like #333, rgb(20, 30, 40) or
- *    hsla(100, 20%, 40%, 0.4)
- * @param {!RgbDef=} defaultRgb The default rgb values to use if the color is
- *    not a valid color.
- * @return {!RgbDef} The RGB values, from zero to 255.
- */
-function colorToRgb(color, defaultRgb = {r: 255, g: 255, b: 255}) {
-  const div = document.createElement('div');
-  div.hidden = true; // Avoid causing layout.
-  setStyle(div, 'color', color);
-  document.body.appendChild(div);
-  const computedColor = getStyle(div, 'color');
-  const values = CSS_RGB_REGEX.exec(computedColor);
-  document.body.removeChild(div);
-
-  if (!values) {
-    return defaultRgb;
-  }
-
-  return {
-    r: Number(values[1]),
-    g: Number(values[2]),
-    b: Number(values[3]),
-  };
-}
 
 /**
  * Creates a `<meta name='theme-color">` element and appends it to the head.
@@ -86,23 +48,90 @@ function createMetaThemeColor(doc) {
  * Gets the infor for the `<meta name="theme-color">` element, creating one if
  * necessary.
  * @param {!Document} doc
- * @return {!{
- *  element: HTMLMetaElement,
- *  content: ?string,
- *  rgb: ?RgbDef,
- * }} Information about the 
+ * @return {!MetaInfo} Information about the meta tag.
  */
 function getMetaThemeColorInfo(doc) {
   if (!doc[META_THEME_COLOR_INFO]) {
     doc[META_THEME_COLOR_INFO] = {
       element: doc.querySelector('meta[name="theme-color"]') ||
           createMetaThemeColor(doc),
-      content: null,
+      originalContent: null,
       rgb: null,
     };
   }
 
-  return doc[META_THEME_COLOR_INFO];
+  const metaInfo = doc[META_THEME_COLOR_INFO];
+
+  // Save the original content, and figure out the original rgb if needed.
+  if (metaInfo.originalContent == null) {
+    metaInfo.originalContent = metaInfo.element.content || 'transparent';
+  }
+
+  return metaInfo;
+}
+
+/**
+ * @param {!MetaInfo} metaInfo Information about the meta tag.
+ */
+function clearMetaThemeColorInfo(metaInfo) {
+  metaInfo.originalContent = null;
+}
+
+/**
+ * Sets the tint for the meta tag. This is animated between the start and end
+ * colors, unless the `currentTime` config is passed, which causes the value
+ * to be set immediately to the interpolated value instead.
+ * 
+ * This uses the web animations API to parse the color values and do the
+ * interpolation. An alternative would be to parse the color values
+ * 
+ * If the web animations API is not supported, then no animation or
+ * interpolation is performed, and the color is set to the end color.
+ * 
+ * @param {!MetaInfo} metaInfo Information about the meta tag.
+ * @param {string} startColor The color to start on.
+ * @param {string} endColor The color to end on.
+ * @param {!{
+ *   currentTime: number=,
+ *   timing: string,
+ *   duration: number,
+ * }} config
+ */
+function updateTint(metaInfo, startColor, endColor, config) {
+  const el = metaInfo.element;
+  const win = el.ownerDocument.defaultView;
+
+  // No web animations API support, so bail early.
+  if (!el.animate) {
+    el.content = endColor;
+    return;
+  }
+
+  const anim = el.animate([
+    {backgroundColor: startColor},
+    {backgroundColor: endColor}
+  ],
+  {
+    duration: config.duration,
+    fill: 'forwards',
+  });
+
+  // We want to use `currentTime` to interpolate a value, so we simply pause
+  // the animation at the desired time to read the value.
+  if (config.currentTime) {
+    anim.currentTime = config.currentTime;
+    anim.pause();
+  }
+
+  // As long as the animation is running, read the computed background color
+  // and set it on the meta element.
+  requestAnimationFrame(function step() {
+    el.content = computedStyle(win, el, 'backgroundColor');
+
+    if (anim.playState == 'running' || anim.playState == 'pending') {
+      requestAnimationFrame(step)
+    }
+  });
 }
 
 /**
@@ -115,25 +144,41 @@ export function darkenMetaThemeColor(doc, percentage = 1) {
   devAssert(percentage <= 1);
 
   const metaInfo = getMetaThemeColorInfo(doc);
+  updateTint(metaInfo, metaInfo.originalContent, 'black', {
+    currentTime: percentage * 100,
+    timing: 'linear',
+    duration: 100,
+  });
+}
 
-  // Save the original content, and figure out the original rgb if needed.
-  if (metaInfo.content == null) {
-    metaInfo.content = metaInfo.element.content;
-    metaInfo.rgb = colorToRgb(metaInfo.content);
-  }
-
-  const r = lerp(metaInfo.rgb.r, 0, percentage);
-  const g = lerp(metaInfo.rgb.g, 0, percentage);
-  const b = lerp(metaInfo.rgb.b, 0, percentage);
-  metaInfo.element.content = `rgb(${r}, ${g}, ${b})`;
+/**
+ * @param {!Document} doc
+ * @param {{
+ *   timing: string,
+ *   duration: number,
+ * }} config
+ */
+export function setMetaThemeColorToBlack(doc, config) {
+  const metaInfo = getMetaThemeColorInfo(doc);
+  updateTint(metaInfo, metaInfo.element.content, 'black', {
+    timing: config.timing,
+    duration: config.duration,
+  });
 }
 
 /**
  * Restores the meta theme color.
  * @param {!Document} doc
+ * @param {{
+ *   timing: string,
+ *   duration: number,
+ * }} config
  */
-export function restoreMetaThemeColor(doc) {
+export function restoreMetaThemeColor(doc, config = {}) {
   const metaInfo = getMetaThemeColorInfo(doc);
-  metaInfo.element.content = metaInfo.content || '';
-  metaInfo.content = null;
+  updateTint(metaInfo, metaInfo.element.content, metaInfo.originalContent, {
+    timing: config.timing,
+    duration: config.duration,
+  });
+  clearMetaThemeColorInfo(metaInfo);
 }
