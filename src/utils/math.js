@@ -135,13 +135,13 @@ export function distance(x1, y1, x2, y2) {
   return magnitude(x2 - x1, y2 - y1);
 }
 
-/*
-* A linear interpolation.
-* @param {number} start
-* @param {number} end
-* @param {number} percentage
-* @return {number} The value percentage of the way between start and end.
-*/
+/**
+ * A linear interpolation.
+ * @param {number} start
+ * @param {number} end
+ * @param {number} percentage
+ * @return {number} The value percentage of the way between start and end.
+ */
 export function lerp(start, end, percentage) {
- return start + (end - start) * percentage;
+  return start + (end - start) * percentage;
 }

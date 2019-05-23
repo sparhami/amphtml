@@ -75,8 +75,7 @@ const LightboxControlsModes = {
 
 // Use S Curves for entry and exit animations
 const TRANSITION_CURVE = {x1: 0.8, y1: 0, x2: 0.2, y2: 1};
-
-const TRANSITION_CURVE_STRING = `cubic-bezier(${TRANSITION_CURVE.X1}, ${TRANSITION_CURVE.Y1}, ${TRANSITION_CURVE.X2}, ${TRANSITION_CURVE.Y2})`;
+const TRANSITION_CURVE_CSS = 'cubic-bezier(0.8. 0. 0.2, 1)';
 
 // Keep in sync with [i-amphtml-lbg-fade]'s animation duration
 const FADE_DURATION = 400; // ms;
@@ -961,7 +960,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
       // Fade in/out the background in sync with the motion.
       setStyles(container, {
         animationName: enter ? 'fadeIn' : 'fadeOut',
-        animationTimingFunction: TRANSITION_CURVE_STRING,
+        animationTimingFunction: TRANSITION_CURVE_CSS,
         animationDuration: `${motionDuration}ms`,
         animationFillMode: 'forwards',
       });
@@ -1055,7 +1054,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     const fn = fadeIn ? setMetaThemeColorToBlack : restoreMetaThemeColor;
 
     fn(this.doc_, {
-      timing: TRANSITION_CURVE_STRING,
+      timing: TRANSITION_CURVE_CSS,
       // The animation using the meta theme color is always one frame behind.
       // In addition, since we start this from a mutate context, we are one
       // additional frame behind from the first animationFrame in the fade

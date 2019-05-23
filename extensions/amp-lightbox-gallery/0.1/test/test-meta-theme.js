@@ -17,7 +17,6 @@
 import {darkenMetaThemeColor, restoreMetaThemeColor} from '../meta-theme';
 
 describes.realWin('amp-lightbox-gallery', {}, env => {
-
   let win, doc;
 
   function getMetaThemeColorElement() {

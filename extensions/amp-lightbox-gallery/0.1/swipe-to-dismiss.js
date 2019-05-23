@@ -18,7 +18,7 @@ import {SwipeDef} from '../../../src/gesture-recognizers';
 import {darkenMetaThemeColor, setMetaThemeColorToBlack} from './meta-theme';
 import {delayAfterDeferringToEventLoop} from './utils';
 import {dev} from '../../../src/log';
-import {distance, lerp, magnitude} from '../../../src/utils/math';
+import {lerp, magnitude} from '../../../src/utils/math';
 import {listen} from '../../../src/event-helper';
 import {setStyle, setStyles} from '../../../src/style';
 
@@ -197,7 +197,10 @@ export class SwipeToDismiss {
     const duration = finalDistance * SWIPE_TO_CLOSE_SNAP_BACK_TIME_FACTOR;
 
     setMetaThemeColorToBlack(this.doc_, {
+      timing: 'ease-out',
       duration,
+      // Always one frame bind the animations below.
+      delay: -16,
     });
     return this.mutateElement_(() => {
       setStyles(dev().assertElement(this.swipeElement_), {
