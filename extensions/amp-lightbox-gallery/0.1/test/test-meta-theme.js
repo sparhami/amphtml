@@ -47,7 +47,7 @@ describes.realWin('amp-lightbox-gallery', {}, env => {
       await animationFramePromise();
 
       const el = getMetaThemeColorElement();
-      expect(el.content).to.equal('rgb(0, 0, 0)');
+      expect(el.content).to.equal('black');
     });
 
     it('should clear the content when restoring', async () => {
@@ -60,7 +60,7 @@ describes.realWin('amp-lightbox-gallery', {}, env => {
       await animationFramePromise();
 
       const el = getMetaThemeColorElement();
-      expect(el.content).to.equal('rgb(255, 255, 255)');
+      expect(el.content).to.equal('');
     });
   });
 
@@ -103,11 +103,8 @@ describes.realWin('amp-lightbox-gallery', {}, env => {
   });
 
   describe('theme color modifications', function() {
-    beforeEach(() => {
-      createMetaThemeColor('rgb(10, 20, 200)');
-    });
-
     it('should darken to black', async () => {
+      createMetaThemeColor('rgb(10, 20, 200)');
       darkenMetaThemeColor(doc, 1);
       await animationFramePromise();
 
@@ -116,6 +113,7 @@ describes.realWin('amp-lightbox-gallery', {}, env => {
     });
 
     it('should lighten to the original color', async () => {
+      createMetaThemeColor('rgb(10, 20, 200)');
       darkenMetaThemeColor(doc, 0);
       await animationFramePromise();
 
@@ -124,6 +122,7 @@ describes.realWin('amp-lightbox-gallery', {}, env => {
     });
 
     it('should lighten part way', async () => {
+      createMetaThemeColor('rgb(10, 20, 200)');
       darkenMetaThemeColor(doc, 0.25);
       await animationFramePromise();
 
@@ -132,6 +131,7 @@ describes.realWin('amp-lightbox-gallery', {}, env => {
     });
 
     it('should restore to the original color', async () => {
+      createMetaThemeColor('rgb(10, 20, 200)');
       // Call multiple times, make sure we restore to the original.
       darkenMetaThemeColor(doc, 1);
       darkenMetaThemeColor(doc, 0.8);

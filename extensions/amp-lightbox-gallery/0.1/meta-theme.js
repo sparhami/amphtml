@@ -100,8 +100,11 @@ function clearMetaThemeColorInfo(metaInfo) {
 function updateTint(metaInfo, startColor, endColor, config) {
   const el = metaInfo.element;
 
-  // No web animations API support, so bail early.
-  if (!el.animate) {
+  // If we have no animations support, just set the color directly. Also, if we
+  // do not know the start color or end color (i.e. no `<meta name="theme-color"
+  // was present on the page), we cannot animate. We cannot assume the default
+  // color is white, because the browser could be in dark mode.
+  if (!el.animate || !endColor || !startColor) {
     el.content = endColor;
     return;
   }
@@ -110,9 +113,9 @@ function updateTint(metaInfo, startColor, endColor, config) {
     const anim = el.animate(
       [
         {
-          backgroundColor: startColor || 'white',
+          backgroundColor: startColor,
         }, {
-          backgroundColor: endColor || 'white',
+          backgroundColor: endColor,
         }],
       {
         duration: config.duration,
@@ -168,7 +171,7 @@ export function darkenMetaThemeColor(doc, percentage = 1) {
   devAssert(percentage <= 1);
 
   const metaInfo = getMetaThemeColorInfo(doc);
-  updateTint(metaInfo, metaInfo.originalContent || 'white', 'black', {
+  updateTint(metaInfo, metaInfo.originalContent, 'black', {
     currentTime: percentage * 100,
     timing: 'linear',
     duration: 100,
