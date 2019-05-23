@@ -953,7 +953,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     };
 
     const mutate = () => {
-      this.fadeMetaThemeColor_(enter, duration);
+      this.fadeMetaThemeColor_(enter, motionDuration);
 
       toggle(carousel, enter);
       // Undo opacity 0 from `openLightboxGallery_`
@@ -1056,6 +1056,11 @@ export class AmpLightboxGallery extends AMP.BaseElement {
 
     fn(this.doc_, {
       timing: TRANSITION_CURVE_STRING,
+      // The animation using the meta theme color is always one frame behind.
+      // In addition, since we start this from a mutate context, we are one
+      // additional frame behind from the first animationFrame in the fade
+      // function.
+      delay: -32,
       duration,
     });
   }

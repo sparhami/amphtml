@@ -95,6 +95,7 @@ function clearMetaThemeColorInfo(metaInfo) {
  *   currentTime: number=,
  *   timing: string,
  *   duration: number,
+ *   delay: number,
  * }} config
  */
 function updateTint(metaInfo, startColor, endColor, config) {
@@ -113,8 +114,16 @@ function updateTint(metaInfo, startColor, endColor, config) {
   ],
   {
     duration: config.duration,
+    // Negative delays do not appear to work (like animationDelay), so only set
+    // a delay if it is positive. The delay is set as the currentTime if it is
+    // negative.
+    delay: Math.max(config.delay, 0),
     fill: 'forwards',
   });
+
+  if (config.delay < 0) {
+    anim.currentTime = -config.delay;
+  }
 
   // We want to use `currentTime` to interpolate a value, so we simply pause
   // the animation at the desired time to read the value.
@@ -126,7 +135,7 @@ function updateTint(metaInfo, startColor, endColor, config) {
   // As long as the animation is running, read the computed background color
   // and set it on the meta element.
   requestAnimationFrame(function step() {
-    el.content = computedStyle(win, el, 'backgroundColor');
+    el.content = computedStyle(win, el)['backgroundColor'];
 
     if (anim.playState == 'running' || anim.playState == 'pending') {
       requestAnimationFrame(step)
@@ -148,6 +157,7 @@ export function darkenMetaThemeColor(doc, percentage = 1) {
     currentTime: percentage * 100,
     timing: 'linear',
     duration: 100,
+    delay: 0,
   });
 }
 
@@ -156,14 +166,14 @@ export function darkenMetaThemeColor(doc, percentage = 1) {
  * @param {{
  *   timing: string,
  *   duration: number,
+ *   delay: number,
  * }} config
  */
 export function setMetaThemeColorToBlack(doc, config) {
   const metaInfo = getMetaThemeColorInfo(doc);
-  updateTint(metaInfo, metaInfo.element.content, 'black', {
-    timing: config.timing,
-    duration: config.duration,
-  });
+  const currentColor = metaInfo.element.content;
+  const endColor = 'black';
+  updateTint(metaInfo, currentColor, endColor, config);
 }
 
 /**
@@ -172,13 +182,13 @@ export function setMetaThemeColorToBlack(doc, config) {
  * @param {{
  *   timing: string,
  *   duration: number,
+ *   delay: number,
  * }} config
  */
-export function restoreMetaThemeColor(doc, config = {}) {
+export function restoreMetaThemeColor(doc, config) {
   const metaInfo = getMetaThemeColorInfo(doc);
-  updateTint(metaInfo, metaInfo.element.content, metaInfo.originalContent, {
-    timing: config.timing,
-    duration: config.duration,
-  });
+  const currentColor = metaInfo.element.content;
+  const endColor = metaInfo.originalContent;
+  updateTint(metaInfo, currentColor, endColor, config);
   clearMetaThemeColorInfo(metaInfo);
 }
