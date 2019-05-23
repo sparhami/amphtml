@@ -62,9 +62,8 @@ function getMetaThemeColorInfo(doc) {
 
   const metaInfo = doc[META_THEME_COLOR_INFO];
 
-  // Save the original content, and figure out the original rgb if needed.
   if (metaInfo.originalContent == null) {
-    metaInfo.originalContent = metaInfo.element.content || 'transparent';
+    metaInfo.originalContent = metaInfo.element.content;;
   }
 
   return metaInfo;
@@ -89,8 +88,8 @@ function clearMetaThemeColorInfo(metaInfo) {
  * interpolation is performed, and the color is set to the end color.
  *
  * @param {!MetaInfoDef} metaInfo Information about the meta tag.
- * @param {string} startColor The color to start on.
- * @param {string} endColor The color to end on.
+ * @param {?string} startColor The color to start on.
+ * @param {?string} endColor The color to end on.
  * @param {!{
  *   currentTime: (number|undefined),
  *   timing: string,
@@ -107,46 +106,56 @@ function updateTint(metaInfo, startColor, endColor, config) {
     return;
   }
 
-  const anim = el.animate(
-    [{backgroundColor: startColor}, {backgroundColor: endColor}],
-    {
-      duration: config.duration,
-      // Negative delays do not appear to work (like animationDelay), so only set
-      // a delay if it is positive. The delay is set as the currentTime if it is
-      // negative.
-      delay: Math.max(config.delay, 0),
-      fill: 'forwards',
+  try {
+    const anim = el.animate(
+      [
+        {
+          backgroundColor: startColor || 'white',
+        }, {
+          backgroundColor: endColor || 'white',
+        }],
+      {
+        duration: config.duration,
+        // Negative delays do not appear to work (like animationDelay), so only set
+        // a delay if it is positive. The delay is set as the currentTime if it is
+        // negative.
+        delay: Math.max(config.delay, 0),
+        fill: 'forwards',
+      }
+    );
+  
+    if (config.delay < 0) {
+      anim.currentTime = -config.delay;
     }
-  );
-
-  if (config.delay < 0) {
-    anim.currentTime = -config.delay;
+  
+    // We want to use `currentTime` to interpolate a value, so we simply pause
+    // the animation at the desired time to read the value.
+    if (config.currentTime) {
+      anim.currentTime = config.currentTime;
+      anim.pause();
+    }
+  
+    // As long as the animation is running, read the computed background color
+    // and set it on the meta element.
+    requestAnimationFrame(function step() {
+      const win = el.ownerDocument.defaultView;
+  
+      // `devAssert` and casting does not seem to make Closure Compiler happy
+      // enough, still thinks it can be `null`?
+      if (!win) {
+        return;
+      }
+  
+      el.content = computedStyle(win, el)['backgroundColor'];
+  
+      if (anim.playState == 'running' || anim.playState == 'pending') {
+        requestAnimationFrame(step);
+      }
+    });
+  } catch (e) {
+    // The animation could fail, if a bad color was specified.
   }
 
-  // We want to use `currentTime` to interpolate a value, so we simply pause
-  // the animation at the desired time to read the value.
-  if (config.currentTime) {
-    anim.currentTime = config.currentTime;
-    anim.pause();
-  }
-
-  // As long as the animation is running, read the computed background color
-  // and set it on the meta element.
-  requestAnimationFrame(function step() {
-    const win = el.ownerDocument.defaultView;
-
-    // `devAssert` and casting does not seem to make Closure Compiler happy
-    // enough, still thinks it can be `null`?
-    if (!win) {
-      return;
-    }
-
-    el.content = computedStyle(win, el)['backgroundColor'];
-
-    if (anim.playState == 'running' || anim.playState == 'pending') {
-      requestAnimationFrame(step);
-    }
-  });
 }
 
 /**
@@ -159,7 +168,7 @@ export function darkenMetaThemeColor(doc, percentage = 1) {
   devAssert(percentage <= 1);
 
   const metaInfo = getMetaThemeColorInfo(doc);
-  updateTint(metaInfo, metaInfo.originalContent || '', 'black', {
+  updateTint(metaInfo, metaInfo.originalContent || 'white', 'black', {
     currentTime: percentage * 100,
     timing: 'linear',
     duration: 100,
@@ -194,7 +203,7 @@ export function setMetaThemeColorToBlack(doc, config) {
 export function restoreMetaThemeColor(doc, config) {
   const metaInfo = getMetaThemeColorInfo(doc);
   const currentColor = metaInfo.element.content;
-  const endColor = metaInfo.originalContent || '';
+  const endColor = metaInfo.originalContent;
   updateTint(metaInfo, currentColor, endColor, config);
   clearMetaThemeColorInfo(metaInfo);
 }

@@ -19,6 +19,12 @@ import {darkenMetaThemeColor, restoreMetaThemeColor} from '../meta-theme';
 describes.realWin('amp-lightbox-gallery', {}, env => {
   let win, doc;
 
+  function animationFramePromise() {
+    return new Promise(resolve => {
+      requestAnimationFrame(resolve);
+    });
+  }
+
   function getMetaThemeColorElement() {
     return doc.querySelector('meta[name="theme-color"]');
   }
@@ -36,61 +42,63 @@ describes.realWin('amp-lightbox-gallery', {}, env => {
   });
 
   describe('default meta theme', function() {
-    it('should be created if none exists', () => {
+    it('should be created if none exists', async() => {
       darkenMetaThemeColor(doc, 1);
+      await animationFramePromise();
 
       const el = getMetaThemeColorElement();
       expect(el.content).to.equal('rgb(0, 0, 0)');
     });
 
-    it('should clear the content when restoring', () => {
+    it('should clear the content when restoring', async () => {
       darkenMetaThemeColor(doc, 1);
-      restoreMetaThemeColor(doc);
+      restoreMetaThemeColor(doc, {
+        duration: 0,
+        timing: 'linear',
+        delay: 0,
+      });
+      await animationFramePromise();
 
       const el = getMetaThemeColorElement();
-      expect(el.content).to.equal('');
+      expect(el.content).to.equal('rgb(255, 255, 255)');
     });
   });
 
   describe('initial theme color', () => {
-    it('should handle color names', () => {
+    it('should handle color names', async () => {
       createMetaThemeColor('red');
-      darkenMetaThemeColor(doc, 0);
+      darkenMetaThemeColor(doc, 0.5);
+      await animationFramePromise();
 
       const el = getMetaThemeColorElement();
-      expect(el.content).to.equal('rgb(255, 0, 0)');
+      expect(el.content).to.equal('rgb(128, 0, 0)');
     });
 
-    it('should handle color hex', () => {
+    it('should handle color hex', async () => {
       createMetaThemeColor('#ff0000');
-      darkenMetaThemeColor(doc, 0);
+      darkenMetaThemeColor(doc, 0.5);
+      await animationFramePromise();
 
       const el = getMetaThemeColorElement();
-      expect(el.content).to.equal('rgb(255, 0, 0)');
+      expect(el.content).to.equal('rgb(128, 0, 0)');
     });
 
-    it('should handle color rgb', () => {
+    it('should handle color rgb', async () => {
       createMetaThemeColor('rgb(255, 0, 0)');
-      darkenMetaThemeColor(doc, 0);
+      darkenMetaThemeColor(doc, 0.5);
+      await animationFramePromise();
 
       const el = getMetaThemeColorElement();
-      expect(el.content).to.equal('rgb(255, 0, 0)');
+      expect(el.content).to.equal('rgb(128, 0, 0)');
     });
 
-    it('should handle color rgba', () => {
-      createMetaThemeColor('rgba(255, 0, 0, 0.2)');
-      darkenMetaThemeColor(doc, 0);
-
-      const el = getMetaThemeColorElement();
-      expect(el.content).to.equal('rgb(255, 0, 0)');
-    });
-
-    it('should handle color hsl', () => {
+    it('should handle color hsl', async () => {
       createMetaThemeColor('hsl(0, 100%, 50%)');
-      darkenMetaThemeColor(doc, 0);
+      darkenMetaThemeColor(doc, 0.5);
+      await animationFramePromise();
 
       const el = getMetaThemeColorElement();
-      expect(el.content).to.equal('rgb(255, 0, 0)');
+      expect(el.content).to.equal('rgb(128, 0, 0)');
     });
   });
 
@@ -99,33 +107,41 @@ describes.realWin('amp-lightbox-gallery', {}, env => {
       createMetaThemeColor('rgb(10, 20, 200)');
     });
 
-    it('should darken to black', () => {
+    it('should darken to black', async () => {
       darkenMetaThemeColor(doc, 1);
+      await animationFramePromise();
 
       const el = getMetaThemeColorElement();
       expect(el.content).to.equal('rgb(0, 0, 0)');
     });
 
-    it('should lighten to the original color', () => {
+    it('should lighten to the original color', async () => {
       darkenMetaThemeColor(doc, 0);
+      await animationFramePromise();
 
       const el = getMetaThemeColorElement();
       expect(el.content).to.equal('rgb(10, 20, 200)');
     });
 
-    it('should lighten part way', () => {
+    it('should lighten part way', async () => {
       darkenMetaThemeColor(doc, 0.25);
+      await animationFramePromise();
 
       const el = getMetaThemeColorElement();
-      expect(el.content).to.equal('rgb(7.5, 15, 150)');
+      expect(el.content).to.equal('rgb(8, 15, 150)');
     });
 
-    it('should restore to the original color', () => {
+    it('should restore to the original color', async () => {
       // Call multiple times, make sure we restore to the original.
       darkenMetaThemeColor(doc, 1);
       darkenMetaThemeColor(doc, 0.8);
       darkenMetaThemeColor(doc, 0.3);
-      restoreMetaThemeColor(doc);
+      restoreMetaThemeColor(doc, {
+        duration: 0,
+        timing: 'linear',
+        delay: 0,
+      });
+      await animationFramePromise();
 
       const el = getMetaThemeColorElement();
       expect(el.content).to.equal('rgb(10, 20, 200)');
