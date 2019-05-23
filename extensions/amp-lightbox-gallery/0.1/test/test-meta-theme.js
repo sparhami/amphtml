@@ -42,7 +42,7 @@ describes.realWin('amp-lightbox-gallery', {}, env => {
   });
 
   describe('default meta theme', function() {
-    it('should be created if none exists', async() => {
+    it('should be created if none exists', async () => {
       darkenMetaThemeColor(doc, 1);
       await animationFramePromise();
 

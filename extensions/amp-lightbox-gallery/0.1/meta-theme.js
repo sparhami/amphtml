@@ -63,7 +63,7 @@ function getMetaThemeColorInfo(doc) {
   const metaInfo = doc[META_THEME_COLOR_INFO];
 
   if (metaInfo.originalContent == null) {
-    metaInfo.originalContent = metaInfo.element.content;;
+    metaInfo.originalContent = metaInfo.element.content;
   }
 
   return metaInfo;
@@ -114,9 +114,11 @@ function updateTint(metaInfo, startColor, endColor, config) {
       [
         {
           backgroundColor: startColor,
-        }, {
+        },
+        {
           backgroundColor: endColor,
-        }],
+        },
+      ],
       {
         duration: config.duration,
         // Negative delays do not appear to work (like animationDelay), so only set
@@ -126,31 +128,31 @@ function updateTint(metaInfo, startColor, endColor, config) {
         fill: 'forwards',
       }
     );
-  
+
     if (config.delay < 0) {
       anim.currentTime = -config.delay;
     }
-  
+
     // We want to use `currentTime` to interpolate a value, so we simply pause
     // the animation at the desired time to read the value.
     if (config.currentTime) {
       anim.currentTime = config.currentTime;
       anim.pause();
     }
-  
+
     // As long as the animation is running, read the computed background color
     // and set it on the meta element.
     requestAnimationFrame(function step() {
       const win = el.ownerDocument.defaultView;
-  
+
       // `devAssert` and casting does not seem to make Closure Compiler happy
       // enough, still thinks it can be `null`?
       if (!win) {
         return;
       }
-  
+
       el.content = computedStyle(win, el)['backgroundColor'];
-  
+
       if (anim.playState == 'running' || anim.playState == 'pending') {
         requestAnimationFrame(step);
       }
@@ -158,7 +160,6 @@ function updateTint(metaInfo, startColor, endColor, config) {
   } catch (e) {
     // The animation could fail, if a bad color was specified.
   }
-
 }
 
 /**
