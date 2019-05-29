@@ -24,16 +24,13 @@ import {
   getResponsiveAttributeValue,
 } from '../../amp-base-carousel/0.1/responsive-attributes';
 import {Services} from '../../../src/services';
-import {
-  iterateCursor,
-  toggleAttribute,
-} from '../../../src/dom';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {dev, user} from '../../../src/log';
 import {dict} from '../../../src/utils/object';
 import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
 import {isLayoutSizeDefined} from '../../../src/layout';
+import {iterateCursor, toggleAttribute} from '../../../src/dom';
 import {toArray} from '../../../src/types';
 
 /** @enum {number} */
@@ -99,6 +96,9 @@ class AmpStreamGallery extends AMP.BaseElement {
     /** @private {number} */
     this.maxItemWidth_ = Number.MAX_VALUE;
 
+    /** @private {number} */
+    this.peek_ = 0;
+
     /** @private @const */
     this.responsiveAttributes_ = new ResponsiveAttributes({
       'auto-advance': newValue => {
@@ -115,6 +115,9 @@ class AmpStreamGallery extends AMP.BaseElement {
       },
       'outset-arrows': newValue => {
         this.updateOutsetArrows_(newValue == 'true');
+      },
+      'peek': newValue => {
+        this.updatePeek_(Number(newValue));
       },
       'inset-arrow-visibility': newValue => {
         this.updateInsetArrowVisibility_(newValue);
@@ -137,11 +140,28 @@ class AmpStreamGallery extends AMP.BaseElement {
     });
   }
 
+  /**
+   * 
+   * @param {number} peek
+   */
+  updatePeek_(peek) {
+    this.peek_ = Math.max(0, peek || 0);
+    this.updateVisibleCount_();
+  }
+  
+  /**
+   * 
+   * @param {number} minVisibleCount
+   */
   updateMinVisibleCount_(minVisibleCount) {
     this.minVisibleCount_ = minVisibleCount || 1;
     this.updateVisibleCount_();
   }
 
+  /**
+   * 
+   * @param {number} maxItemWidth
+   */
   updateMaxItemWidth_(maxItemWidth) {
     this.maxItemWidth_ = maxItemWidth || Number.MAX_VALUE;
     this.updateVisibleCount_();
@@ -169,10 +189,19 @@ class AmpStreamGallery extends AMP.BaseElement {
     this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
   }
 
+  /**
+   * Updates the number of items visible for the internal carousel.
+   */
   updateVisibleCount_() {
+    const {maxItemWidth_, minVisibleCount_, peek_} = this;
     const box = this.getLayoutBox();
-    const items = Math.ceil(box.width / this.maxItemWidth_);
-    const visibleCount = Math.max(items, this.minVisibleCount_);
+    const fractionalItems = box.width / maxItemWidth_;
+    const partialItem = fractionalItems - Math.floor(fractionalItems);
+    const wholeItems = Math.ceil(fractionalItems);
+    const items =
+      partialItem > peek_ ? wholeItems + peek_ : wholeItems - 1 + peek_;
+
+    const visibleCount = Math.max(items, minVisibleCount_);
     const advanceCount = Math.floor(visibleCount);
 
     this.carousel_.updateAdvanceCount(advanceCount);

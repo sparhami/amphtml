@@ -1,0 +1,69 @@
+<!doctype html>
+<html ⚡>
+<head>
+  <meta charset="utf-8">
+  <title>Stream Gallery</title>
+  <link rel="canonical" href="amps.html" >
+  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+  <link href='https://fonts.googleapis.com/css?family=Questrial' rel='stylesheet' type='text/css'>
+  <script async custom-element="amp-stream-gallery" src="https://cdn.ampproject.org/v0/amp-stream-gallery-0.1.js"></script>
+  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+  <style amp-custom>
+    .item {
+      display: flex;
+      padding: 0 5px
+    }
+
+    @media (min-width: 500px) {
+      .item > * {
+        max-width: 160px;
+      }
+    }
+
+    .item img {
+      object-fit: contain;
+    }
+  </style>
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+</head>
+<body>
+  <h1>Stream Gallery</h1>
+  <amp-stream-gallery
+      layout="fixed-height"
+      height="128"
+      loop="true"
+      max-item-width="180"
+      peek="(min-width: 499px) 0, 0.5">
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/redgradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/greengradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/bluegradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/orangegradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/tealgradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/lemonyellowgradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/lilacgradient.png" layout="flex-item"></amp-img>
+    </div>
+  </amp-stream-gallery>
+  <p>Configuration:</p>
+  <ul>
+    <li>Looping</li>
+    <li>Snapping</li>
+    <li>Showing 2.5 items for (max-width: 499px)</li>
+    <li>Items that grow, with a new slide being introduced every 180px</li>
+    <li>When width is under 499px, show a partial item</li>
+    <li>Cap item size at 160px, with remainder of space going to padding</li>
+  </ul>
+</body>
+</html>
