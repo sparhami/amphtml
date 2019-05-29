@@ -1,10 +1,13 @@
 amp-stream-gallery .i-amphtml-carousel-content {
   display: flex;
 }
-
 .i-amphtml-stream-gallery-slides {
   order: 1;
   flex-grow: 1;
+}
+
+amp-stream-gallery .i-amphtml-carousel-scroll {
+  margin: auto;
 }
 
 .i-amphtml-stream-gallery-arrow-prev-slot {

@@ -24,6 +24,7 @@ import {
   getResponsiveAttributeValue,
 } from '../../amp-base-carousel/0.1/responsive-attributes';
 import {Services} from '../../../src/services';
+import {clamp} from '../../../src/utils/math';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {dev, user} from '../../../src/log';
 import {dict} from '../../../src/utils/object';
@@ -31,6 +32,7 @@ import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
 import {isLayoutSizeDefined} from '../../../src/layout';
 import {iterateCursor, toggleAttribute} from '../../../src/dom';
+import {setStyle} from '../../../src/style';
 import {toArray} from '../../../src/types';
 
 /** @enum {number} */
@@ -141,16 +143,16 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
-   * 
+   *
    * @param {number} peek
    */
   updatePeek_(peek) {
     this.peek_ = Math.max(0, peek || 0);
     this.updateVisibleCount_();
   }
-  
+
   /**
-   * 
+   *
    * @param {number} minVisibleCount
    */
   updateMinVisibleCount_(minVisibleCount) {
@@ -159,7 +161,7 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
-   * 
+   *
    * @param {number} maxItemWidth
    */
   updateMaxItemWidth_(maxItemWidth) {
@@ -193,7 +195,7 @@ class AmpStreamGallery extends AMP.BaseElement {
    * Updates the number of items visible for the internal carousel.
    */
   updateVisibleCount_() {
-    const {maxItemWidth_, minVisibleCount_, peek_} = this;
+    const {maxItemWidth_, minVisibleCount_, peek_, slides_} = this;
     const box = this.getLayoutBox();
     const fractionalItems = box.width / maxItemWidth_;
     const partialItem = fractionalItems - Math.floor(fractionalItems);
@@ -201,8 +203,13 @@ class AmpStreamGallery extends AMP.BaseElement {
     const items =
       partialItem > peek_ ? wholeItems + peek_ : wholeItems - 1 + peek_;
 
-    const visibleCount = Math.max(items, minVisibleCount_);
+    const maxRequiredWidth = slides_.length * maxItemWidth_;
+    const visibleCount = clamp(minVisibleCount_, items, slides_.length);
     const advanceCount = Math.floor(visibleCount);
+
+    // Set a max-width for the scrollContainer, so that the items do not
+    // space out if there is more than enough space.
+    setStyle(this.scrollContainer_, 'max-width', maxRequiredWidth, 'px');
 
     this.carousel_.updateAdvanceCount(advanceCount);
     this.carousel_.updateAutoAdvanceCount(advanceCount);
@@ -491,6 +498,7 @@ class AmpStreamGallery extends AMP.BaseElement {
    */
   updateSlides_() {
     this.carousel_.updateSlides(this.slides_);
+    this.updateVisibleCount_();
   }
 
   /**
