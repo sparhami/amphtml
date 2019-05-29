@@ -14,73 +14,55 @@
       padding: 0 5px
     }
 
-    .item img {
-      object-fit: contain;
+    @media (min-width: 500px) {
+      .item > * {
+        max-width: 160px;
+      }
     }
 
-    .gallery-container {
-      position: relative;
-      max-width: 1024px;
+    .item img {
+      object-fit: contain;
     }
   </style>
   <script async src="https://cdn.ampproject.org/v0.js"></script>
 </head>
 <body>
   <h1>Stream Gallery</h1>
-  <div class="gallery-container">
-    <!--
-      a_w: arrow width - defaults to 48px
-      m_h: margin between items
-      n: number of visible slides
-      ar_h: aspect ratio height
-      ar_w: aspect ratio width
-
-      <div style="padding: 0  calc(a_w + n * m / 2)">
-        <div style="padding-top: calc(100% * (ar_h / (n * ar_w))))"></div>
-      </div>
-    -->
-    <!--
-      For this example: a_w = 0 (inset), m = 10px, n = 2.5, ar_h = 2 and ar_w = 3
-    -->
-    <div style="padding: 0 calc(2 * 10px / 2)">
-      <div style="padding-top: calc(100% * (2 / (2.5 * 3)))"></div>
+  <amp-stream-gallery
+      layout="fixed-height"
+      height="128"
+      loop="true"
+      max-item-width="(max-width: 499px) 499, 180"
+      min-visible-count="2.5">
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/redgradient.png" layout="flex-item"></amp-img>
     </div>
-    <amp-stream-gallery
-        class="gallery"
-        layout="fill"
-        loop="false"
-        snap="true"
-        visible-count="(min-width: 600px) 5, 2.5">
-      <div class="item">
-        <amp-img src="../amp-base-carousel/img/redgradient.png" layout="flex-item"></amp-img>
-      </div>
-      <div class="item">
-        <amp-img src="../amp-base-carousel/img/greengradient.png" layout="flex-item"></amp-img>
-      </div>
-      <div class="item">
-        <amp-img src="../amp-base-carousel/img/bluegradient.png" layout="flex-item"></amp-img>
-      </div>
-      <div class="item">
-        <amp-img src="../amp-base-carousel/img/orangegradient.png" layout="flex-item"></amp-img>
-      </div>
-      <div class="item">
-        <amp-img src="../amp-base-carousel/img/tealgradient.png" layout="flex-item"></amp-img>
-      </div>
-      <div class="item">
-        <amp-img src="../amp-base-carousel/img/lemonyellowgradient.png" layout="flex-item"></amp-img>
-      </div>
-      <div class="item">
-        <amp-img src="../amp-base-carousel/img/lilacgradient.png" layout="flex-item"></amp-img>
-      </div>
-    </amp-stream-gallery>
-  </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/greengradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/bluegradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/orangegradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/tealgradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/lemonyellowgradient.png" layout="flex-item"></amp-img>
+    </div>
+    <div class="item">
+      <amp-img src="../amp-base-carousel/img/lilacgradient.png" layout="flex-item"></amp-img>
+    </div>
+  </amp-stream-gallery>
   <p>Configuration:</p>
   <ul>
-    <li>Non-looping</li>
+    <li>Looping</li>
     <li>Snapping</li>
-    <li>Showing 5 items for (min-width: 600px), 2.5 items otherwise</li>
-    <li>3:2 aspect ratio of slides</li>
-    <li>10px spacing between items</li>
+    <li>Showing 2.5 items for (max-width: 499px)</li>
+    <li>Above 500x, items that grow, with a new slide being introduced every 180px</li>
+    <li>Cap item size at 160px, with remainder of space going to padding</li>
   </ul>
 </body>
 </html>

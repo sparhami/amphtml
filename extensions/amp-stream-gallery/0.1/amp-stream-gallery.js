@@ -25,7 +25,6 @@ import {
 } from '../../amp-base-carousel/0.1/responsive-attributes';
 import {Services} from '../../../src/services';
 import {
-  closestAncestorElementBySelector,
   iterateCursor,
   toggleAttribute,
 } from '../../../src/dom';
@@ -94,6 +93,12 @@ class AmpStreamGallery extends AMP.BaseElement {
     /** @private {?../../../src/service/action-impl.ActionService} */
     this.action_ = null;
 
+    /** @private {number} */
+    this.minVisibleCount_ = 1;
+
+    /** @private {number} */
+    this.maxItemWidth_ = Number.MAX_VALUE;
+
     /** @private @const */
     this.responsiveAttributes_ = new ResponsiveAttributes({
       'auto-advance': newValue => {
@@ -123,10 +128,23 @@ class AmpStreamGallery extends AMP.BaseElement {
       'snap-align': newValue => {
         this.carousel_.updateAlignment(newValue);
       },
-      'visible-count': newValue => {
-        this.updateVisibleCount_(Number(newValue) || 0);
+      'min-visible-count': newValue => {
+        this.updateMinVisibleCount_(Number(newValue));
+      },
+      'max-item-width': newValue => {
+        this.updateMaxItemWidth_(Number(newValue));
       },
     });
+  }
+
+  updateMinVisibleCount_(minVisibleCount) {
+    this.minVisibleCount_ = minVisibleCount || 1;
+    this.updateVisibleCount_();
+  }
+
+  updateMaxItemWidth_(maxItemWidth) {
+    this.maxItemWidth_ = maxItemWidth || Number.MAX_VALUE;
+    this.updateVisibleCount_();
   }
 
   /**
@@ -149,6 +167,18 @@ class AmpStreamGallery extends AMP.BaseElement {
    */
   interactionPrev() {
     this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
+  }
+
+  updateVisibleCount_() {
+    const box = this.getLayoutBox();
+    const items = Math.ceil(box.width / this.maxItemWidth_);
+    const visibleCount = Math.max(items, this.minVisibleCount_);
+    const advanceCount = Math.floor(visibleCount);
+
+    this.carousel_.updateAdvanceCount(advanceCount);
+    this.carousel_.updateAutoAdvanceCount(advanceCount);
+    this.carousel_.updateSnapBy(advanceCount);
+    this.carousel_.updateVisibleCount(visibleCount);
   }
 
   /** @override */
@@ -235,16 +265,7 @@ class AmpStreamGallery extends AMP.BaseElement {
 
   /** @override */
   layoutCallback() {
-    // TODO(sparhami) #19259 Tracks a more generic way to do this. Remove once
-    // we have something better.
-    const isScaled = closestAncestorElementBySelector(
-      this.element,
-      '[i-amphtml-scale-animation]'
-    );
-    if (isScaled) {
-      return Promise.resolve();
-    }
-
+    this.updateVisibleCount_();
     this.carousel_.updateUi();
     return Promise.resolve();
   }
@@ -368,21 +389,6 @@ class AmpStreamGallery extends AMP.BaseElement {
         this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
       }
     });
-  }
-
-  /**
-   * @param {number} visibleCount
-   * @private
-   */
-  updateVisibleCount_(visibleCount) {
-    const advanceCount = Math.floor(visibleCount);
-    this.carousel_.updateAdvanceCount(advanceCount);
-    this.carousel_.updateAutoAdvanceCount(advanceCount);
-    this.carousel_.updateSnapBy(advanceCount);
-    this.carousel_.updateVisibleCount(visibleCount);
-
-    this.visibleCount_ = visibleCount;
-    this.updateUi_();
   }
 
   /**
