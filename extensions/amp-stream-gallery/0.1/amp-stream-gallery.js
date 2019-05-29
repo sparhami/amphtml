@@ -129,7 +129,6 @@ class AmpStreamGallery extends AMP.BaseElement {
     });
   }
 
-
   /**
    * Moves the Carousel to a given index.
    * @param {number} index
@@ -401,9 +400,11 @@ class AmpStreamGallery extends AMP.BaseElement {
    */
   updateInsetArrowVisibility_(insetArrowVisibility) {
     this.insetArrowVisibility_ =
-        insetArrowVisibility == 'always' ? ArrowVisibility.ALWAYS :
-        insetArrowVisibility == 'never' ? ArrowVisibility.NEVER :
-        ArrowVisibility.AUTO;
+      insetArrowVisibility == 'always'
+        ? ArrowVisibility.ALWAYS
+        : insetArrowVisibility == 'never'
+        ? ArrowVisibility.NEVER
+        : ArrowVisibility.AUTO;
     this.updateUi_();
   }
 

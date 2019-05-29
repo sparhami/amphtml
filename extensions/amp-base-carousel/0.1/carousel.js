@@ -29,6 +29,7 @@ import {
 import {AutoAdvance} from './auto-advance';
 import {CarouselAccessibility} from './carousel-accessibility';
 import {backwardWrappingDistance, forwardWrappingDistance} from './array-util';
+import {clamp, mod} from '../../../src/utils/math';
 import {createCustomEvent, listenOnce} from '../../../src/event-helper';
 import {debounce} from '../../../src/utils/rate-limit';
 import {dict} from '../../../src/utils/object';
@@ -39,7 +40,6 @@ import {
   setStyles,
 } from '../../../src/style';
 import {iterateCursor} from '../../../src/dom';
-import {mod, clamp} from '../../../src/utils/math';
 
 /**
  * How long to wait prior to resetting the scrolling position after the last
@@ -291,7 +291,7 @@ export class Carousel {
 
     /**
      * Whether or not looping is requested. Do not use directly, but rather use
-     * `isLooping` instead. 
+     * `isLooping` instead.
      * @private {boolean}
      */
     this.loop_ = false;
@@ -442,7 +442,7 @@ export class Carousel {
    * @return {boolean} Whether or not looping is enabled.
    */
   isLooping() {
-    return this.loop_ && (this.slides_.length / this.visibleCount_) >= 3;
+    return this.loop_ && this.slides_.length / this.visibleCount_ >= 3;
   }
 
   /**
@@ -783,8 +783,9 @@ export class Carousel {
    */
   isAtEnd() {
     const el = this.scrollContainer_;
-    return !this.isLooping() &&
-        el.scrollLeft + el.offsetWidth >= el.scrollWidth;
+    return (
+      !this.isLooping() && el.scrollLeft + el.offsetWidth >= el.scrollWidth
+    );
   }
 
   /**
