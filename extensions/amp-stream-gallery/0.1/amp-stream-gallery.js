@@ -550,12 +550,12 @@ class AmpStreamGallery extends AMP.BaseElement {
       toggleAttribute(child, 'disabled', this.carousel_.isAtEnd());
     });
     toggleAttribute(
-      this.content_,
+      dev().assertElement(this.content_),
       'i-amphtml-stream-gallery-hide-buttons',
       this.shouldHideButtons_()
     );
     toggleAttribute(
-      this.content_,
+      dev().assertElement(this.content_),
       'i-amphtml-stream-gallery-outset-arrows',
       this.outsetArrows_
     );

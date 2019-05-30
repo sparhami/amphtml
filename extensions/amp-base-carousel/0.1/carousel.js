@@ -364,8 +364,8 @@ export class Carousel {
    * TODO(sparhami) How can we make this work well for accessibility?
    * @param {number} delta
    * @param {{
-   *   actionSource: !ActionSource=,
-   *   allowWrap: boolean=,
+   *   actionSource: (!ActionSource|undefined),
+   *   allowWrap: (boolean|undefined),
    * }=} options
    */
   advance(delta, {actionSource, allowWrap = false} = {}) {
@@ -670,7 +670,7 @@ export class Carousel {
    */
   notifyScrollPositionChanged_() {
     this.element_.dispatchEvent(
-      createCustomEvent(this.win_, 'scrollpositionchange')
+      createCustomEvent(this.win_, 'scrollpositionchange', null)
     );
   }
 
