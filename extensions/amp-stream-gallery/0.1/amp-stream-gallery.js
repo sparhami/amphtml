@@ -99,6 +99,9 @@ class AmpStreamGallery extends AMP.BaseElement {
     this.maxItemWidth_ = Number.MAX_VALUE;
 
     /** @private {number} */
+    this.minItemWidth_ = 0;
+
+    /** @private {number} */
     this.peek_ = 0;
 
     /** @private @const */
@@ -139,6 +142,9 @@ class AmpStreamGallery extends AMP.BaseElement {
       'max-item-width': newValue => {
         this.updateMaxItemWidth_(Number(newValue));
       },
+      'min-item-width': newValue => {
+        this.updateMinItemWidth_(Number(newValue));
+      },
     });
   }
 
@@ -170,6 +176,15 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
+   *
+   * @param {number} minItemWidth
+   */
+  updateMinItemWidth_(minItemWidth) {
+    this.minItemWidth_ = minItemWidth || 0;
+    this.updateVisibleCount_();
+  }
+
+  /**
    * Moves the Carousel to a given index.
    * @param {number} index
    */
@@ -192,24 +207,51 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
+   *
+   * @param {number} containerWidth The width of the container element.
+   * @param {number} itemWidth The width of each item.
+   * @param {boolean} roundUp Whether the fractional number of items should
+   *    be rounded up or down.
+   * @return {number} The number of items to display.
+   */
+  getItemsForWidth_(containerWidth, itemWidth, roundUp) {
+    const {peek_} = this;
+    const availableWidth = containerWidth - peek_ * itemWidth;
+    const fractionalItems = availableWidth / itemWidth;
+    const wholeItems = roundUp
+      ? Math.ceil(fractionalItems)
+      : Math.floor(fractionalItems);
+    return wholeItems + peek_;
+  }
+
+  /**
    * Updates the number of items visible for the internal carousel.
    */
   updateVisibleCount_() {
-    const {maxItemWidth_, minVisibleCount_, peek_, slides_} = this;
+    const {maxItemWidth_, minItemWidth_, minVisibleCount_, slides_} = this;
     const box = this.getLayoutBox();
-    const fractionalItems = box.width / maxItemWidth_;
-    const partialItem = fractionalItems - Math.floor(fractionalItems);
-    const wholeItems = Math.ceil(fractionalItems);
-    const items =
-      partialItem > peek_ ? wholeItems + peek_ : wholeItems - 1 + peek_;
+    const maxItems = this.getItemsForWidth_(box.width, maxItemWidth_, true);
+    const minItems = this.getItemsForWidth_(box.width, minItemWidth_, false);
+    const items = Math.min(minItems, maxItems);
 
-    const maxRequiredWidth = slides_.length * maxItemWidth_;
+    /*
+     * When we are going to show more slides than we have, cap the width so
+     * that we do not go over the max requested slide width. Otherwise, when
+     * the number of min items is less than the number of maxItems, then we
+     * need to cap the width, so that the extra space goes to the sides.
+     */
+    const maxContainerWidth =
+      items > slides_.length
+        ? `${slides_.length * maxItemWidth_}px`
+        : minItems < maxItems
+        ? `${minItems * maxItemWidth_}px`
+        : '';
     const visibleCount = clamp(minVisibleCount_, items, slides_.length);
     const advanceCount = Math.floor(visibleCount);
 
     // Set a max-width for the scrollContainer, so that the items do not
     // space out if there is more than enough space.
-    setStyle(this.scrollContainer_, 'max-width', maxRequiredWidth, 'px');
+    setStyle(this.scrollContainer_, 'max-width', maxContainerWidth);
 
     this.carousel_.updateAdvanceCount(advanceCount);
     this.carousel_.updateAutoAdvanceCount(advanceCount);
