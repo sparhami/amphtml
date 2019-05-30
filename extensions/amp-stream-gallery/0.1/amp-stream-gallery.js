@@ -387,7 +387,8 @@ class AmpStreamGallery extends AMP.BaseElement {
     const wholeItems = roundUp
       ? Math.ceil(fractionalItems)
       : Math.floor(fractionalItems);
-    return wholeItems + this.peek_;
+    // Always show at least 1 whole item.
+    return Math.max(1, wholeItems) + this.peek_;
   }
 
   /**
