@@ -51,69 +51,15 @@ function isSizer(el) {
 }
 
 class AmpStreamGallery extends AMP.BaseElement {
-  /** @param {!AmpElement} element */
-  constructor(element) {
-    super(element);
-
-    /** @private {?Element} */
-    this.content_ = null;
-
-    /** @private {?Element} */
-    this.scrollContainer_ = null;
-
-    /** @private {?Carousel} */
-    this.carousel_ = null;
-
-    /** @private {!Array<!Element>} */
-    this.slides_ = [];
-
-    /** @private {?Element} */
-    this.nextArrowSlot_ = null;
-
-    /** @private {?Element} */
-    this.prevArrowSlot_ = null;
-
-    /** @private {boolean} */
-    this.outsetArrows_ = false;
-
-    /** @private {number} */
-    this.visibleCount_ = 1;
-
-    /** @private {!ArrowVisibility} */
-    this.insetArrowVisibility_ = ArrowVisibility.AUTO;
-
-    /**
-     * Whether or not the user has interacted with the carousel using touch in
-     * the past at any point.
-     * @private {boolean}
-     */
-    this.hadTouch_ = false;
-
-    /** @private {?../../../src/service/action-impl.ActionService} */
-    this.action_ = null;
-
-    /** @private {number} */
-    this.minVisibleCount_ = 1;
-
-    /** @private {number} */
-    this.maxItemWidth_ = Number.MAX_VALUE;
-
-    /** @private {number} */
-    this.minItemWidth_ = 0;
-
-    /** @private {number} */
-    this.peek_ = 0;
-
-    /** @private @const */
-    this.responsiveAttributes_ = new ResponsiveAttributes({
-      'auto-advance': newValue => {
-        this.carousel_.updateAutoAdvance(newValue == 'true');
-      },
-      'auto-advance-interval': newValue => {
-        this.carousel_.updateAutoAdvanceInterval(Number(newValue) || 0);
-      },
-      'auto-advance-loops': newValue => {
-        this.carousel_.updateAutoAdvanceLoops(Number(newValue) || 0);
+  /**
+   * The configuration for handling attributes on this element.
+   * @return {!Object<string, function(string)>}
+   * @private
+   */
+  getAttributeConfig_() {
+    return {
+      'inset-arrow-visibility': newValue => {
+        this.updateInsetArrowVisibility_(newValue);
       },
       'loop': newValue => {
         this.carousel_.updateLoop(newValue == 'true');
@@ -124,64 +70,120 @@ class AmpStreamGallery extends AMP.BaseElement {
       'peek': newValue => {
         this.updatePeek_(Number(newValue));
       },
-      'inset-arrow-visibility': newValue => {
-        this.updateInsetArrowVisibility_(newValue);
-      },
       'slide': newValue => {
         this.carousel_.goToSlide(Number(newValue));
+      },
+      'slide-align': newValue => {
+        this.carousel_.updateAlignment(newValue);
       },
       'snap': newValue => {
         this.carousel_.updateSnap(newValue != 'false');
       },
-      'snap-align': newValue => {
-        this.carousel_.updateAlignment(newValue);
-      },
-      'min-visible-count': newValue => {
-        this.updateMinVisibleCount_(Number(newValue));
-      },
       'max-item-width': newValue => {
         this.updateMaxItemWidth_(Number(newValue));
+      },
+      'max-visible-count': newValue => {
+        this.updateMaxVisibleCount_(Number(newValue));
       },
       'min-item-width': newValue => {
         this.updateMinItemWidth_(Number(newValue));
       },
-    });
+      'min-visible-count': newValue => {
+        this.updateMinVisibleCount_(Number(newValue));
+      },
+    };
   }
 
   /**
-   *
-   * @param {number} peek
+   * Sets up the actions supported by this element.
+   * @private
    */
-  updatePeek_(peek) {
-    this.peek_ = Math.max(0, peek || 0);
-    this.updateVisibleCount_();
+  setupActions_() {
+    this.registerAction(
+      'prev',
+      ({trust}) => {
+        this.carousel_.prev(this.getActionSource_(trust));
+      },
+      ActionTrust.LOW
+    );
+    this.registerAction(
+      'next',
+      ({trust}) => {
+        this.carousel_.next(this.getActionSource_(trust));
+      },
+      ActionTrust.LOW
+    );
+    this.registerAction(
+      'goToSlide',
+      ({args, trust}) => {
+        this.carousel_.goToSlide(args['index'] || -1, {
+          actionSource: this.getActionSource_(trust),
+        });
+      },
+      ActionTrust.LOW
+    );
   }
 
-  /**
-   *
-   * @param {number} minVisibleCount
-   */
-  updateMinVisibleCount_(minVisibleCount) {
-    this.minVisibleCount_ = minVisibleCount || 1;
-    this.updateVisibleCount_();
-  }
+  /** @param {!AmpElement} element */
+  constructor(element) {
+    super(element);
 
-  /**
-   *
-   * @param {number} maxItemWidth
-   */
-  updateMaxItemWidth_(maxItemWidth) {
-    this.maxItemWidth_ = maxItemWidth || Number.MAX_VALUE;
-    this.updateVisibleCount_();
-  }
+    /** @private @const */
+    this.responsiveAttributes_ = new ResponsiveAttributes(
+      this.getAttributeConfig_()
+    );
 
-  /**
-   *
-   * @param {number} minItemWidth
-   */
-  updateMinItemWidth_(minItemWidth) {
-    this.minItemWidth_ = minItemWidth || 0;
-    this.updateVisibleCount_();
+    /** @private {?../../../src/service/action-impl.ActionService} */
+    this.action_ = null;
+
+    /** @private {?Carousel} */
+    this.carousel_ = null;
+
+    /** @private {?Element} */
+    this.content_ = null;
+
+    /** @private {?Element} */
+    this.nextArrowSlot_ = null;
+
+    /** @private {?Element} */
+    this.prevArrowSlot_ = null;
+
+    /** @private {?Element} */
+    this.scrollContainer_ = null;
+
+    /** @private {!ArrowVisibility} */
+    this.insetArrowVisibility_ = ArrowVisibility.AUTO;
+
+    /** @private {number} */
+    this.maxItemWidth_ = Number.POSITIVE_INFINITY;
+
+    /** @private {number} */
+    this.maxVisibleCount_ = Number.POSITIVE_INFINITY;
+
+    /** @private {number} */
+    this.minItemWidth_ = 0;
+
+    /** @private {number} */
+    this.minVisibleCount_ = 1;
+
+    /** @private {boolean} */
+    this.outsetArrows_ = false;
+
+    /** @private {number} */
+    this.peek_ = 0;
+
+    /** @private {number} */
+    this.visibleCount_ = 1;
+
+    /** @private {!Array<!Element>} */
+    this.slides_ = [];
+
+    /**
+     * Whether or not the user has interacted with the carousel using touch in
+     * the past at any point.
+     * @private {boolean}
+     */
+    this.hadTouch_ = false;
   }
 
   /**
@@ -190,73 +192,6 @@ class AmpStreamGallery extends AMP.BaseElement {
    */
   goToSlide(index) {
     this.carousel_.goToSlide(index, {smoothScroll: false});
-  }
-
-  /**
-   * Goes to the next slide. This should be called from a user interaction.
-   */
-  interactionNext() {
-    this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
-  }
-
-  /**
-   * Goes to the previous slide. This should be called from a user interaction.
-   */
-  interactionPrev() {
-    this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
-  }
-
-  /**
-   *
-   * @param {number} containerWidth The width of the container element.
-   * @param {number} itemWidth The width of each item.
-   * @param {boolean} roundUp Whether the fractional number of items should
-   *    be rounded up or down.
-   * @return {number} The number of items to display.
-   */
-  getItemsForWidth_(containerWidth, itemWidth, roundUp) {
-    const {peek_} = this;
-    const availableWidth = containerWidth - peek_ * itemWidth;
-    const fractionalItems = availableWidth / itemWidth;
-    const wholeItems = roundUp
-      ? Math.ceil(fractionalItems)
-      : Math.floor(fractionalItems);
-    return wholeItems + peek_;
-  }
-
-  /**
-   * Updates the number of items visible for the internal carousel.
-   */
-  updateVisibleCount_() {
-    const {maxItemWidth_, minItemWidth_, minVisibleCount_, slides_} = this;
-    const box = this.getLayoutBox();
-    const maxItems = this.getItemsForWidth_(box.width, maxItemWidth_, true);
-    const minItems = this.getItemsForWidth_(box.width, minItemWidth_, false);
-    const items = Math.min(minItems, maxItems);
-
-    /*
-     * When we are going to show more slides than we have, cap the width so
-     * that we do not go over the max requested slide width. Otherwise, when
-     * the number of min items is less than the number of maxItems, then we
-     * need to cap the width, so that the extra space goes to the sides.
-     */
-    const maxContainerWidth =
-      items > slides_.length
-        ? `${slides_.length * maxItemWidth_}px`
-        : minItems < maxItems
-        ? `${minItems * maxItemWidth_}px`
-        : '';
-    const visibleCount = clamp(minVisibleCount_, items, slides_.length);
-    const advanceCount = Math.floor(visibleCount);
-
-    // Set a max-width for the scrollContainer, so that the items do not
-    // space out if there is more than enough space.
-    setStyle(this.scrollContainer_, 'max-width', maxContainerWidth);
-
-    this.carousel_.updateAdvanceCount(advanceCount);
-    this.carousel_.updateAutoAdvanceCount(advanceCount);
-    this.carousel_.updateSnapBy(advanceCount);
-    this.carousel_.updateVisibleCount(visibleCount);
   }
 
   /** @override */
@@ -368,6 +303,15 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
+   * @param {string} name The name of the attribute.
+   * @param {string} newValue The new value of the attribute.
+   * @private
+   */
+  attributeMutated_(name, newValue) {
+    this.responsiveAttributes_.updateAttribute(name, newValue);
+  }
+
+  /**
    * @return {!Element}
    * @private
    */
@@ -419,54 +363,145 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
+   * @return {number} The initial index for the carousel.
    * @private
    */
-  setupActions_() {
-    this.registerAction(
-      'prev',
-      ({trust}) => {
-        this.carousel_.prev(this.getActionSource_(trust));
-      },
-      ActionTrust.LOW
-    );
-    this.registerAction(
-      'next',
-      ({trust}) => {
-        this.carousel_.next(this.getActionSource_(trust));
-      },
-      ActionTrust.LOW
-    );
-    this.registerAction(
-      'goToSlide',
-      ({args, trust}) => {
-        this.carousel_.goToSlide(args['index'] || -1, {
-          actionSource: this.getActionSource_(trust),
-        });
-      },
-      ActionTrust.LOW
+  getInitialIndex_() {
+    const attr = this.element.getAttribute('slide') || '0';
+    return Number(getResponsiveAttributeValue(attr));
+  }
+
+  /**
+   * Determines how many whole items in addition to the current peek value can
+   * fit for a given item width. This can be rounded up or down to satisfy a
+   * max/min size constraint.
+   * @param {number} containerWidth The width of the container element.
+   * @param {number} itemWidth The width of each item.
+   * @param {boolean} roundUp Whether the fractional number of items should
+   *    be rounded up or down.
+   * @return {number} The number of items to display.
+   */
+  getItemsForWidth_(containerWidth, itemWidth, roundUp) {
+    const availableWidth = containerWidth - this.peek_ * itemWidth;
+    const fractionalItems = availableWidth / itemWidth;
+    const wholeItems = roundUp
+      ? Math.ceil(fractionalItems)
+      : Math.floor(fractionalItems);
+    return wholeItems + this.peek_;
+  }
+
+  /**
+   * @param {!ActionSource|undefined} actionSource
+   * @return {boolean} Whether or not the action is a high trust action.
+   * @private
+   */
+  isHighTrustActionSource_(actionSource) {
+    return (
+      actionSource == ActionSource.WHEEL ||
+      actionSource == ActionSource.TOUCH ||
+      actionSource == ActionSource.GENERIC_HIGH_TRUST
     );
   }
 
   /**
+   * @return {boolean}
    * @private
    */
-  setupListeners_() {
-    this.element.addEventListener('indexchange', event => {
-      this.onIndexChanged_(event);
-    });
-    this.element.addEventListener('scrollpositionchange', () => {
-      this.updateUi_();
-    });
-    this.prevArrowSlot_.addEventListener('click', event => {
-      if (event.target != event.currentTarget) {
-        this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
-      }
-    });
-    this.nextArrowSlot_.addEventListener('click', event => {
-      if (event.target != event.currentTarget) {
-        this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
-      }
-    });
+  shouldHideButtons_() {
+    if (this.insetArrowVisibility_ == ArrowVisibility.ALWAYS) {
+      return false;
+    }
+
+    if (this.insetArrowVisibility_ == ArrowVisibility.NEVER) {
+      return true;
+    }
+
+    const peeking = Math.round(this.visibleCount_) != this.visibleCount_;
+    return this.hadTouch_ || peeking;
+  }
+
+  /**
+   *
+   * @param {number} peek
+   */
+  updatePeek_(peek) {
+    this.peek_ = Math.max(0, peek || 0);
+    this.updateVisibleCount_();
+  }
+
+  /**
+   *
+   * @param {number} maxItemWidth
+   */
+  updateMaxItemWidth_(maxItemWidth) {
+    this.maxItemWidth_ = maxItemWidth || Number.POSITIVE_INFINITY;
+    this.updateVisibleCount_();
+  }
+
+  /**
+   *
+   * @param {number} maxVisibleCount
+   */
+  updateMaxVisibleCount_(maxVisibleCount) {
+    this.maxVisibleCount_ = maxVisibleCount || Number.POSITIVE_INFINITY;
+    this.updateVisibleCount_();
+  }
+
+  /**
+   *
+   * @param {number} minItemWidth
+   */
+  updateMinItemWidth_(minItemWidth) {
+    this.minItemWidth_ = minItemWidth || 0;
+    this.updateVisibleCount_();
+  }
+
+  /**
+   *
+   * @param {number} minVisibleCount
+   */
+  updateMinVisibleCount_(minVisibleCount) {
+    this.minVisibleCount_ = minVisibleCount || 1;
+    this.updateVisibleCount_();
+  }
+
+  /**
+   * Updates the number of items visible for the internal carousel.
+   */
+  updateVisibleCount_() {
+    const {
+      maxItemWidth_,
+      minItemWidth_,
+      maxVisibleCount_,
+      minVisibleCount_,
+      slides_,
+    } = this;
+    const box = this.getLayoutBox();
+    const maxItems = this.getItemsForWidth_(box.width, maxItemWidth_, true);
+    const minItems = this.getItemsForWidth_(box.width, minItemWidth_, false);
+    const items = Math.min(minItems, maxItems);
+
+    const maxVisibleSlides = Math.min(slides_.length, maxVisibleCount_);
+    const visibleCount = clamp(minVisibleCount_, items, maxVisibleSlides);
+    const advanceCount = Math.floor(visibleCount);
+    /*
+     * When we are going to show more slides than we have, cap the width so
+     * that we do not go over the max requested slide width. Otherwise, when
+     * the number of min items is less than the number of maxItems, then we
+     * need to cap the width, so that the extra space goes to the sides.
+     */
+    const maxContainerWidth =
+      items > maxVisibleSlides
+        ? `${maxVisibleSlides * maxItemWidth_}px`
+        : minItems < maxItems
+        ? `${minItems * maxItemWidth_}px`
+        : '';
+    setStyle(this.scrollContainer_, 'max-width', maxContainerWidth);
+
+    this.carousel_.updateAdvanceCount(advanceCount);
+    this.carousel_.updateAutoAdvanceCount(advanceCount);
+    this.carousel_.updateSnapBy(advanceCount);
+    this.carousel_.updateVisibleCount(visibleCount);
   }
 
   /**
@@ -491,22 +526,12 @@ class AmpStreamGallery extends AMP.BaseElement {
         : ArrowVisibility.AUTO;
     this.updateUi_();
   }
-
   /**
-   * @return {boolean}
    * @private
    */
-  shouldHideButtons_() {
-    if (this.insetArrowVisibility_ == ArrowVisibility.ALWAYS) {
-      return false;
-    }
-
-    if (this.insetArrowVisibility_ == ArrowVisibility.NEVER) {
-      return true;
-    }
-
-    const peeking = Math.round(this.visibleCount_) != this.visibleCount_;
-    return this.hadTouch_ || peeking;
+  updateSlides_() {
+    this.carousel_.updateSlides(this.slides_);
+    this.updateVisibleCount_();
   }
 
   /**
@@ -538,31 +563,23 @@ class AmpStreamGallery extends AMP.BaseElement {
   /**
    * @private
    */
-  updateSlides_() {
-    this.carousel_.updateSlides(this.slides_);
-    this.updateVisibleCount_();
-  }
-
-  /**
-   * @return {number} The initial index for the carousel.
-   * @private
-   */
-  getInitialIndex_() {
-    const attr = this.element.getAttribute('slide') || '0';
-    return Number(getResponsiveAttributeValue(attr));
-  }
-
-  /**
-   * @param {!ActionSource|undefined} actionSource
-   * @return {boolean} Whether or not the action is a high trust action.
-   * @private
-   */
-  isHighTrustActionSource_(actionSource) {
-    return (
-      actionSource == ActionSource.WHEEL ||
-      actionSource == ActionSource.TOUCH ||
-      actionSource == ActionSource.GENERIC_HIGH_TRUST
-    );
+  setupListeners_() {
+    this.element.addEventListener('indexchange', event => {
+      this.onIndexChanged_(event);
+    });
+    this.element.addEventListener('scrollpositionchange', () => {
+      this.updateUi_();
+    });
+    this.prevArrowSlot_.addEventListener('click', event => {
+      if (event.target != event.currentTarget) {
+        this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
+      }
+    });
+    this.nextArrowSlot_.addEventListener('click', event => {
+      if (event.target != event.currentTarget) {
+        this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
+      }
+    });
   }
 
   /**
@@ -583,15 +600,6 @@ class AmpStreamGallery extends AMP.BaseElement {
     this.element.dispatchCustomEvent(name, data);
     this.hadTouch_ = this.hadTouch_ || actionSource == ActionSource.TOUCH;
     this.updateUi_();
-  }
-
-  /**
-   * @param {string} name The name of the attribute.
-   * @param {string} newValue The new value of the attribute.
-   * @private
-   */
-  attributeMutated_(name, newValue) {
-    this.responsiveAttributes_.updateAttribute(name, newValue);
   }
 }
 
