@@ -966,14 +966,18 @@ export class Carousel {
       scrollContainer_,
       slides_,
     } = this;
-    const loop = this.isLooping();
     const totalLength = sum(this.getSlideLengths_());
     // When looping, we translate the slides, but the slides might decide to
     // translate their content instead of the whole slide. As a result, we need
     // to use the spacers to figure out where we are rather than the slides
     // themselves.
-    const items = loop ? allSpacers_ : slides_;
-    const startIndex = loop ? currentIndex_ + slides_.length : currentIndex_;
+    // Note: we do not check looping directly, since the spacers / layout are
+    // updated asynchronously.
+    const hasSpacers = !!allSpacers_.length;
+    const items = hasSpacers ? allSpacers_ : slides_;
+    const startIndex = hasSpacers
+      ? currentIndex_ + slides_.length
+      : currentIndex_;
     const overlappingIndex = findOverlappingIndex(
       axis_,
       alignment_,
