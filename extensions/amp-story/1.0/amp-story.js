@@ -38,6 +38,7 @@ import {
 import {ActionTrust} from '../../../src/action-constants';
 import {AdvancementConfig, TapNavigationDirection} from './page-advancement';
 import {AdvancementMode, getAnalyticsService} from './story-analytics';
+import {AmpEvents} from '../../../src/amp-events';
 import {AmpStoryAccess} from './amp-story-access';
 import {AmpStoryBackground} from './background';
 import {AmpStoryBookend} from './bookend/amp-story-bookend';
@@ -64,6 +65,7 @@ import {
 import {InfoDialog} from './amp-story-info-dialog';
 import {Keys} from '../../../src/utils/key-codes';
 import {Layout} from '../../../src/layout';
+import {LiveStoryManager} from './live-story-manager';
 import {LocalizationService} from '../../../src/service/localization';
 import {MediaPool, MediaType} from './media-pool';
 import {NavigationState} from './navigation-state';
@@ -85,6 +87,7 @@ import {
   createElementWithAttributes,
   isRTL,
   scopedQuerySelectorAll,
+  whenUpgradedToCustomElement,
 } from '../../../src/dom';
 import {
   computedStyle,
@@ -357,6 +360,9 @@ export class AmpStory extends AMP.BaseElement {
     /** @private {?Element} */
     this.maskElement_ = null;
 
+    /** @private {?LiveStoryManager} */
+    this.liveStoryManager_ = null;
+
     /** @private @const {!LocalizationService} */
     this.localizationService_ = new LocalizationService(this.win);
     this.localizationService_
@@ -527,10 +533,10 @@ export class AmpStory extends AMP.BaseElement {
     // ../../../extensions/amp-animation/0.1/web-animations.js
     this.mutateElement(() => {
       styleEl.textContent = styleEl.textContent
-        .replace(/([\d.]+)vh/gim, 'calc($1 * var(--i-amphtml-story-vh))')
-        .replace(/([\d.]+)vw/gim, 'calc($1 * var(--i-amphtml-story-vw))')
-        .replace(/([\d.]+)vmin/gim, 'calc($1 * var(--i-amphtml-story-vmin))')
-        .replace(/([\d.]+)vmax/gim, 'calc($1 * var(--i-amphtml-story-vmax))');
+        .replace(/([\d.]+)vh/gim, 'calc($1 * var(--story-page-vh))')
+        .replace(/([\d.]+)vw/gim, 'calc($1 * var(--story-page-vw))')
+        .replace(/([\d.]+)vmin/gim, 'calc($1 * var(--story-page-vmin))')
+        .replace(/([\d.]+)vmax/gim, 'calc($1 * var(--story-page-vmax))');
     });
   }
 
@@ -578,10 +584,10 @@ export class AmpStory extends AMP.BaseElement {
         mutate: state => {
           this.win.document.documentElement.setAttribute(
             'style',
-            `--i-amphtml-story-vh: ${px(state.vh)};` +
-              `--i-amphtml-story-vw: ${px(state.vw)};` +
-              `--i-amphtml-story-vmin: ${px(state.vmin)};` +
-              `--i-amphtml-story-vmax: ${px(state.vmax)};`
+            `--story-page-vh: ${px(state.vh)};` +
+              `--story-page-vw: ${px(state.vw)};` +
+              `--story-page-vmin: ${px(state.vmin)};` +
+              `--story-page-vmax: ${px(state.vmax)};`
           );
         },
       },
@@ -597,7 +603,8 @@ export class AmpStory extends AMP.BaseElement {
   buildSystemLayer_() {
     this.updateAudioIcon_();
     const pageIds = this.pages_.map(page => page.element.id);
-    this.element.appendChild(this.systemLayer_.build(pageIds));
+    this.storeService_.dispatch(Action.ADD_TO_PAGE_IDS, pageIds);
+    this.element.appendChild(this.systemLayer_.build());
   }
 
   /** @private */
@@ -961,9 +968,44 @@ export class AmpStory extends AMP.BaseElement {
     // that prevents descendents from being laid out (and therefore loaded).
     storyLayoutPromise
       .then(() => this.whenPagesLoaded_(PAGE_LOAD_TIMEOUT_MS))
-      .then(() => this.markStoryAsLoaded_());
+      .then(() => {
+        this.markStoryAsLoaded_();
+        this.initializeLiveStory_();
+      });
 
+    // Story is being prerendered: resolve the layoutCallback when the first
+    // page is built. Other pages will only build if the document becomes
+    // visible.
+    if (!Services.viewerForDoc(this.element).hasBeenVisible()) {
+      return whenUpgradedToCustomElement(firstPageEl).then(() =>
+        firstPageEl.whenBuilt()
+      );
+    }
+
+    // Will resolve when all pages are built.
     return storyLayoutPromise;
+  }
+
+  /**
+   * Initialize LiveStoryManager if this is a live story.
+   * @private
+   */
+  initializeLiveStory_() {
+    if (this.element.hasAttribute('dynamic-live-list')) {
+      this.liveStoryManager_ = new LiveStoryManager(this);
+      this.liveStoryManager_.build();
+
+      this.storeService_.dispatch(Action.ADD_TO_ACTIONS_WHITELIST, [
+        {tagOrTarget: 'AMP-LIVE-LIST', method: 'update'},
+      ]);
+
+      this.element.addEventListener(AmpEvents.DOM_UPDATE, ({target}) => {
+        this.liveStoryManager_.update(
+          target,
+          this.element.querySelectorAll('amp-story-page:not([ad])')
+        );
+      });
+    }
   }
 
   /**
@@ -1010,7 +1052,9 @@ export class AmpStory extends AMP.BaseElement {
         : [this.pages_[0]];
 
     const storyLoadPromise = Promise.all(
-      pagesToWaitFor.filter(page => !!page).map(page => page.whenLoaded())
+      pagesToWaitFor
+        .filter(page => !!page)
+        .map(page => page.element.signals().whenSignal(CommonSignals.LOAD_END))
     );
 
     return this.timer_
@@ -2172,8 +2216,9 @@ export class AmpStory extends AMP.BaseElement {
     // Once the media pool is ready, registers and preloads the background
     // audio, and then gets the swapped element from the DOM to mute/unmute/play
     // it programmatically later.
-    this.activePage_
-      .whenLoaded()
+    this.activePage_.element
+      .signals()
+      .whenSignal(CommonSignals.LOAD_END)
       .then(() => {
         backgroundAudioEl = /** @type {!HTMLMediaElement} */ (backgroundAudioEl);
         this.mediaPool_.register(backgroundAudioEl);
@@ -2549,6 +2594,8 @@ export class AmpStory extends AMP.BaseElement {
     if (page.isAd()) {
       this.adPages_.push(page);
     }
+
+    this.storeService_.dispatch(Action.SET_PAGES_COUNT, this.getPageCount());
   }
 
   /**
@@ -2591,9 +2638,13 @@ export class AmpStory extends AMP.BaseElement {
 
     const nextPageEl = nextPage.element;
     const nextPageId = nextPageEl.id;
-    pageToBeInsertedEl.setAttribute(advanceAttr, nextPageId);
-    pageToBeInsertedEl.setAttribute(Attributes.AUTO_ADVANCE_TO, nextPageId);
-    nextPageEl.setAttribute(Attributes.RETURN_TO, pageToBeInsertedId);
+    // For a live story, nextPage is the same as pageToBeInserted. But not for
+    // ads since it's inserted between two pages.
+    if (nextPageId !== pageToBeInsertedId) {
+      pageToBeInsertedEl.setAttribute(advanceAttr, nextPageId);
+      pageToBeInsertedEl.setAttribute(Attributes.AUTO_ADVANCE_TO, nextPageId);
+      nextPageEl.setAttribute(Attributes.RETURN_TO, pageToBeInsertedId);
+    }
 
     return true;
   }

@@ -110,14 +110,19 @@ export class AmpList extends AMP.BaseElement {
 
     /** @private {?../../../extensions/amp-bind/0.1/bind-impl.Bind} */
     this.bind_ = null;
+
     /** @private {boolean} */
     this.loadMoreEnabled_ = false;
+
     /** @private {?./service/load-more-service.LoadMoreService} */
     this.loadMoreService_ = null;
+
     /** @private {?string} */
     this.loadMoreSrc_ = null;
+
     /**@private {boolean} */
     this.resizeFailed_ = false;
+
     /**@private {?UnlistenDef} */
     this.unlistenAutoLoadMore_ = null;
 
@@ -198,6 +203,7 @@ export class AmpList extends AMP.BaseElement {
   /** @override */
   layoutCallback() {
     this.layoutCompleted_ = true;
+
     // If a placeholder exists and it's taller than amp-list, attempt a resize.
     const placeholder = this.getPlaceholder();
     if (placeholder) {
@@ -211,6 +217,7 @@ export class AmpList extends AMP.BaseElement {
     if (this.loadMoreEnabled_) {
       this.initializeLoadMoreElements_();
     }
+
     return this.fetchList_();
   }
 
@@ -291,11 +298,23 @@ export class AmpList extends AMP.BaseElement {
 
   /** @override */
   mutatedAttributesCallback(mutations) {
-    dev().info(TAG, 'mutate:', mutations);
+    dev().info(TAG, 'mutate:', this.element, mutations);
     let promise;
+
+    /**
+     * @param {!Array|!Object} data
+     * @return {!Promise}
+     */
+    const renderLocalData = data => {
+      // Remove the 'src' now that local data is used to render the list.
+      this.element.setAttribute('src', '');
+      const array = /** @type {!Array} */ (isArray(data) ? data : [data]);
+      this.resetIfNecessary_(/* isFetch */ false);
+      return this.scheduleRender_(array, /* append */ false);
+    };
+
     const src = mutations['src'];
     const state = /** @type {!JsonObject} */ (mutations)['state'];
-    const isLayoutContainer = mutations['is-layout-container'];
     if (src !== undefined) {
       if (typeof src === 'string') {
         // Defer to fetch in layoutCallback() before first layout.
@@ -304,23 +323,20 @@ export class AmpList extends AMP.BaseElement {
           promise = this.fetchList_();
         }
       } else if (typeof src === 'object') {
-        // Remove the 'src' now that local data is used to render the list.
-        this.element.setAttribute('src', '');
-        this.resetIfNecessary_(/* isFetch */ false);
-        const data = isArray(src) ? src : [src];
-        promise = this.scheduleRender_(data, /*append*/ false);
+        promise = renderLocalData(src);
       } else {
         this.user().error(TAG, 'Unexpected "src" type: ' + src);
       }
     } else if (state !== undefined) {
       user().error(TAG, '[state] is deprecated, please use [src] instead.');
-      this.resetIfNecessary_(/* isFetch */ false);
-      const data = isArray(state) ? state : [state];
-      promise = this.scheduleRender_(data, /*append*/ false);
+      promise = renderLocalData(state);
     }
+
+    const isLayoutContainer = mutations['is-layout-container'];
     if (isLayoutContainer) {
       this.changeToLayoutContainer_();
     }
+
     // Only return the promise for easier testing.
     if (getMode().test) {
       return promise;
@@ -453,9 +469,9 @@ export class AmpList extends AMP.BaseElement {
           items = this.truncateToMaxLen_(items);
         }
         if (this.loadMoreEnabled_) {
-          this.updateLoadMoreSrc_(/**@type {!JsonObject} */ (data));
+          this.updateLoadMoreSrc_(/** @type {!JsonObject} */ (data));
         }
-        return this.scheduleRender_(items, !!opt_append, data);
+        return this.scheduleRender_(items, opt_append, /* opt_payload */ data);
       });
     }
 
@@ -538,7 +554,7 @@ export class AmpList extends AMP.BaseElement {
       .then(
         response => {
           userAssert(
-            response && response['html'],
+            response && typeof response['html'] === 'string',
             'Expected response with format {html: <string>}. Received: ',
             response
           );
@@ -554,19 +570,20 @@ export class AmpList extends AMP.BaseElement {
           throw user().createError('Error proxying amp-list templates', error);
         }
       )
-      .then(data => this.scheduleRender_(data, /*append*/ false));
+      .then(data => this.scheduleRender_(data, /* append */ false));
   }
 
   /**
    * Schedules a fetch result to be rendered in the near future.
    * @param {!Array|!JsonObject|undefined} data
-   * @param {boolean} append
+   * @param {boolean=} opt_append
    * @param {JsonObject|Array<JsonObject>=} opt_payload
    * @return {!Promise}
    * @private
    */
-  scheduleRender_(data, append, opt_payload) {
-    dev().info(TAG, 'schedule:', data);
+  scheduleRender_(data, opt_append, opt_payload) {
+    dev().info(TAG, 'schedule:', this.element, data);
+
     const deferred = new Deferred();
     const {promise, resolve: resolver, reject: rejecter} = deferred;
 
@@ -577,13 +594,13 @@ export class AmpList extends AMP.BaseElement {
 
     this.renderItems_ = /** @type {?RenderItems} */ ({
       data,
-      append,
       resolver,
       rejecter,
+      append: opt_append,
       payload: opt_payload,
     });
 
-    if (this.renderedItems_ && append) {
+    if (this.renderedItems_ && opt_append) {
       this.renderItems_.payload =
         /** @type {(?JsonObject|Array<JsonObject>)} */ (opt_payload || {});
     }
@@ -598,8 +615,9 @@ export class AmpList extends AMP.BaseElement {
    */
   doRenderPass_() {
     const current = this.renderItems_;
+
     devAssert(current && current.data, 'Nothing to render.');
-    dev().info(TAG, 'pass:', current);
+    dev().info(TAG, 'pass:', this.element, current);
     const scheduleNextPass = () => {
       // If there's a new `renderItems_`, schedule it for render.
       if (this.renderItems_ !== current) {
@@ -729,7 +747,7 @@ export class AmpList extends AMP.BaseElement {
    * @private
    */
   render_(elements, opt_append = false) {
-    dev().info(TAG, 'render:', elements);
+    dev().info(TAG, 'render:', this.element, elements);
     const container = dev().assertElement(this.container_);
 
     return this.mutateElement(() => {

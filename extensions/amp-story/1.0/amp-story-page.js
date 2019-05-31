@@ -54,6 +54,7 @@ import {
   iterateCursor,
   matches,
   scopedQuerySelectorAll,
+  whenUpgradedToCustomElement,
 } from '../../../src/dom';
 import {debounce} from '../../../src/utils/rate-limit';
 import {dev} from '../../../src/log';
@@ -65,7 +66,7 @@ import {getLogEntries} from './logging';
 import {getMode} from '../../../src/mode';
 import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
-import {isMediaDisplayed} from './utils';
+import {isMediaDisplayed, setTextBackgroundColor} from './utils';
 import {toggle} from '../../../src/style';
 import {upgradeBackgroundAudio} from './audio';
 
@@ -225,14 +226,6 @@ export class AmpStoryPage extends AMP.BaseElement {
     /** @private @const {!../../../src/service/resources-impl.Resources} */
     this.resources_ = Services.resourcesForDoc(getAmpdoc(this.win.document));
 
-    /** @private @const {!Promise} */
-    this.mediaLayoutPromise_ = this.waitForMediaLayout_();
-
-    /** @private @const {!Promise} */
-    this.pageLoadPromise_ = this.mediaLayoutPromise_.then(() => {
-      this.markPageAsLoaded_();
-    });
-
     const deferred = new Deferred();
 
     /** @private @const {!Promise<!MediaPool>} */
@@ -310,6 +303,7 @@ export class AmpStoryPage extends AMP.BaseElement {
     this.advancement_.addProgressListener(progress =>
       this.emitProgress_(progress)
     );
+    this.setDescendantCssTextStyles_();
   }
 
   /**
@@ -446,7 +440,7 @@ export class AmpStoryPage extends AMP.BaseElement {
     );
     return Promise.all([
       this.beforeVisible(),
-      this.mediaLayoutPromise_,
+      this.waitForMediaLayout_(),
       this.mediaPoolPromise_,
     ]);
   }
@@ -475,9 +469,8 @@ export class AmpStoryPage extends AMP.BaseElement {
         switch (mediaEl.tagName.toLowerCase()) {
           case 'amp-img':
           case 'amp-anim':
-            mediaEl
-              .signals()
-              .whenSignal(CommonSignals.LOAD_END)
+            whenUpgradedToCustomElement(mediaEl)
+              .then(el => el.signals().whenSignal(CommonSignals.LOAD_END))
               .then(resolve, resolve);
             break;
           case 'amp-audio':
@@ -501,8 +494,7 @@ export class AmpStoryPage extends AMP.BaseElement {
         mediaEl.addEventListener('error', resolve, true /* useCapture */);
       });
     });
-
-    return Promise.all(mediaPromises);
+    return Promise.all(mediaPromises).then(() => this.markPageAsLoaded_());
   }
 
   /**
@@ -564,11 +556,6 @@ export class AmpStoryPage extends AMP.BaseElement {
         debouncePrepareForAnimation(el, null /* unlisten */);
       }
     });
-  }
-
-  /** @return {!Promise} */
-  whenLoaded() {
-    return this.pageLoadPromise_;
   }
 
   /** @private */
@@ -1389,5 +1376,14 @@ export class AmpStoryPage extends AMP.BaseElement {
    */
   isAd() {
     return this.element.hasAttribute(ADVERTISEMENT_ATTR_NAME);
+  }
+
+  /**
+   * Sets text styles for descendants of the
+   * <amp-story-page> element.
+   * @private
+   */
+  setDescendantCssTextStyles_() {
+    setTextBackgroundColor(this.element);
   }
 }

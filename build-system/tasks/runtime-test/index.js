@@ -19,7 +19,7 @@ const argv = require('minimist')(process.argv.slice(2));
 const babelify = require('babelify');
 const colors = require('ansi-colors');
 const config = require('../../config');
-const gulp = require('gulp-help')(require('gulp'));
+const gulp = require('gulp');
 const Karma = require('karma').Server;
 const karmaDefault = require('../karma.conf');
 const log = require('fancy-log');
@@ -35,14 +35,15 @@ const {
 const {
   reportTestErrored,
   reportTestFinished,
+  reportTestRunComplete,
   reportTestSkipped,
   reportTestStarted,
-} = require('./status-report');
+} = require('../report-test-status');
 const {app} = require('../../test-server');
-const {build} = require('../build');
+const {clean} = require('../clean');
 const {createCtrlcHandler, exitCtrlcHandler} = require('../../ctrlcHandler');
 const {css} = require('../css');
-const {getStdout} = require('../../exec');
+const {dist} = require('../dist');
 const {isTravisBuild} = require('../../travis');
 
 const {green, yellow, cyan, red} = colors;
@@ -131,8 +132,8 @@ function getConfig() {
       : [
           // With --saucelabs_lite, a subset of the unit tests are run.
           // Only browsers that support chai-as-promised may be included below.
-          // TODO(rsimha): Add more browsers to this list. #6039.
           'SL_Safari_12',
+          'SL_Firefox',
         ];
 
     return Object.assign({}, karmaDefault, {
@@ -163,7 +164,8 @@ function printArgvMessages() {
     testnames: 'Listing the names of all tests being run.',
     files: 'Running tests in the file(s): ' + cyan(argv.files),
     integration:
-      'Running only the integration tests. Prerequisite: ' + cyan('gulp build'),
+      'Running only the integration tests. Prerequisite: ' +
+      cyan('gulp dist --fortesting'),
     unit: 'Running only the unit tests. Prerequisite: ' + cyan('gulp css'),
     a4a: 'Running only A4A tests.',
     compiled: 'Running tests against minified code.',
@@ -270,24 +272,19 @@ async function runTests() {
     c.reporters = ['mocha'];
   }
 
-  c.browserify = {
-    transform: [['babelify', {global: true}]],
-    configure: function(bundle) {
-      bundle.on('prebundle', function() {
-        log(
-          green('Transforming tests with'),
-          cyan('browserify') + green('...')
-        );
-      });
-      bundle.on('transform', function(tr) {
-        if (tr instanceof babelify) {
-          tr.once('babelify', function() {
-            process.stdout.write('.');
-          });
-        }
-      });
-    },
+  c.browserify.configure = function(bundle) {
+    bundle.on('prebundle', function() {
+      log(green('Transforming tests with'), cyan('browserify') + green('...'));
+    });
+    bundle.on('transform', function(tr) {
+      if (tr instanceof babelify) {
+        tr.once('babelify', function() {
+          process.stdout.write('.');
+        });
+      }
+    });
   };
+
   // Exclude chai-as-promised from runs on the full set of sauce labs browsers.
   // See test/chai-as-promised/chai-as-promised.js for why this is necessary.
   c.files = argv.saucelabs ? [] : config.chaiAsPromised;
@@ -376,14 +373,14 @@ async function runTests() {
         {
           plugins: [
             [
-              'babel-plugin-istanbul',
+              'istanbul',
               {
                 exclude: [
-                  './ads/**/*.js',
-                  './third_party/**/*.js',
-                  './test/**/*.js',
-                  './extensions/**/test/**/*.js',
-                  './testing/**/*.js',
+                  'ads/**/*.js',
+                  'third_party/**/*.js',
+                  'test/**/*.js',
+                  'extensions/**/test/**/*.js',
+                  'testing/**/*.js',
                 ],
               },
             ],
@@ -395,7 +392,14 @@ async function runTests() {
     c.reporters = c.reporters.concat(['coverage-istanbul']);
     c.coverageIstanbulReporter = {
       dir: 'test/coverage',
-      reports: isTravisBuild() ? ['lcov'] : ['html', 'text', 'text-summary'],
+      reports: isTravisBuild()
+        ? ['lcovonly']
+        : ['html', 'text', 'text-summary'],
+      'report-config': {
+        lcovonly: {
+          file: argv.unit ? 'lcov-unit.info' : 'lcov-integration.info',
+        },
+      },
     };
   }
 
@@ -427,13 +431,16 @@ async function runTests() {
   // Avoid Karma startup errors
   refreshKarmaWdCache();
 
+  // Notify the test-status bot that the tests are running.
+  reportTestStarted();
+
   // Run Sauce Labs tests in batches to avoid timeouts when connecting to the
   // Sauce Labs environment.
   let processExitCode;
   if (argv.saucelabs || argv.saucelabs_lite) {
     processExitCode = await runTestInBatches();
   } else {
-    processExitCode = await createKarmaServer(c);
+    processExitCode = await createKarmaServer(c, reportTestRunComplete);
   }
 
   // Exit tests
@@ -472,12 +479,31 @@ async function runTests() {
         browserId.toLowerCase().endsWith('_beta') ? 'beta' : 'stable'
       ].push(browserId);
     }
+
+    let errored = false;
+    let totalStableSuccess = 0;
+    let totalStableFailed = 0;
+    const partialTestRunCompleteFn = async (browsers, results) => {
+      if (results.error) {
+        errored = true;
+      } else {
+        totalStableSuccess += results.success;
+        totalStableFailed += results.failed;
+      }
+    };
+
     if (browsers.stable.length) {
       const allBatchesExitCodes = await runTestInBatchesWithBrowsers(
         'stable',
-        browsers.stable
+        browsers.stable,
+        partialTestRunCompleteFn
       );
-      if (allBatchesExitCodes) {
+      if (errored) {
+        await reportTestErrored();
+      } else {
+        await reportTestFinished(totalStableSuccess, totalStableFailed);
+      }
+      if (allBatchesExitCodes || errored) {
         log(
           yellow('Some tests have failed on'),
           cyan('stable'),
@@ -485,14 +511,15 @@ async function runTests() {
           cyan('beta'),
           yellow('browsers.')
         );
-        return allBatchesExitCodes;
+        return allBatchesExitCodes || Number(errored);
       }
     }
 
     if (browsers.beta.length) {
       const allBatchesExitCodes = await runTestInBatchesWithBrowsers(
         'beta',
-        browsers.beta
+        browsers.beta,
+        /* runCompleteFn */ () => {}
       );
       if (allBatchesExitCodes) {
         log(
@@ -517,9 +544,16 @@ async function runTests() {
    * @param {string} batchName a human readable name for the batch.
    * @param {!Array{string}} browsers list of SauceLabs browsers as
    *     customLaunchers IDs.
+   * @param {!Function} runCompleteFn a function to execute on the
+   *     `run_complete` event. It should take two arguments, (browser, results),
+   *     and return nothing.
    * @return {number} processExitCode
    */
-  async function runTestInBatchesWithBrowsers(batchName, browsers) {
+  async function runTestInBatchesWithBrowsers(
+    batchName,
+    browsers,
+    runCompleteFn
+  ) {
     let batch = 1;
     let startIndex = 0;
     let endIndex = batchSize;
@@ -541,7 +575,7 @@ async function runTests() {
         cyan(configBatch.browsers.length),
         green('Sauce Labs browser(s)...')
       );
-      batchExitCodes.push(await createKarmaServer(configBatch));
+      batchExitCodes.push(await createKarmaServer(configBatch, runCompleteFn));
       startIndex = batch * batchSize;
       batch++;
       endIndex = Math.min(batch * batchSize, browsers.length);
@@ -553,57 +587,26 @@ async function runTests() {
   /**
    * Creates and starts karma server
    * @param {!Object} configBatch
+   * @param {!Function} runCompleteFn a function to execute on the
+   *     `run_complete` event. It should take two arguments, (browser, results),
+   *     and return nothing.
    * @return {!Promise<number>}
    */
-  function createKarmaServer(configBatch) {
+  function createKarmaServer(configBatch, runCompleteFn) {
     let resolver;
     const deferred = new Promise(resolverIn => {
       resolver = resolverIn;
     });
     new Karma(configBatch, function(exitCode) {
-      if (argv.coverage) {
-        if (isTravisBuild()) {
-          const codecovCmd =
-            './node_modules/.bin/codecov --file=test/coverage/lcov.info';
-          let flags = '';
-          if (argv.unit) {
-            flags = ' --flags=unit_tests';
-          } else if (argv.integration) {
-            flags = ' --flags=integration_tests';
-          }
-          log(
-            green('INFO:'),
-            'Uploading code coverage report to',
-            cyan('https://codecov.io/gh/ampproject/amphtml'),
-            'by running',
-            cyan(codecovCmd + flags) + '...'
-          );
-          const output = getStdout(codecovCmd + flags);
-          const viewReportPrefix = 'View report at: ';
-          const viewReport = output.match(`${viewReportPrefix}.*`);
-          if (viewReport && viewReport.length > 0) {
-            log(
-              green('INFO:'),
-              viewReportPrefix +
-                cyan(viewReport[0].replace(viewReportPrefix, ''))
-            );
-          } else {
-            log(
-              yellow('WARNING:'),
-              'Code coverage report upload may have failed:\n',
-              yellow(output)
-            );
-          }
-        } else {
-          const coverageReportUrl =
-            'file://' + path.resolve('test/coverage/index.html');
-          log(
-            green('INFO:'),
-            'Generated code coverage report at',
-            cyan(coverageReportUrl)
-          );
-          opn(coverageReportUrl, {wait: false});
-        }
+      if (argv.coverage && !isTravisBuild()) {
+        const coverageReportUrl =
+          'file://' + path.resolve('test/coverage/index.html');
+        log(
+          green('INFO:'),
+          'Generated code coverage report at',
+          cyan(coverageReportUrl)
+        );
+        opn(coverageReportUrl, {wait: false});
       }
       resolver(exitCode);
     })
@@ -611,7 +614,6 @@ async function runTests() {
         if (!argv.saucelabs && !argv.saucelabs_lite) {
           log(green('Running tests locally...'));
         }
-        reportTestStarted();
       })
       .on('browsers_ready', function() {
         console./*OK*/ log('\n');
@@ -621,9 +623,8 @@ async function runTests() {
         const result = browser.lastResult;
         // Prevent cases where Karma detects zero tests and still passes. #16851.
         if (result.total == 0) {
-          log(
-            red('ERROR: Zero tests detected by Karma. Something went wrong.')
-          );
+          log(red('ERROR: Zero tests detected by Karma.'));
+          log(red(JSON.stringify(result)));
           reportTestErrored().finally(() => {
             if (!argv.watch) {
               process.exit(1);
@@ -644,13 +645,7 @@ async function runTests() {
         console./*OK*/ log('\n');
         log(message);
       })
-      .on('run_complete', (browsers, results) => {
-        if (results.error) {
-          reportTestErrored();
-        } else {
-          reportTestFinished(results.success, results.failed);
-        }
-      })
+      .on('run_complete', runCompleteFn)
       .start();
     return deferred;
   }
@@ -661,7 +656,10 @@ async function test() {
     if (argv.unit || argv.a4a || argv['local-changes']) {
       await css();
     } else {
-      await build();
+      argv.fortesting = true;
+      argv.compiled = true;
+      await clean();
+      await dist();
     }
   }
   // TODO(alanorozco): Come up with a more elegant check?

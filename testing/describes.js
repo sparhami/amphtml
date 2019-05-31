@@ -96,9 +96,10 @@ import {
   installAmpdocServices,
   installRuntimeServices,
 } from '../src/runtime';
+import {cssText as ampDocCss} from '../build/ampdoc.css';
+import {cssText as ampElementCss} from '../build/ampelement.css';
 import {createAmpElementForTesting} from '../src/custom-element';
 import {createElementWithAttributes} from '../src/dom';
-import {cssText} from '../build/css';
 import {doNotLoadExternalResourcesInTest} from './iframe';
 import {
   installBuiltinElements,
@@ -347,6 +348,9 @@ function describeEnv(factory) {
       let d = describe.configure();
       if (spec.retryOnSaucelabs) {
         d = d.retryOnSaucelabs(spec.retryOnSaucelabs);
+      }
+      if (spec.ifIe) {
+        d = d.ifIe();
       }
       d.run(SUB, function() {
         if (spec.timeout) {
@@ -849,7 +853,7 @@ function installRuntimeStylesPromise(win) {
   }
   const style = document.createElement('style');
   style.setAttribute('amp-runtime', '');
-  style./*OK*/ textContent = cssText;
+  style./*OK*/ textContent = ampDocCss + ampElementCss;
   win.document.head.appendChild(style);
 }
 

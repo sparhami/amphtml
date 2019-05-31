@@ -30,7 +30,7 @@ import {AutoAdvance} from './auto-advance';
 import {CarouselAccessibility} from './carousel-accessibility';
 import {backwardWrappingDistance, forwardWrappingDistance} from './array-util';
 import {clamp, mod} from '../../../src/utils/math';
-import {createCustomEvent, listenOnce} from '../../../src/event-helper';
+import {createCustomEvent, listen, listenOnce} from '../../../src/event-helper';
 import {debounce} from '../../../src/utils/rate-limit';
 import {dict} from '../../../src/utils/object';
 import {
@@ -282,6 +282,17 @@ export class Carousel {
     this.axis_ = Axis.X;
 
     /**
+     * Whether slides are laid out in the forwards or reverse direction. When
+     * using rtl (right to left), this should be false. This is used to set the
+     * transforms for slides and spacers correctly when the flex direction is
+     * reversed due to a rtl direction. TODO(sparhami) is there some way we
+     * could get this to work without needing to be explicitly told what the
+     * direction is?
+     * @private {boolean}
+     */
+    this.forwards_ = true;
+
+    /**
      * TODO(sparhami) Rename this to `activeIndex`. We do not want to expose
      * this as it changes, only when the user stops scrolling. Also change
      * restingIndex to currentIndex.
@@ -315,16 +326,16 @@ export class Carousel {
       () => this.handleScrollEnd_(),
       true
     );
-    this.scrollContainer_.addEventListener(
+    listen(
+      this.scrollContainer_,
       'touchstart',
       () => this.handleTouchStart_(),
-      true
+      {capture: true, passive: true}
     );
-    this.scrollContainer_.addEventListener(
-      'wheel',
-      () => this.handleWheel_(),
-      true
-    );
+    listen(this.scrollContainer_, 'wheel', () => this.handleWheel_(), {
+      capture: true,
+      passive: true,
+    });
   }
 
   /**
@@ -528,6 +539,15 @@ export class Carousel {
   }
 
   /**
+   * @param {boolean} forwards Whether or not the advancement direction is
+   *    forwards (e.g. ltr) or reverse (e.g. rtl).
+   */
+  updateForwards(forwards) {
+    this.forwards_ = forwards;
+    this.updateUi();
+  }
+
+  /**
    * @param {boolean} horizontal Whether the scrollable should lay out
    *    horizontally or vertically.
    */
@@ -693,6 +713,7 @@ export class Carousel {
       },
       {
         capture: true,
+        passive: true,
       }
     );
   }
@@ -752,7 +773,9 @@ export class Carousel {
    * @private
    */
   setElementTransform_(el, revolutions, revolutionLength) {
-    setTransformTranslateStyle(this.axis_, el, revolutions * revolutionLength);
+    const dir = this.forwards_ ? 1 : -1;
+    const delta = revolutions * revolutionLength * dir;
+    setTransformTranslateStyle(this.axis_, el, delta);
     el._revolutions = revolutions;
   }
 

@@ -155,10 +155,10 @@ class AmpStreamGallery extends AMP.BaseElement {
     this.insetArrowVisibility_ = ArrowVisibility.AUTO;
 
     /** @private {number} */
-    this.maxItemWidth_ = Number.POSITIVE_INFINITY;
+    this.maxItemWidth_ = Number.MAX_VALUE;
 
     /** @private {number} */
-    this.maxVisibleCount_ = Number.POSITIVE_INFINITY;
+    this.maxVisibleCount_ = Number.MAX_VALUE;
 
     /** @private {number} */
     this.minItemWidth_ = 0;
@@ -435,7 +435,7 @@ class AmpStreamGallery extends AMP.BaseElement {
    * @param {number} maxItemWidth
    */
   updateMaxItemWidth_(maxItemWidth) {
-    this.maxItemWidth_ = maxItemWidth || Number.POSITIVE_INFINITY;
+    this.maxItemWidth_ = maxItemWidth || Number.MAX_VALUE;
     this.updateVisibleCount_();
   }
 
@@ -444,7 +444,7 @@ class AmpStreamGallery extends AMP.BaseElement {
    * @param {number} maxVisibleCount
    */
   updateMaxVisibleCount_(maxVisibleCount) {
-    this.maxVisibleCount_ = maxVisibleCount || Number.POSITIVE_INFINITY;
+    this.maxVisibleCount_ = maxVisibleCount || Number.MAX_VALUE;
     this.updateVisibleCount_();
   }
 
@@ -483,7 +483,7 @@ class AmpStreamGallery extends AMP.BaseElement {
     const items = Math.min(minItems, maxItems);
 
     const maxVisibleSlides = Math.min(slides_.length, maxVisibleCount_);
-    const visibleCount = clamp(minVisibleCount_, items, maxVisibleSlides);
+    const visibleCount = clamp(items, minVisibleCount_, maxVisibleSlides);
     const advanceCount = Math.floor(visibleCount);
     /*
      * When we are going to show more slides than we have, cap the width so

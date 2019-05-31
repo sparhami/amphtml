@@ -16,7 +16,7 @@
 
 import {ActionSource} from './action-source';
 import {debounce} from '../../../src/utils/rate-limit';
-import {listenOnce} from '../../../src/event-helper';
+import {listen, listenOnce} from '../../../src/event-helper';
 
 const MIN_AUTO_ADVANCE_INTERVAL = 1000;
 
@@ -85,10 +85,11 @@ export class AutoAdvance {
       () => this.handleScroll_(),
       true
     );
-    this.scrollContainer_.addEventListener(
+    listen(
+      this.scrollContainer_,
       'touchstart',
       () => this.handleTouchStart_(),
-      true
+      {capture: true, passive: true}
     );
   }
 
@@ -189,9 +190,7 @@ export class AutoAdvance {
       () => {
         this.resume();
       },
-      {
-        capture: true,
-      }
+      {capture: true, passive: true}
     );
   }
 

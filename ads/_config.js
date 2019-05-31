@@ -146,6 +146,8 @@ export const adConfig = {
     consentHandlingOverride: true,
   },
 
+  'adop': {},
+
   'adpicker': {
     renderStartImplemented: true,
   },
@@ -293,6 +295,10 @@ export const adConfig = {
 
   'atomx': {
     prefetch: 'https://s.ato.mx/p.js',
+  },
+
+  'beaverads': {
+    renderStartImplemented: true,
   },
 
   'beopinion': {

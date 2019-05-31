@@ -34,6 +34,7 @@ const {
   processGithubIssues,
 } = require('./build-system/tasks/process-github-issues');
 const {ava} = require('./build-system/tasks/ava');
+const {babelPluginTests} = require('./build-system/tasks/babel-plugin-tests');
 const {build, defaultTask, watch} = require('./build-system/tasks/build');
 const {bundleSize} = require('./build-system/tasks/bundle-size');
 const {cachesJson, jsonSyntax} = require('./build-system/tasks/json-check');
@@ -41,6 +42,7 @@ const {changelog, changelogUpdate} = require('./build-system/tasks/changelog');
 const {checkLinks} = require('./build-system/tasks/check-links');
 const {checkTypes} = require('./build-system/tasks/check-types');
 const {clean} = require('./build-system/tasks/clean');
+const {codecovUpload} = require('./build-system/tasks/codecov-upload');
 const {createGoldenCss} = require('./build-system/tasks/create-golden-css');
 const {css} = require('./build-system/tasks/css');
 const {csvifySize} = require('./build-system/tasks/csvify-size');
@@ -66,6 +68,7 @@ const {visualDiff} = require('./build-system/tasks/visual-diff');
 
 // Keep this list alphabetized.
 gulp.task('ava', ava);
+gulp.task('babel-plugin-tests', babelPluginTests);
 gulp.task('build', build);
 gulp.task('build-experiments', buildExperiments);
 gulp.task('build-login-done', buildLoginDone);
@@ -76,6 +79,7 @@ gulp.task('changelog:update', changelogUpdate);
 gulp.task('check-links', checkLinks);
 gulp.task('check-types', checkTypes);
 gulp.task('clean', clean);
+gulp.task('codecov-upload', codecovUpload);
 gulp.task('compile-access-expr', compileAccessExpr);
 gulp.task('compile-bind-expr', compileBindExpr);
 gulp.task('compile-css-expr', compileCssExpr);
