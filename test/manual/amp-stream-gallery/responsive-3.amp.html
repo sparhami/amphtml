@@ -32,10 +32,12 @@
       layout="fixed-height"
       height="128"
       loop="true"
-      min-item-width="170"
+      min-item-width="(min-width: 499px) 130, 0"
       max-item-width="180"
       max-visible-count="5"
-      peek="(min-width: 499px) 0, 0.5">
+      peek="(min-width: 499px) 0, 0.5"
+      inset-arrow-visibility="never"
+      outset-arrows="(min-width: 499px) true, false">
     <div class="item">
       <amp-img src="../amp-base-carousel/img/redgradient.png" layout="flex-item"></amp-img>
     </div>

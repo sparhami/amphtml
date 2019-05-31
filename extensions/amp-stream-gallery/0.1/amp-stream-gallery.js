@@ -151,6 +151,9 @@ class AmpStreamGallery extends AMP.BaseElement {
     /** @private {?Element} */
     this.scrollContainer_ = null;
 
+    /** @private {?Element} */
+    this.slidesContainer_ = null;
+
     /** @private {!ArrowVisibility} */
     this.insetArrowVisibility_ = ArrowVisibility.AUTO;
 
@@ -184,6 +187,11 @@ class AmpStreamGallery extends AMP.BaseElement {
      * @private {boolean}
      */
     this.hadTouch_ = false;
+
+    /**
+     * @private {boolean}
+     */
+    this.updateVisibleCountRequested_ = false;
   }
 
   /**
@@ -229,6 +237,9 @@ class AmpStreamGallery extends AMP.BaseElement {
 
     this.scrollContainer_ = dev().assertElement(
       this.element.querySelector('.i-amphtml-carousel-scroll')
+    );
+    this.slidesContainer_ = this.element.querySelector(
+      '.i-amphtml-stream-gallery-slides'
     );
     this.content_ = dev().assertElement(
       this.element.querySelector('.i-amphtml-carousel-content')
@@ -470,39 +481,56 @@ class AmpStreamGallery extends AMP.BaseElement {
    * Updates the number of items visible for the internal carousel.
    */
   updateVisibleCount_() {
-    const {
-      maxItemWidth_,
-      minItemWidth_,
-      maxVisibleCount_,
-      minVisibleCount_,
-      slides_,
-    } = this;
-    const box = this.getLayoutBox();
-    const maxItems = this.getItemsForWidth_(box.width, maxItemWidth_, true);
-    const minItems = this.getItemsForWidth_(box.width, minItemWidth_, false);
-    const items = Math.min(minItems, maxItems);
+    if (this.updateVisibleCountRequested_) {
+      return;
+    }
 
-    const maxVisibleSlides = Math.min(slides_.length, maxVisibleCount_);
-    const visibleCount = clamp(items, minVisibleCount_, maxVisibleSlides);
-    const advanceCount = Math.floor(visibleCount);
-    /*
-     * When we are going to show more slides than we have, cap the width so
-     * that we do not go over the max requested slide width. Otherwise, when
-     * the number of min items is less than the number of maxItems, then we
-     * need to cap the width, so that the extra space goes to the sides.
-     */
-    const maxContainerWidth =
-      items > maxVisibleSlides
-        ? `${maxVisibleSlides * maxItemWidth_}px`
-        : minItems < maxItems
-        ? `${minItems * maxItemWidth_}px`
-        : '';
-    setStyle(this.scrollContainer_, 'max-width', maxContainerWidth);
+    this.updateVisibleCountRequested_ = true;
+    Promise.resolve().then(() => {
+      this.updateVisibleCountRequested_ = false;
 
-    this.carousel_.updateAdvanceCount(advanceCount);
-    this.carousel_.updateAutoAdvanceCount(advanceCount);
-    this.carousel_.updateSnapBy(advanceCount);
-    this.carousel_.updateVisibleCount(visibleCount);
+      const {
+        maxItemWidth_,
+        minItemWidth_,
+        maxVisibleCount_,
+        minVisibleCount_,
+        slides_,
+      } = this;
+      // For outset arrows, we need to check the slides container to get the
+      // available width. Ideally, we wouldn't do a read here. We cannot do a
+      // measure, since the internal carousel implementation would update its
+      // calculations on the next frame when we update things below.
+      const width = this.outsetArrows_
+        ? this.slidesContainer_./*OK*/ getBoundingClientRect().width
+        : this.getLayoutBox().width;
+      const maxItems = this.getItemsForWidth_(width, maxItemWidth_, true);
+      const minItems = this.getItemsForWidth_(width, minItemWidth_, false);
+      const items = Math.min(minItems, maxItems);
+
+      const maxVisibleSlides = Math.min(slides_.length, maxVisibleCount_);
+      const visibleCount = clamp(items, minVisibleCount_, maxVisibleSlides);
+      const advanceCount = Math.floor(visibleCount);
+      /*
+       * When we are going to show more slides than we have, cap the width so
+       * that we do not go over the max requested slide width. Otherwise, when
+       * the number of min items is less than the number of maxItems, then we
+       * need to cap the width, so that the extra space goes to the sides.
+       */
+      const maxContainerWidth =
+        items > maxVisibleSlides
+          ? `${maxVisibleSlides * maxItemWidth_}px`
+          : minItems < maxItems
+          ? `${minItems * maxItemWidth_}px`
+          : '';
+
+      this.mutateElement(() => {
+        setStyle(this.scrollContainer_, 'max-width', maxContainerWidth);
+      });
+      this.carousel_.updateAdvanceCount(advanceCount);
+      this.carousel_.updateAutoAdvanceCount(advanceCount);
+      this.carousel_.updateSnapBy(advanceCount);
+      this.carousel_.updateVisibleCount(visibleCount);
+    });
   }
 
   /**
