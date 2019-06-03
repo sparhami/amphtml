@@ -235,48 +235,46 @@ class AmpStreamGallery extends AMP.BaseElement {
     // Create the carousel's inner DOM.
     element.appendChild(this.renderContainerDom_());
 
-    this.scrollContainer_ = dev().assertElement(
-      this.element.querySelector('.i-amphtml-carousel-scroll')
-    );
-    this.slidesContainer_ = this.element.querySelector(
+    this.scrollContainer_ = element.querySelector('.i-amphtml-carousel-scroll');
+    this.slidesContainer_ = element.querySelector(
       '.i-amphtml-stream-gallery-slides'
     );
-    this.content_ = dev().assertElement(
-      this.element.querySelector('.i-amphtml-carousel-content')
+    this.content_ = element.querySelector('.i-amphtml-carousel-content');
+    this.prevArrowSlot_ = element.querySelector(
+      '.i-amphtml-stream-gallery-arrow-prev-slot'
     );
+    this.nextArrowSlot_ = element.querySelector(
+      '.i-amphtml-stream-gallery-arrow-next-slot'
+    );
+
     this.carousel_ = new Carousel({
       win,
       element,
-      scrollContainer: this.scrollContainer_,
+      scrollContainer: dev().assertElement(this.scrollContainer_),
       initialIndex: this.getInitialIndex_(),
       runMutate: cb => this.mutateElement(cb),
     });
-    this.carousel_.updateSnap(false);
+    // this.carousel_.updateSnap(false);
 
     // Do some manual "slot" distribution
     this.slides_.forEach(slide => {
       slide.classList.add('i-amphtml-carousel-slotted');
       this.scrollContainer_.appendChild(slide);
     });
-    this.prevArrowSlot_ = this.element.querySelector(
-      '.i-amphtml-stream-gallery-arrow-prev-slot'
-    );
-    this.nextArrowSlot_ = this.element.querySelector(
-      '.i-amphtml-stream-gallery-arrow-next-slot'
-    );
+
     // Slot the arrows, with defaults
     this.prevArrowSlot_.appendChild(prevArrow || this.createPrevArrow_());
     this.nextArrowSlot_.appendChild(nextArrow || this.createNextArrow_());
 
     // Handle the initial set of attributes
-    toArray(this.element.attributes).forEach(attr => {
-      this.attributeMutated_(attr.name, attr.value);
-    });
+    // toArray(this.element.attributes).forEach(attr => {
+    //   this.attributeMutated_(attr.name, attr.value);
+    // });
 
     this.setupActions_();
     this.setupListeners_();
-    this.updateSlides_();
-    this.updateUi_();
+    // this.updateSlides_();
+    // this.updateUi_();
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
@@ -289,6 +287,10 @@ class AmpStreamGallery extends AMP.BaseElement {
 
   /** @override */
   layoutCallback() {
+    toArray(this.element.attributes).forEach(attr => {
+      this.attributeMutated_(attr.name, attr.value);
+    });
+
     this.updateVisibleCount_();
     this.carousel_.updateUi();
     return Promise.resolve();
@@ -526,6 +528,7 @@ class AmpStreamGallery extends AMP.BaseElement {
       this.mutateElement(() => {
         setStyle(this.scrollContainer_, 'max-width', maxContainerWidth);
       });
+      this.carousel_.updateSlides(this.slides_);
       this.carousel_.updateAdvanceCount(advanceCount);
       this.carousel_.updateAutoAdvanceCount(advanceCount);
       this.carousel_.updateSnapBy(advanceCount);
@@ -559,7 +562,6 @@ class AmpStreamGallery extends AMP.BaseElement {
    * @private
    */
   updateSlides_() {
-    this.carousel_.updateSlides(this.slides_);
     this.updateVisibleCount_();
   }
 

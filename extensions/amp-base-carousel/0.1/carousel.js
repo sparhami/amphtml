@@ -397,7 +397,7 @@ export class Carousel {
     if (this.isLooping()) {
       slideIndex = mod(newIndex, endIndex + 1);
     } else if (!allowWrap) {
-      slideIndex = clamp(0, newIndex, endIndex);
+      slideIndex = clamp(newIndex, 0, endIndex);
     } else if (
       delta > 0 &&
       this.inLastWindow_(index) &&
@@ -583,7 +583,6 @@ export class Carousel {
   updateSlides(slides) {
     this.slides_ = slides;
     this.carouselAccessibility_.updateSlides(slides);
-    this.updateUi();
   }
 
   /**
