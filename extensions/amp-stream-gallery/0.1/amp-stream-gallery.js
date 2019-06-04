@@ -189,6 +189,12 @@ class AmpStreamGallery extends AMP.BaseElement {
     this.hadTouch_ = false;
 
     /**
+     * Whether or not the element has been laid out yet.
+     * @private {boolean}
+     */
+    this.laidOut_ = false;
+
+    /**
      * @private {boolean}
      */
     this.updateVisibleCountRequested_ = false;
@@ -247,6 +253,14 @@ class AmpStreamGallery extends AMP.BaseElement {
       '.i-amphtml-stream-gallery-arrow-next-slot'
     );
 
+    // Do some manual "slot" distribution
+    this.slides_.forEach(slide => {
+      slide.classList.add('i-amphtml-carousel-slotted');
+      this.scrollContainer_.appendChild(slide);
+    });
+    this.prevArrowSlot_.appendChild(prevArrow || this.createPrevArrow_());
+    this.nextArrowSlot_.appendChild(nextArrow || this.createNextArrow_());
+
     this.carousel_ = new Carousel({
       win,
       element,
@@ -254,27 +268,17 @@ class AmpStreamGallery extends AMP.BaseElement {
       initialIndex: this.getInitialIndex_(),
       runMutate: cb => this.mutateElement(cb),
     });
-    // this.carousel_.updateSnap(false);
-
-    // Do some manual "slot" distribution
-    this.slides_.forEach(slide => {
-      slide.classList.add('i-amphtml-carousel-slotted');
-      this.scrollContainer_.appendChild(slide);
-    });
-
-    // Slot the arrows, with defaults
-    this.prevArrowSlot_.appendChild(prevArrow || this.createPrevArrow_());
-    this.nextArrowSlot_.appendChild(nextArrow || this.createNextArrow_());
+    this.carousel_.pauseLayout();
+    this.carousel_.updateSnap(false);
+    this.carousel_.updateSlides(this.slides_);
 
     // Handle the initial set of attributes
-    // toArray(this.element.attributes).forEach(attr => {
-    //   this.attributeMutated_(attr.name, attr.value);
-    // });
+    toArray(this.element.attributes).forEach(attr => {
+      this.attributeMutated_(attr.name, attr.value);
+    });
 
     this.setupActions_();
     this.setupListeners_();
-    // this.updateSlides_();
-    // this.updateUi_();
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
@@ -286,24 +290,41 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /** @override */
-  layoutCallback() {
-    toArray(this.element.attributes).forEach(attr => {
-      this.attributeMutated_(attr.name, attr.value);
-    });
-
-    this.updateVisibleCount_();
-    this.carousel_.updateUi();
-    return Promise.resolve();
-  }
-
-  /** @override */
   pauseCallback() {
-    this.carousel_.pauseAutoAdvance();
+    this.carousel_.pauseLayout();
   }
 
   /** @override */
   resumeCallback() {
-    this.carousel_.resumeAutoAdvance();
+    this.carousel_.resumeLayout();
+  }
+
+  /**
+   * Does the first layout for the carousel implementation.
+   * @private
+   */
+  firstLayout_() {
+    this.carousel_.resumeLayout();
+    // Unhides the content once things are stable. This uses mutate element to
+    // synchronize with the rest of the carousel layout, even though
+    // `layoutCallback` is in a mutate context.
+    this.mutateElement(() => {
+      this.element.setAttribute('i-amphtml-gallery-laid-out', '');
+    });
+  }
+
+  /** @override */
+  layoutCallback() {
+    this.updateVisibleCount_();
+
+    if (!this.laidOut_) {
+      this.laidOut_ = true;
+      this.firstLayout_();
+    } else {
+      this.carousel_.updateUi();
+    }
+
+    return Promise.resolve();
   }
 
   /** @override */
@@ -557,12 +578,6 @@ class AmpStreamGallery extends AMP.BaseElement {
         ? ArrowVisibility.NEVER
         : ArrowVisibility.AUTO;
     this.updateUi_();
-  }
-  /**
-   * @private
-   */
-  updateSlides_() {
-    this.updateVisibleCount_();
   }
 
   /**
