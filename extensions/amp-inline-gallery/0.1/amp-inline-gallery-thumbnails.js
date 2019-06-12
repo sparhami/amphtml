@@ -14,15 +14,24 @@
  * limitations under the License.
  */
 
-import {Alignment, Axis, scrollContainerToElement} from '../../amp-base-carousel/0.1/dimensions';
+import {
+  Alignment,
+  Axis,
+  scrollContainerToElement,
+} from '../../amp-base-carousel/0.1/dimensions';
 import {CSS} from '../../../build/amp-inline-gallery-thumbnails-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel';
 import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
-import {createCustomEvent, getDetail, listenOnce} from '../../../src/event-helper';
+import {
+  createCustomEvent,
+  getDetail,
+  listenOnce,
+} from '../../../src/event-helper';
 import {dev} from '../../../src/log';
 import {dict} from '../../../src/utils/object';
 import {getStyle, setStyle} from '../../../src/style';
 import {htmlFor} from '../../../src/static-template';
+import {scopedQuerySelector} from '../../../src/dom';
 
 /**
  * @param {!Element} el The Element to check.
@@ -89,7 +98,7 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
   }
 
   /** @override */
-  isLayoutSupported(layout) {
+  isLayoutSupported() {
     return true;
   }
 
@@ -103,7 +112,8 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
 
     const sr = this.createShadowRoot_();
     this.thumbnailsContainer_ = dev().assertElement(
-        sr.querySelector('.i-amphtml-carousel-scroll'));
+      sr.querySelector('.i-amphtml-carousel-scroll')
+    );
 
     this.carousel_ = new Carousel({
       win: this.win,
@@ -117,8 +127,10 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     this.carousel_.updateMixedLength(true);
     this.carousel_.updateSnap(false);
 
-    this.thumbWidth = this.element.getAttribute('thumbnail-aspect-ratio-width') || 1;
-    this.thumbHeight = this.element.getAttribute('thumbnail-aspect-ratio-height') || 1;
+    this.thumbWidth =
+      this.element.getAttribute('thumbnail-aspect-ratio-width') || 1;
+    this.thumbHeight =
+      this.element.getAttribute('thumbnail-aspect-ratio-height') || 1;
     this.keepScrollInSync_ = this.element.hasAttribute('sync-scroll');
 
     this.addListeners_();
@@ -130,9 +142,14 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     return Promise.resolve();
   }
 
+  /**
+   *
+   * @param {*} element
+   * @param {*} index
+   */
   createThumbnailForElement_(element, index) {
     const html = htmlFor(this.element);
-    const content = html `
+    const content = html`
       <div class="thumbnail-container">
         <div class="thumbnail">
           <svg class="resizer"></svg>
@@ -140,14 +157,21 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
       </div>
     `;
 
-    content.querySelector('.resizer').setAttribute('viewBox', `0 0 ${this.thumbWidth} ${this.thumbHeight}`);
+    content
+      .querySelector('.resizer')
+      .setAttribute('viewBox', `0 0 ${this.thumbWidth} ${this.thumbHeight}`);
     content.querySelector('.thumbnail').appendChild(element);
     content.onclick = () => {
-      const event = createCustomEvent(this.win, 'goToSlide', dict({
-        'index': index,
-      }), {
-        bubbles: true,
-      });
+      const event = createCustomEvent(
+        this.win,
+        'goToSlide',
+        dict({
+          'index': index,
+        }),
+        {
+          bubbles: true,
+        }
+      );
       this.element.dispatchEvent(event);
       this.requestedIndex_ = index;
       this.ignoreScrollUntilSettled_ = true;
@@ -156,6 +180,9 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     return content;
   }
 
+  /**
+   *
+   */
   addListeners_() {
     this.element.addEventListener('offsetchange-update', event => {
       this.handleOffsetChangeUpdate_(event);
@@ -169,23 +196,36 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     this.element.addEventListener('indexchange', event => {
       event.stopPropagation();
     });
-    this.element.addEventListener('touchstart', event => {
-      this.handleTouchstart_();
-    }, {
-      passive: true,
-    });
+    this.element.addEventListener(
+      'touchstart',
+      () => {
+        this.handleTouchstart_();
+      },
+      {
+        passive: true,
+      }
+    );
   }
 
+  /**
+   *
+   */
   createDefaultThumbnail_() {
     const html = htmlFor(this.element);
-    return html `
+    return html`
       <div class="default-thumbnail-content"></div>
     `;
   }
 
+  /**
+   *
+   * @param {*} slide
+   */
   getThumbnailContent_(slide) {
-    const ampImg = slide.tagName == 'AMP-IMG' ? slide :
-      slide.querySelector(':scope > amp-img');
+    const ampImg =
+      slide.tagName == 'AMP-IMG'
+        ? slide
+        : scopedQuerySelector(slide, '> amp-img');
 
     if (!ampImg) {
       return this.createDefaultThumbnail_();
@@ -200,17 +240,26 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     return img;
   }
 
+  /**
+   *
+   * @param {*} index
+   * @param {*} offset
+   * @param {*} smooth
+   */
   scrollToElement(index, offset = 0, smooth) {
     const thumbnail = this.thumbnails_[index];
     const {thumbnailsContainer_} = this;
 
+    /**
+     *
+     */
     function runner() {
       scrollContainerToElement(
-          Axis.X,
-          Alignment.CENTER,
-          thumbnailsContainer_,
-          thumbnail,
-          offset
+        Axis.X,
+        Alignment.CENTER,
+        thumbnailsContainer_,
+        thumbnail,
+        offset
       );
     }
 
@@ -221,11 +270,23 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     }
   }
 
+  /**
+   *
+   * @param {*} slide
+   * @param {*} index
+   */
   createThumbnail_(slide, index) {
     return this.createThumbnailForElement_(
-        this.getThumbnailContent_(slide), index);
+      this.getThumbnailContent_(slide),
+      index
+    );
   }
 
+  /**
+   *
+   * @param {*} index
+   * @param {*} offset
+   */
   isScrollSettled_(index, offset) {
     if (!this.ignoreScrollUntilSettled_) {
       return true;
@@ -234,6 +295,10 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     return this.requestedIndex_ == index && Math.abs(offset) <= 0.01;
   }
 
+  /**
+   *
+   * @param {*} slides
+   */
   updateSlides_(slides) {
     if (slides == this.slides_) {
       return;
@@ -248,12 +313,16 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     });
   }
 
+  /**
+   *
+   * @param {*} index
+   * @param {*} offset
+   * @param {*} smooth
+   */
   updateOffset_(index, offset, smooth) {
     if (this.touching_ || this.userScrolling_) {
       return;
     }
-
-
 
     if (this.ignoreScrollUntilSettled_) {
       return;
@@ -262,6 +331,9 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     this.scrollToElement(index, offset, smooth);
   }
 
+  /**
+   *
+   */
   handleTouchstart_() {
     this.touching_ = true;
 
@@ -271,22 +343,34 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
       this.handleManualScroll_();
     });
 
-    listenOnce(this.element, 'touchend', () => {
-      this.touching_ = false;
-      unlistenScroll();
-    }, {
-      passive: true,
-    });
+    listenOnce(
+      this.element,
+      'touchend',
+      () => {
+        this.touching_ = false;
+        unlistenScroll();
+      },
+      {
+        passive: true,
+      }
+    );
   }
 
+  /**
+   *
+   */
   handleManualScroll_() {
     this.userScrolling_ = true;
 
-    listenOnce(this.element, 'reset-reference-point', event => {
+    listenOnce(this.element, 'reset-reference-point', () => {
       this.userScrolling_ = false;
     });
   }
 
+  /**
+   *
+   * @param {*} event
+   */
   handleOffsetChangeUpdate_(event) {
     const detail = getDetail(event);
     const index = detail['index'];
@@ -301,6 +385,10 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     }
   }
 
+  /**
+   *
+   * @param {*} event
+   */
   handleIndexChangeUpdate_(event) {
     const detail = getDetail(event);
     const index = detail['index'];

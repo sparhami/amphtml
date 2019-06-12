@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-import {AutoLightboxEvents} from '../../../src/auto-lightbox';
 import {ActionSource} from '../../amp-base-carousel/0.1/action-source';
+import {AutoLightboxEvents} from '../../../src/auto-lightbox';
 import {CSS} from '../../../build/amp-inline-gallery-slides-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel';
 import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
 import {Layout} from '../../../src/layout';
-import {
-  ResponsiveAttributes,
-} from '../../amp-base-carousel/0.1/responsive-attributes';
+import {ResponsiveAttributes} from '../../amp-base-carousel/0.1/responsive-attributes';
 import {Services} from '../../../src/services';
 import {dev} from '../../../src/log';
 import {getDetail} from '../../../src/event-helper';
@@ -81,7 +79,8 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
 
     /** @private @const */
     this.responsiveAttributes_ = new ResponsiveAttributes(
-        this.attributeConfig_);
+      this.attributeConfig_
+    );
 
     /** @private {?Carousel} */
     this.carousel_ = null;
@@ -113,7 +112,8 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
 
     const sr = this.createShadowRoot_();
     const scrollContainer = dev().assertElement(
-        sr.querySelector('.i-amphtml-carousel-scroll'));
+      sr.querySelector('.i-amphtml-carousel-scroll')
+    );
     const slideSlot = scrollContainer.firstElementChild;
 
     this.carousel_ = new Carousel({
@@ -133,6 +133,9 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
     return this.mutateElement(() => {});
   }
 
+  /**
+   *
+   */
   setupListeners_() {
     this.element.addEventListener('goToSlide', event => {
       const detail = getDetail(event);
@@ -167,7 +170,7 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
   }
 
   /**
-   * @param {number} index 
+   * @param {number} index
    */
   goToSlide(index) {
     this.carousel_.goToSlide(index, {smoothScroll: false});
@@ -177,8 +180,10 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
    * @private
    */
   installAdditionalExtensions_() {
-    Services.extensionsFor(this.win)
-        .installExtensionForDoc(this.getAmpDoc(), 'amp-lightbox-gallery');
+    Services.extensionsFor(this.win).installExtensionForDoc(
+      this.getAmpDoc(),
+      'amp-lightbox-gallery'
+    );
   }
 
   /**
@@ -215,7 +220,7 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
   }
 
   /**
-   * @param {!Array<!Element>} slides 
+   * @param {!Array<!Element>} slides
    * @private
    */
   lightboxSlides_(slides) {

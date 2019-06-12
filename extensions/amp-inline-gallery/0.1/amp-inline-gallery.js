@@ -51,7 +51,7 @@ class AmpInlineGallery extends AMP.BaseElement {
 
   /**
    *
-   * @param {string}} name
+   * @param {string} name
    * @param {!JsonObject} detail
    * @private
    */
@@ -94,9 +94,15 @@ AMP.extension('amp-inline-gallery', '0.1', AMP => {
   }
 
   AMP.registerElement('amp-inline-gallery-captions', AmpInlineGalleryCaptions);
-  AMP.registerElement('amp-inline-gallery-pagination', AmpInlineGalleryPagination);
+  AMP.registerElement(
+    'amp-inline-gallery-pagination',
+    AmpInlineGalleryPagination
+  );
   AMP.registerElement('amp-inline-gallery-slides', AmpInlineGallerySlides);
   AMP.registerElement('amp-inline-gallery-slide', AmpInlineGallerySlide);
-  AMP.registerElement('amp-inline-gallery-thumbnails', AmpInlineGalleryThumbnails);
+  AMP.registerElement(
+    'amp-inline-gallery-thumbnails',
+    AmpInlineGalleryThumbnails
+  );
   AMP.registerElement('amp-inline-gallery', AmpInlineGallery, CSS);
 });

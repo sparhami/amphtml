@@ -28,7 +28,7 @@ import {htmlFor} from '../../../src/static-template';
  * @param {number} power
  */
 function exponentialFalloff(percentage, power) {
-  return Math.max(0, 1 - (1 / Math.pow(percentage, power)));
+  return Math.max(0, 1 - 1 / Math.pow(percentage, power));
 }
 
 export class AmpInlineGalleryPagination extends AMP.BaseElement {
@@ -84,10 +84,17 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     });
   }
 
+  /**
+   * @override
+   */
   layoutCallback() {
     this.updateTotal_(this.total_, true);
   }
 
+  /**
+   *
+   * @param {*} index
+   */
   createPaginationDot_(index) {
     const html = htmlFor(this.element);
     const content = html`
@@ -99,17 +106,27 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     `;
 
     content.onclick = () => {
-      const event = createCustomEvent(this.win, 'goToSlide', dict({
-        'index': index,
-      }), {
-        bubbles: true,
-      });
+      const event = createCustomEvent(
+        this.win,
+        'goToSlide',
+        dict({
+          'index': index,
+        }),
+        {
+          bubbles: true,
+        }
+      );
       this.element.dispatchEvent(event);
     };
 
     return content;
   }
 
+  /**
+   *
+   * @param {*} total
+   * @param {*} force
+   */
   updateTotal_(total, force = false) {
     if (total == this.total_ && !force) {
       return;
@@ -117,15 +134,17 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
 
     const style = computedStyle(this.win, this.element);
     const maxWidthPercentage = parseFloat(
-        style.getPropertyValue('--amp-igp-max-dots-width-percentage'));
-    const dotWidth = parseFloat(
-        style.getPropertyValue('--amp-igp-dot-width'));
+      style.getPropertyValue('--amp-igp-max-dots-width-percentage')
+    );
+    const dotWidth = parseFloat(style.getPropertyValue('--amp-igp-dot-width'));
     const dotMinSpacing = parseFloat(
-        style.getPropertyValue('--amp-igp-dot-min-spacing'));
+      style.getPropertyValue('--amp-igp-dot-min-spacing')
+    );
     const dotWidthTotal = total * dotWidth;
     const dotSpacingTotal = (total + 1) * dotMinSpacing;
     const {width} = this.getLayoutBox();
-    const useDots = width * maxWidthPercentage > dotWidthTotal + dotSpacingTotal;
+    const useDots =
+      width * maxWidthPercentage > dotWidthTotal + dotSpacingTotal;
     const dotCount = useDots ? total : 0;
 
     if (total == this.total_ && useDots == this.useDots_) {
@@ -143,6 +162,10 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     });
   }
 
+  /**
+   *
+   * @param {*} dotCount
+   */
   createDots_(dotCount) {
     this.paginationDots_.innerHTML = '';
     for (let i = 0; i < dotCount; i++) {
@@ -150,6 +173,11 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     }
   }
 
+  /**
+   *
+   * @param {*} index
+   * @param {*} offset
+   */
   updateDots_(index, offset) {
     const position = index - offset;
     const allDots = Array.from(this.paginationDots_.children);
@@ -165,10 +193,17 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     });
   }
 
+  /**
+   *
+   * @param {*} index
+   */
   updateIndex_(index) {
     this.paginationIndexEl_.textContent = index + 1;
   }
 
+  /**
+   * @param {!Event} event
+   */
   handleIndexChangeUpdate_(event) {
     const detail = getDetail(event);
     const total = detail['total'];

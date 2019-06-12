@@ -26,7 +26,7 @@ import {setImportantStyles} from '../../../src/style.js';
  * @param {number} power
  */
 function exponentialFalloff(percentage, power) {
-  return Math.max(0, 1 - (1 / Math.pow(percentage, power)));
+  return Math.max(0, 1 - 1 / Math.pow(percentage, power));
 }
 
 export class AmpInlineGalleryCaptions extends AMP.BaseElement {
@@ -75,6 +75,10 @@ export class AmpInlineGalleryCaptions extends AMP.BaseElement {
     });
   }
 
+  /**
+   *
+   * @param {*} event
+   */
   handleIndexChangeUpdate_(event) {
     const data = getDetail(event);
     const index = data['index'];
@@ -88,6 +92,8 @@ export class AmpInlineGalleryCaptions extends AMP.BaseElement {
   /**
    * Updates the opacities of the captions, based on their distance from the
    * current slide.
+   * @param {!Array<!Element>} slides
+   * @param {number} position
    */
   updateCaptionOpacities_(slides, position) {
     this.mutateElement(() => {
