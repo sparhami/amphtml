@@ -75,6 +75,9 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       'alignment': newValue => {
         this.carousel_.updateAlignment(this.getAlignmentValue_(newValue));
       },
+      'peek': newValue => {
+        this.updatePeek_(Number(newValue) || 0);
+      },
     };
 
     /** @private @const */
@@ -184,6 +187,13 @@ export class AmpInlineGallerySlides extends AMP.BaseElement {
       this.getAmpDoc(),
       'amp-lightbox-gallery'
     );
+  }
+
+  /**
+   * @param {*} peek
+   */
+  updatePeek_(peek) {
+    this.carousel_.updateVisibleCount(1 + peek);
   }
 
   /**
