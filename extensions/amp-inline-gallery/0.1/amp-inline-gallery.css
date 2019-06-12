@@ -8,3 +8,8 @@ amp-inline-gallery amp-img > .i-amphtml-replaced-content {
    */
   object-fit: contain;
 }
+
+amp-inline-gallery > amp-base-carousel,
+amp-inline-gallery > amp-inline-gallery-slides {
+  padding-bottom: var(--amp-caption-height, 0px);
+}
