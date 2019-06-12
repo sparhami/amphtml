@@ -75,13 +75,32 @@ function setTruncated(element) {
 }
 
 /**
- * @param {!Node} node The node to operate on. 
+ * @param {!Node} node The node to operate on.
  * @param {function(!Node)} cb  A callback to call for each child.
  */
 function forEachChild(node, cb) {
-  const childNodes = node.localName == 'slot' ?
-      node.assignedNodes() :
-      node.childNodes;
+  // Check for slots in the light DOM, which may have content projected into
+  // them. For example:
+  //
+  // <amp-slide>
+  //   # ShadowDOM
+  //   <amp-truncate-text>
+  //     <slot name="caption"></slot>
+  //     <button slot="expand">More</button>
+  //   </amp-truncate-text>
+  // </amp-slide>
+  //
+  // <amp-slide>
+  //   <div slot="caption">...</div>
+  // </amp-slide>
+  //
+  // We want to get the contents of the "caption" slot and iterate over them.
+  // We use flatten so that we get the slot default contents, if nothing is
+  // slotted.
+  const childNodes =
+    node.localName == 'slot'
+      ? node.assignedNodes({flatten: true})
+      : node.childNodes;
 
   for (let i = 0; i < childNodes.length; i++) {
     cb(childNodes[i]);
@@ -126,7 +145,7 @@ function truncate(node, originalText, modifiedText) {
  * @return {number} The vertical overflow, if any, in pixels.
  */
 function getOverflowY(element) {
-  return element.scrollHeight - element.offsetHeight;
+  return element./*OK*/ scrollHeight - element./*OK*/ offsetHeight;
 }
 
 /**
@@ -137,7 +156,7 @@ function getOverflowY(element) {
  * contents in any way so that event listeners and any expando properties are
  * maintained.
  *
- * Unlike CSS text truncateing, this actually removes text from the DOM. Text
+ * Unlike CSS text truncating, this actually removes text from the DOM. Text
  * nodes are cleared and not removed so that almost all DOM diffing libraries
  * continue to work. One implication of actually removing text is that it is
  * unavailable to screen readers. This is unfortunate as users would need to
@@ -156,10 +175,7 @@ function getOverflowY(element) {
  *   overflowElement: ?Element,
  * }} config
  */
-export function truncateText({
-  container,
-  overflowElement,
-} = {}) {
+export function truncateText({container, overflowElement} = {}) {
   clearTruncated(container);
 
   // If everything fits while the overflow button is hidden, we are done.
@@ -169,25 +185,34 @@ export function truncateText({
 
   // Measure here, since we just measured and the container rect should not
   // depend on truncateing.
-  const containerRect = container.getBoundingClientRect();
+  const containerRect = container./*OK*/ getBoundingClientRect();
   // Set the container as truncateed, so we show the overflow element and we can
   // truncate taking the size into account.
   setTruncated(container);
   runTruncation(container, containerRect, overflowElement);
 }
 
+/**
+ *
+ * @param {*} container
+ * @param {*} filter
+ */
 export function getNonTruncatedTextContent(container, filter) {
+  /**
+   *
+   * @param {*} node
+   */
   function combinedFilter(node) {
     return node.nodeType == Node.TEXT_NODE || filter(node);
   }
 
   return getAllNodes(container, combinedFilter)
-      .filter(node => node.nodeType == Node.TEXT_NODE)
-      .map(node => {
-        const data = node[TEXT_DATA_PROPERTY];
-        return data ? data.originalText : node.data;
-      })
-      .join('');
+    .filter(node => node.nodeType == Node.TEXT_NODE)
+    .map(node => {
+      const data = node[TEXT_DATA_PROPERTY];
+      return data ? data.originalText : node.data;
+    })
+    .join('');
 }
 
 /**
@@ -232,8 +257,10 @@ function runTruncation(container, containerRect, overflowElement) {
     }
 
     // Truncate the text node. If it got ellipsized, the we are done.
-    if (node.nodeType == Node.TEXT_NODE &&
-        maybeEllipsizeNode(node, container, containerRect)) {
+    if (
+      node.nodeType == Node.TEXT_NODE &&
+      maybeEllipsizeNode(node, container, containerRect)
+    ) {
       break;
     }
   }
@@ -270,7 +297,7 @@ function maybeEllipsizeNode(node, container, containerRect) {
   // window.
   const range = document.createRange();
   range.selectNode(node);
-  const rect = range.getBoundingClientRect();
+  const rect = range./*OK*/ getBoundingClientRect();
   const text = node.data;
 
   // If the rect has no size, there is nothing we need to do.
@@ -289,30 +316,35 @@ function maybeEllipsizeNode(node, container, containerRect) {
   // occur. As long as we have underflow, we will keep looking at a higher
   // index. Note:
   //
-  // - We use BinarySearchPreference.HIGH to find the index that is
+  // - We use BinarySearchPreference.NEXT to find the index that is
   //   overflowing when the return value is negative. When everything overflows
-  //   overflows, BinarySearchPreference.LOW returns `-0`, so we would need to
+  //   overflows, BinarySearchPreference.PREV returns `-0`, so we would need to
   //   special case that.
   // - We use BinarySearchStop.RIGHT to find the last index that is not
   //   overflowing when the return value is positive.
-  const searchIndex = binarySearch(0, text.length, offset => {
-    // Treat whitespace as being the same as the the previous non-whitespace
-    // character in terms of truncation. This is necessary as we will strip
-    // trailing whitespace, so we do not to include its width when considering
-    // if we overflow. Note this includes non-breaking whitespace.
-    while (isWhitespace(text[offset]) && offset > 0) {
-      offset--;
-    }
+  const searchIndex = binarySearch(
+    0,
+    text.length,
+    offset => {
+      // Treat whitespace as being the same as the the previous non-whitespace
+      // character in terms of truncation. This is necessary as we will strip
+      // trailing whitespace, so we do not to include its width when considering
+      // if we overflow. Note this includes non-breaking whitespace.
+      while (isWhitespace(text[offset]) && offset > 0) {
+        offset--;
+      }
 
-    return underflowAtPosition(container, node, text, offset);
-  }, BinarySearchStop.RIGHT, BinarySearchPreference.HIGH);
+      return underflowAtPosition(container, node, text, offset);
+    },
+    BinarySearchStop.RIGHT,
+    BinarySearchPreference.NEXT
+  );
 
   // When positive, seachIndex is the last underflowing index, so add one to
   // get the overflowing index.
   // When negative, searchIndex corresponds to the first overflowing index.
-  const firstOverflowingIndex = searchIndex >= 0 ?
-    searchIndex + 1 :
-    -(searchIndex + 1);
+  const firstOverflowingIndex =
+    searchIndex >= 0 ? searchIndex + 1 : -(searchIndex + 1);
 
   // Remove trailing whitespace since we do not want to have something like
   // "Hello world   …". We need to keep leading whitespace since it may be

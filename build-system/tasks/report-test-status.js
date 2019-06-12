@@ -19,10 +19,13 @@ const argv = require('minimist')(process.argv.slice(2));
 const log = require('fancy-log');
 const requestPromise = require('request-promise');
 const {cyan, green, yellow} = require('ansi-colors');
-const {gitCommitHash} = require('../../git');
-const {isTravisPullRequestBuild} = require('../../travis');
+const {gitCommitHash} = require('../git');
+const {isTravisPullRequestBuild} = require('../travis');
 
 const reportBaseUrl = 'https://amp-test-status-bot.appspot.com/v0/tests';
+
+const IS_GULP_E2E = argv._[0] === 'e2e';
+const IS_GULP_TEST = argv._[0] === 'test';
 
 const IS_INTEGRATION = !!argv.integration;
 const IS_LOCAL_CHANGES = !!argv['local-changes'];
@@ -31,59 +34,73 @@ const IS_SINGLE_PASS = !!argv.single_pass;
 const IS_UNIT = !!argv.unit;
 
 const TEST_TYPE_SUBTYPES = new Map([
-  // TODO(danielrozenberg): add 'saucelabs' to integration tests when supported.
-  ['integration', ['local', 'single-pass']],
+  ['integration', ['local', 'single-pass', 'saucelabs']],
   ['unit', ['local', 'local-changes', 'saucelabs']],
-  // TODO(danielrozenberg): add 'e2e' tests.
+  ['e2e', ['local']],
 ]);
 const TEST_TYPE_BUILD_TARGETS = new Map([
-  ['integration', ['RUNTIME', 'BUILD_SYSTEM', 'INTEGRATION_TEST']],
-  ['unit', ['RUNTIME', 'BUILD_SYSTEM', 'UNIT_TEST']],
+  ['integration', ['RUNTIME', 'FLAG_CONFIG', 'INTEGRATION_TEST']],
+  ['unit', ['RUNTIME', 'UNIT_TEST']],
+  ['e2e', ['RUNTIME', 'FLAG_CONFIG', 'E2E_TEST']],
 ]);
 
 function inferTestType() {
-  let type;
-  if (IS_UNIT) {
-    type = 'unit';
-  } else if (IS_INTEGRATION) {
-    type = 'integration';
-
-    // TODO(danielrozenberg): report integration on saucelabs
-    if (IS_SAUCELABS) {
+  if (IS_GULP_TEST) {
+    let type;
+    if (IS_UNIT) {
+      type = 'unit';
+    } else if (IS_INTEGRATION) {
+      type = 'integration';
+    } else {
       return null;
     }
-  } else {
-    return null;
-  }
 
-  if (IS_LOCAL_CHANGES) {
-    return `${type}/local-changes`;
-  } else if (IS_SAUCELABS) {
-    return `${type}/saucelabs`;
-  } else if (IS_SINGLE_PASS) {
-    return `${type}/single-pass`;
-  } else {
-    return `${type}/local`;
+    if (IS_LOCAL_CHANGES) {
+      return `${type}/local-changes`;
+    } else if (IS_SAUCELABS) {
+      return `${type}/saucelabs`;
+    } else if (IS_SINGLE_PASS) {
+      return `${type}/single-pass`;
+    } else {
+      return `${type}/local`;
+    }
+  } else if (IS_GULP_E2E) {
+    return 'e2e/local';
   }
+  return null;
 }
 
 function postReport(type, action) {
   if (type !== null && isTravisPullRequestBuild()) {
     const commitHash = gitCommitHash();
     const postUrl = `${reportBaseUrl}/${commitHash}/${type}/${action}`;
-    return requestPromise.post(postUrl)
-        .then(body => {
-          log(green('INFO:'), 'reported', cyan(`${type}/${action}`),
-              'to the test-status GitHub App');
-          if (body.length > 0) {
-            log(green('INFO:'), 'response from test-status was',
-                cyan(body.substr(0, 100)));
-          }
-        }).catch(error => {
-          log(yellow('WARNING:'), 'failed to report', cyan(`${type}/${action}`),
-              'to the test-status GitHub App:\n', error.message.substr(0, 100));
-          return;
-        });
+    return requestPromise
+      .post(postUrl)
+      .then(body => {
+        log(
+          green('INFO:'),
+          'reported',
+          cyan(`${type}/${action}`),
+          'to the test-status GitHub App'
+        );
+        if (body.length > 0) {
+          log(
+            green('INFO:'),
+            'response from test-status was',
+            cyan(body.substr(0, 100))
+          );
+        }
+      })
+      .catch(error => {
+        log(
+          yellow('WARNING:'),
+          'failed to report',
+          cyan(`${type}/${action}`),
+          'to the test-status GitHub App:\n',
+          error.message.substr(0, 100)
+        );
+        return;
+      });
   }
   return Promise.resolve();
 }
@@ -108,10 +125,25 @@ async function reportAllExpectedTests(buildTargets) {
   for (const [type, subTypes] of TEST_TYPE_SUBTYPES) {
     const testTypeBuildTargets = TEST_TYPE_BUILD_TARGETS.get(type);
     const action = testTypeBuildTargets.some(target => buildTargets.has(target))
-      ? 'queued' : 'skipped';
+      ? 'queued'
+      : 'skipped';
     for (const subType of subTypes) {
       await postReport(`${type}/${subType}`, action);
     }
+  }
+}
+
+/**
+ * Callback to the Karma.Server on('run_complete') event for simple test types.
+ *
+ * @param {!any} browsers
+ * @param {!Karma.TestResults} results
+ */
+function reportTestRunComplete(browsers, results) {
+  if (results.error) {
+    reportTestErrored();
+  } else {
+    reportTestFinished(results.success, results.failed);
   }
 }
 
@@ -119,6 +151,7 @@ module.exports = {
   reportAllExpectedTests,
   reportTestErrored,
   reportTestFinished,
+  reportTestRunComplete,
   reportTestSkipped,
   reportTestStarted,
 };

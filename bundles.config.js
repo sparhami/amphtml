@@ -22,11 +22,11 @@ const log = require('fancy-log');
 /**
  * @enum {string}
  */
-const TYPES = exports.TYPES = {
+const TYPES = (exports.TYPES = {
   AD: '_base_ad',
   MEDIA: '_base_media',
   MISC: '_base_misc',
-};
+});
 
 exports.extensionBundles = [
   {
@@ -210,10 +210,7 @@ exports.extensionBundles = [
     latestVersion: '0.1',
     options: {
       hasCss: true,
-      cssBinaries: [
-        'amp-base-carousel',
-        'carousel',
-      ],
+      cssBinaries: ['amp-base-carousel', 'carousel'],
     },
     type: TYPES.MISC,
   },
@@ -405,6 +402,12 @@ exports.extensionBundles = [
     type: TYPES.MISC,
   },
   {
+    name: 'amp-user-location',
+    version: '0.1',
+    latestVersion: '0.1',
+    type: TYPES.MISC,
+  },
+  {
     name: 'amp-gfycat',
     version: '0.1',
     latestVersion: '0.1',
@@ -483,9 +486,7 @@ exports.extensionBundles = [
     version: '0.1',
     latestVersion: '0.1',
     type: TYPES.MISC,
-    postPrepend: [
-      'third_party/inputmask/bundle.js',
-    ],
+    postPrepend: ['third_party/inputmask/bundle.js'],
   },
   {
     name: 'amp-instagram',
@@ -665,8 +666,7 @@ exports.extensionBundles = [
     name: 'amp-story',
     version: '0.1',
     latestVersion: '1.0',
-    options:
-    {
+    options: {
       hasCss: true,
       cssBinaries: [
         'amp-story-bookend',
@@ -686,8 +686,7 @@ exports.extensionBundles = [
     name: 'amp-story',
     version: '1.0',
     latestVersion: '1.0',
-    options:
-    {
+    options: {
       hasCss: true,
       cssBinaries: [
         'amp-story-bookend',
@@ -711,9 +710,7 @@ exports.extensionBundles = [
     latestVersion: '0.1',
     options: {
       hasCss: true,
-      cssBinaries: [
-        'amp-story-auto-ads-attribution',
-      ],
+      cssBinaries: ['amp-story-auto-ads-attribution'],
     },
     type: TYPES.MISC,
   },
@@ -755,9 +752,7 @@ exports.extensionBundles = [
     latestVersion: '0.1',
     options: {hasCss: true},
     type: TYPES.MISC,
-    postPrepend: [
-      'third_party/react-dates/bundle.js',
-    ],
+    postPrepend: ['third_party/react-dates/bundle.js'],
   },
   {
     name: 'amp-image-viewer',
@@ -823,10 +818,7 @@ exports.extensionBundles = [
     latestVersion: '0.1',
     options: {
       hasCss: true,
-      cssBinaries: [
-        'amp-truncate-text',
-        'amp-truncate-text-shadow',
-      ],
+      cssBinaries: ['amp-truncate-text', 'amp-truncate-text-shadow'],
     },
     type: TYPES.MISC,
   },
@@ -884,8 +876,7 @@ exports.extensionBundles = [
     name: 'amp-viewer-integration',
     version: '0.1',
     latestVersion: '0.1',
-    options:
-    {
+    options: {
       // The viewer integration code needs to run asap, so that viewers
       // can influence document state asap. Otherwise the document may take
       // a long time to learn that it should start process other extensions
@@ -997,9 +988,13 @@ exports.altMainBundles = [
  */
 function verifyBundle_(condition, field, message, name, found) {
   if (!condition) {
-    log(colors.red('ERROR:'),
-        colors.cyan(field), message, colors.cyan(name),
-        '\n' + found);
+    log(
+      colors.red('ERROR:'),
+      colors.cyan(field),
+      message,
+      colors.cyan(name),
+      '\n' + found
+    );
     process.exit(1);
   }
 }
@@ -1008,29 +1003,53 @@ exports.verifyExtensionBundles = function() {
   exports.extensionBundles.forEach(bundle => {
     const bundleString = JSON.stringify(bundle, null, 2);
     verifyBundle_(
-        'name' in bundle,
-        'name', 'is missing from', '', bundleString);
+      'name' in bundle,
+      'name',
+      'is missing from',
+      '',
+      bundleString
+    );
     verifyBundle_(
-        'version' in bundle,
-        'version', 'is missing from', bundle.name, bundleString);
+      'version' in bundle,
+      'version',
+      'is missing from',
+      bundle.name,
+      bundleString
+    );
     verifyBundle_(
-        'latestVersion' in bundle,
-        'latestVersion', 'is missing from', bundle.name, bundleString);
+      'latestVersion' in bundle,
+      'latestVersion',
+      'is missing from',
+      bundle.name,
+      bundleString
+    );
     const duplicates = exports.extensionBundles.filter(
-        duplicate => duplicate.name === bundle.name);
+      duplicate => duplicate.name === bundle.name
+    );
     verifyBundle_(
-        duplicates.every(
-            duplicate => duplicate.latestVersion === bundle.latestVersion),
-        'latestVersion', 'is not the same for all versions of', bundle.name,
-        JSON.stringify(duplicates, null, 2));
+      duplicates.every(
+        duplicate => duplicate.latestVersion === bundle.latestVersion
+      ),
+      'latestVersion',
+      'is not the same for all versions of',
+      bundle.name,
+      JSON.stringify(duplicates, null, 2)
+    );
     verifyBundle_(
-        'type' in bundle,
-        'type', 'is missing from', bundle.name, bundleString);
+      'type' in bundle,
+      'type',
+      'is missing from',
+      bundle.name,
+      bundleString
+    );
     const validTypes = Object.keys(TYPES).map(x => TYPES[x]);
     verifyBundle_(
-        validTypes.some(validType => validType === bundle.type),
-        'type', `is not one of ${validTypes.join(',')} in`, bundle.name,
-        bundleString);
+      validTypes.some(validType => validType === bundle.type),
+      'type',
+      `is not one of ${validTypes.join(',')} in`,
+      bundle.name,
+      bundleString
+    );
   });
 };
 
@@ -1038,13 +1057,25 @@ exports.verifyExtensionAliasBundles = function() {
   exports.aliasBundles.forEach(bundle => {
     const bundleString = JSON.stringify(bundle, null, 2);
     verifyBundle_(
-        'name' in bundle,
-        'name', 'is missing from', '', bundleString);
+      'name' in bundle,
+      'name',
+      'is missing from',
+      '',
+      bundleString
+    );
     verifyBundle_(
-        'version' in bundle,
-        'version', 'is missing from', bundle.name, bundleString);
+      'version' in bundle,
+      'version',
+      'is missing from',
+      bundle.name,
+      bundleString
+    );
     verifyBundle_(
-        'latestVersion' in bundle,
-        'latestVersion', 'is missing from', bundle.name, bundleString);
+      'latestVersion' in bundle,
+      'latestVersion',
+      'is missing from',
+      bundle.name,
+      bundleString
+    );
   });
 };

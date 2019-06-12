@@ -55,7 +55,7 @@ export function getDimension(axis, el) {
     left,
     right,
     width,
-  } = el./*OK*/getBoundingClientRect();
+  } = el./*OK*/ getBoundingClientRect();
 
   return {
     start: axis == Axis.X ? left : top,
@@ -92,18 +92,9 @@ export function getStart(axis, el) {
  *    the given alignment.
  */
 export function getPosition(axis, alignment, el) {
-  return alignment == Alignment.START ? getStart(axis, el) :
-    getCenter(axis, el);
-}
-
-/**
- * @param {!Axis} axis The Axis to get the offset for.
- * @param {!Element} el The Element to get the offset for.
- * @return {number} The offsetLeft or offsetTop for the Element, depending on
- *    the axis.
- */
-export function getOffsetStart(axis, el) {
-  return axis == Axis.X ? el./*OK*/offsetLeft : el./*OK*/offsetTop;
+  return alignment == Alignment.START
+    ? getStart(axis, el)
+    : getCenter(axis, el);
 }
 
 /**
@@ -156,7 +147,11 @@ export function overlaps(axis, el, position) {
  * @return {number} How far el is from alignment, as a percentage of its length.
  */
 export function getPercentageOffsetFromAlignment(
-  axis, alignment, container, el) {
+  axis,
+  alignment,
+  container,
+  el
+) {
   const elPos = getPosition(axis, alignment, el);
   const containerPos = getPosition(axis, alignment, container);
   const {length: elLength} = getDimension(axis, el);
@@ -176,7 +171,12 @@ export function getPercentageOffsetFromAlignment(
  * @return {number|undefined} The overlapping index, if one exists.
  */
 export function findOverlappingIndex(
-  axis, alignment, container, children, startIndex) {
+  axis,
+  alignment,
+  container,
+  children,
+  startIndex
+) {
   const pos = getPosition(axis, alignment, container);
 
   // First look at the start index, since is the most likely to overlap.
@@ -199,7 +199,6 @@ export function findOverlappingIndex(
   }
 }
 
-
 /**
  * Gets the current scroll position for an element along a given axis.
  * @param {!Axis} axis The axis to set the scroll position for.
@@ -208,10 +207,10 @@ export function findOverlappingIndex(
  */
 export function getScrollPosition(axis, el) {
   if (axis == Axis.X) {
-    return el./*OK*/scrollLeft;
+    return el./*OK*/ scrollLeft;
   }
 
-  return el./*OK*/scrollTop;
+  return el./*OK*/ scrollTop;
 }
 
 /**
@@ -222,11 +221,10 @@ export function getScrollPosition(axis, el) {
  */
 export function setScrollPosition(axis, el, position) {
   if (axis == Axis.X) {
-    el./*OK*/scrollLeft = position;
+    el./*OK*/ scrollLeft = position;
   } else {
-    el./*OK*/scrollTop = position;
+    el./*OK*/ scrollTop = position;
   }
-
 }
 
 /**
@@ -250,13 +248,19 @@ export function updateScrollPosition(axis, el, delta) {
  * @param {number} offset A pixel offset within the element to scroll to.
  */
 export function scrollContainerToElement(
-  axis, alignment, container, el, offset = 0) {
+  axis,
+  alignment,
+  container,
+  el,
+  offset = 0
+) {
   const startAligned = alignment == Alignment.START;
   const {length} = getDimension(axis, el);
   const snapOffset = startAligned ? getStart(axis, el) : getCenter(axis, el);
-  const scrollOffset = startAligned ? getStart(axis, container) :
-    getCenter(axis, container);
-  const delta = snapOffset - scrollOffset - (offset * length);
+  const scrollOffset = startAligned
+    ? getStart(axis, container)
+    : getCenter(axis, container);
+  const delta = snapOffset - scrollOffset - offset * length;
 
   updateScrollPosition(axis, container, delta);
 }

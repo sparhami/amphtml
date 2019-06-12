@@ -22,8 +22,8 @@ import {devAssert} from '../../../src/log';
  * @enum {number}
  */
 export const BinarySearchPreference = {
-  HIGH: 1,
-  LOW: 2,
+  NEXT: 1,
+  PREV: 2,
 };
 
 /**
@@ -49,7 +49,7 @@ export const BinarySearchStop = {
  *    values if the bottom half should be searched, and zero if the value was
  *    found.
  * @param {BinarySearchStop=} stop When there are multiple matching values,
- *    wether to return the first found value, the rightmost value or the
+ *    whether to return the first found value, the rightmost value or the
  *    leftmost value. Defaults to BinarySearchStop.IMMEDIATE.
  * @param {BinarySearchPreference=} preference A preference on whether to end
  *    on the next index or previous index when there is no exact match found.
@@ -62,7 +62,8 @@ export function binarySearch(
   end,
   condition,
   stop = BinarySearchStop.IMMEDIATE,
-  preference = BinarySearchPreference.HIGH) {
+  preference = BinarySearchPreference.NEXT
+) {
   devAssert(start <= end);
 
   let low = start;
@@ -75,11 +76,11 @@ export function binarySearch(
     const res = condition(mid);
 
     if (res > 0 || (res == 0 && stop == BinarySearchStop.RIGHT)) {
-      prefIndex = preference == BinarySearchPreference.LOW ? mid : prefIndex;
+      prefIndex = preference == BinarySearchPreference.PREV ? mid : prefIndex;
       match = res == 0 ? mid : match;
       low = mid + 1;
     } else if (res < 0 || (res == 0 && stop == BinarySearchStop.LEFT)) {
-      prefIndex = preference == BinarySearchPreference.HIGH ? mid : prefIndex;
+      prefIndex = preference == BinarySearchPreference.NEXT ? mid : prefIndex;
       match = res == 0 ? mid : match;
       high = mid - 1;
     } else {
@@ -95,12 +96,12 @@ export function binarySearch(
   // Figure out the index to fallback to. If there is a low preference and we
   // end up at the end, then fall back to the last index we visited. Similar
   // for a high preference and the start.
-  const index = !isNaN(prefIndex) ?
-    prefIndex :
-    // If we stopped, high is either less than or equal to low. So if we have
+  const index = !isNaN(prefIndex)
+    ? prefIndex
+    : // If we stopped, high is either less than or equal to low. So if we have
     // a high preference, actually return the current value of low.
-    preference == BinarySearchPreference.HIGH ?
-      low :
-      high;
+    preference == BinarySearchPreference.NEXT
+    ? low
+    : high;
   return -(index + 1);
 }

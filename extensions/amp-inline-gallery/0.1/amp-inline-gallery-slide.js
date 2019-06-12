@@ -57,22 +57,28 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
     element['getCaptionContent'] = () => this.getCaptionContent();
   }
 
+  /**
+   *
+   */
   openLightbox() {
     Services.extensionsFor(this.win)
-        .installExtensionForDoc(this.getAmpDoc(), 'amp-lightbox-gallery')
-        .then(() => {
-          const el = document.querySelector('amp-lightbox-gallery');
-          return el.getImpl();
-        })
-        .then((impl) => {
-          const img = this.element.querySelector('amp-img');
-          impl.open(img, true);
-        });
+      .installExtensionForDoc(this.getAmpDoc(), 'amp-lightbox-gallery')
+      .then(() => {
+        const el = document.querySelector('amp-lightbox-gallery');
+        return el.getImpl();
+      })
+      .then(impl => {
+        const img = this.element.querySelector('amp-img');
+        impl.open(img, true);
+      });
   }
 
+  /**
+   *
+   */
   getCaptionContent() {
     const truncateText = this.sr_.querySelector('amp-truncate-text');
-    return truncateText.getTextContent();
+    return truncateText['getTextContent']();
   }
 
   /** @override */

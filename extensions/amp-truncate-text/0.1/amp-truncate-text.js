@@ -15,17 +15,13 @@
  */
 
 import {CSS} from '../../../build/amp-truncate-text-0.1.css';
-import {
-  CSS as ShadowCSS,
-} from '../../../build/amp-truncate-text-shadow-0.1.css';
-import {devAssert} from '../../../src/log';
+import {CSS as ShadowCSS} from '../../../build/amp-truncate-text-shadow-0.1.css';
+import {createShadowRoot} from './shadow-utils';
+import {dev, userAssert} from '../../../src/log';
+import {getNonTruncatedTextContent, truncateText} from './truncate-text';
 import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
 import {iterateCursor} from '../../../src/dom';
-import {
-  getNonTruncatedTextContent,
-  truncateText,
-} from './truncate-text';
 
 /**
  * TODO(sparhami) List of stuff to do / consider:
@@ -60,30 +56,30 @@ export class AmpTruncateText extends AMP.BaseElement {
     /** @private {boolean} */
     this.useShadow_ = false;
 
-    /** @private {?MutationObserver} */
-    this.mutationObserver_ = null;
-
-    /** @private {boolean} */
-    this.truncateRequested_ = false;
+    /** @private {!MutationObserver} */
+    this.mutationObserver_ = new this.win.MutationObserver(() => {
+      this.truncate_();
+    });
 
     element['getTextContent'] = () => this.getTextContent();
   }
 
   /** @override */
   buildCallback() {
-    this.useShadow_ = !!this.element.attachShadow &&
+    userAssert(
+      isExperimentOn(this.win, 'amp-truncate-text'),
+      'The amp-truncate-text experiment must be enabled to use this ' +
+        'component.'
+    );
+
+    this.useShadow_ =
+      !!this.element.attachShadow &&
       isExperimentOn(this.win, 'amp-truncate-text-shadow');
 
     if (this.useShadow_) {
       this.buildShadow_();
     } else {
       this.build_();
-    }
-
-    if ('MutationObserver' in window) {
-      this.mutationObserver_ = new MutationObserver(() => {
-        this.truncate_();
-      });
     }
 
     this.expandSlot_.addEventListener('click', () => this.expand_());
@@ -104,10 +100,12 @@ export class AmpTruncateText extends AMP.BaseElement {
     `;
 
     const defaultSlot = this.content_.querySelector('.i-amphtml-default-slot');
-    this.expandSlot_ = this.content_
-        .querySelector('.i-amphtml-truncate-expand-slot');
-    this.collapseSlot_ = this.content_
-        .querySelector('.i-amphtml-truncate-collapse-slot');
+    this.expandSlot_ = this.content_.querySelector(
+      '.i-amphtml-truncate-expand-slot'
+    );
+    this.collapseSlot_ = this.content_.querySelector(
+      '.i-amphtml-truncate-collapse-slot'
+    );
 
     iterateCursor(this.element.querySelectorAll('[slot="expand"]'), el => {
       this.expandSlot_.appendChild(el);
@@ -126,46 +124,39 @@ export class AmpTruncateText extends AMP.BaseElement {
    * Builds the component when using Shadow DOM.
    */
   buildShadow_() {
-    // TODO(sparhami) Where is the right place to put this? Runtime? What about
-    // SSR?
-    const sizer = this.element.querySelector('i-amphtml-sizer');
-    if (sizer) {
-      sizer.setAttribute('slot', 'sizer');
-    }
-
-    // TODO(sparhami) Is there a shared place to add logic for creating
-    // shadow roots with styles? Might make sense to have it create the style
-    // as well as a slot for the sizer.
-    const sr = this.element.attachShadow({mode: 'open'});
-    const style = document.createElement('style');
-    style.textContent = ShadowCSS;
     const html = htmlFor(this.element);
-    const content = html`
-      <div>
+    const sr = createShadowRoot(
+      this.element,
+      ShadowCSS,
+      html`
         <div class="content">
           <slot></slot>
           <slot class="expand-slot" name="expand"></slot>
           <slot class="collapse-slot" name="collapse"></slot>
         </div>
-        <slot name="sizer"></slot>
-      </div>
-    `;
-
-    sr.appendChild(style);
-    sr.appendChild(content);
+      `
+    );
 
     this.content_ = null;
-    this.expandSlot_ = content.querySelector('.expand-slot');
-    this.collapseSlot_ = content.querySelector('.collapse-slot');
+    this.expandSlot_ = sr.querySelector('.expand-slot');
+    this.collapseSlot_ = sr.querySelector('.collapse-slot');
   }
 
   /** @override */
   layoutCallback() {
-    if (isExperimentOn(this.win, 'amp-truncate-text')) {
+    return this.mutateElement(() => {
       this.truncate_();
-    }
+    });
+  }
 
-    return Promise.resolve();
+  /** @override */
+  firstAttachedCallback() {
+    this.mutationObserver_.observe(this.element, {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
   }
 
   /** @override */
@@ -179,77 +170,24 @@ export class AmpTruncateText extends AMP.BaseElement {
   }
 
   /**
-   * Stops listening for mutations, if we have a `MutationObserver`.
-   * @private
-   */
-  unlistenForMutations_() {
-    if (this.mutationObserver_) {
-      this.mutationObserver_.disconnect();
-    }
-  }
-
-  /**
-   * Starts listening for mutations, if we have a `MutationObserver`.
-   * @private
-   */
-  listenForMutations_() {
-    if (this.mutationObserver_) {
-      this.mutationObserver_.observe(this.element, {
-        attributes: true,
-        characterData: true,
-        childList: true,
-        subtree: true,
-      });
-    }
-  }
-
-  /**
-   * Truncates the content of the element. This is debounced as runtime will do
-   * a mutation (add a class) right after `layoutCallback`. We want to make
-   * sure we do not truncate twice as a result. TODO(sparhami) Try to find a
-   * better solution for this.
+   * Truncates the content of the element.
    * @private
    */
   truncate_() {
-    if (this.truncateRequested_) {
-      return;
-    }
+    const container = dev().assertElement(
+      this.useShadow_ ? this.element : this.content_
+    );
+    const overflowElement = this.useShadow_
+      ? this.element.querySelector('[slot="expand"]')
+      : this.element.querySelector('.i-amphtml-truncate-expand-slot');
 
-    this.truncateRequested_ = true;
-
-    Promise.resolve()
-        .then(() => {
-        // Runtime will actually trigger another mutation one microtask after
-        // layoutCallback finishes, so we need to delay one additional
-        // microtask for that.
-        })
-        .then(() => {
-          this.truncateRequested_ = false;
-
-          const container =
-              devAssert(this.useShadow_ ? this.element : this.content_);
-          const overflowElement = this.useShadow_ ?
-            this.element.querySelector('[slot="expand"]') :
-            this.element.querySelector('.i-amphtml-truncate-expand-slot');
-
-          // Make sure mutations from truncateing do not trigger truncateing.
-          this.unlistenForMutations_();
-          truncateText({
-            container,
-            overflowElement,
-          });
-          // Listen to all changes, since they may change layout and require
-          // retruncateing.
-          this.listenForMutations_();
-        });
-  }
-
-  getTextContent() {
-    return getNonTruncatedTextContent(this.element, node => {
-      return node.nodeType == Node.ELEMENT_NODE &&
-          node.parentNode != this.element || 
-          !node.hasAttribute('slot');
+    truncateText({
+      container,
+      overflowElement,
     });
+    // Take the records to clear them out. This prevents mutations from
+    // the truncation from invoking the observer's callback.
+    this.mutationObserver_.takeRecords();
   }
 
   /**
@@ -264,6 +202,19 @@ export class AmpTruncateText extends AMP.BaseElement {
    */
   collapse_() {
     this.element.removeAttribute('i-amphtml-truncate-expanded');
+  }
+
+  /**
+   *
+   */
+  getTextContent() {
+    return getNonTruncatedTextContent(this.element, node => {
+      return (
+        (node.nodeType == Node.ELEMENT_NODE &&
+          node.parentNode != this.element) ||
+        !node.hasAttribute('slot')
+      );
+    });
   }
 }
 
