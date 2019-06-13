@@ -35,8 +35,8 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
           <amp-truncate-text layout="fill">
             <slot name="caption"></slot>
             <button class="see-more" slot="collapsed">See more</button>
-            <div class="credit" slot="persistent">
-              <slot name="credit"></slot>
+            <div class="persistent" slot="persistent">
+              <slot name="persistent"></slot>
             </div>
           </amp-truncate-text>
         </figcaption>
