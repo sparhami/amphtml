@@ -34,12 +34,15 @@ export class AmpInlineGallerySlide extends AMP.BaseElement {
         <figcaption class="caption">
           <amp-truncate-text layout="fill">
             <slot name="caption"></slot>
-            <button slot="expand">See more</button>
+            <button class="see-more" slot="collapsed">See more</button>
+            <div class="credit" slot="persistent">
+              <slot name="credit"></slot>
+            </div>
           </amp-truncate-text>
         </figcaption>
       </figure>
     `;
-    const expand = sr.querySelector('[slot="expand"]');
+    const expand = sr.querySelector('[slot="collapsed"]');
     expand.addEventListener('click', e => {
       this.openLightbox();
       e.stopPropagation();

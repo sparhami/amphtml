@@ -11,12 +11,16 @@
   <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
   <script async src="https://cdn.ampproject.org/v0.js"></script>
   <style amp-custom>
+    :root {
+      --amp-caption-margin-top: 6px;
+    }
+
     .with-background {
       background-color: #eee;
     }
 
     .caption {
-      height: 2.5em;
+      height: 3.75em;
       line-height: 1.25em;
       font-size: 1em;
     }
@@ -82,6 +86,7 @@
           Suspendisse potenti. Curabitur consequat volutpat arcu nec elementum. Etiam a turpis ac libero varius condimentum.
           Maecenas sollicitudin felis aliquam tortor vulputate, ac posuere velit semper.
         </span>
+        <div slot="credit">By Foo bar</div>
       </amp-inline-gallery-slide>
       <amp-inline-gallery-slide layout="flex-item">
         <amp-img src="../amp-base-carousel/img/greengradient.png" layout="fill"></amp-img>
