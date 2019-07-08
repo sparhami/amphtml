@@ -5,9 +5,11 @@ amp-stream-gallery:not([i-amphtml-gallery-laid-out]) {
 amp-stream-gallery .i-amphtml-carousel-content {
   display: flex;
 }
+
 .i-amphtml-stream-gallery-slides {
   order: 1;
   flex-grow: 1;
+  min-width: 1px;
 }
 
 amp-stream-gallery .i-amphtml-carousel-scroll {
