@@ -48,24 +48,24 @@ amp-stream-gallery .i-amphtml-carousel-scroll {
 
 
 /* Start outset arrow styles */
-[i-amphtml-stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
-[i-amphtml-stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-next-slot > [disabled] {
+[stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
+[stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-next-slot > [disabled] {
   opacity: 0.4;
 }
 
-[i-amphtml-stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-prev-slot > .i-amphtml-stream-gallery-prev {
+[stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-prev-slot > .i-amphtml-stream-gallery-prev {
   background-image: url('data:image/svg+xml;charset=utf-8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path  d="M14,7.4 L9.4,12 L14,16.6" fill="none" stroke="#000" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" /></svg>');
 }
 
-[i-amphtml-stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-next-slot > .i-amphtml-stream-gallery-next {
+[stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-next-slot > .i-amphtml-stream-gallery-next {
   background-image: url('data:image/svg+xml;charset=utf-8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path  d="M10,7.4 L14.6,12 L10,16.6" fill="none" stroke="#000" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" /></svg>');
 }
 /* End outset arrow styles */
 
 
 /* Start inset arrow styles */
-:not([i-amphtml-stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot,
-:not([i-amphtml-stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot {
+:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot,
+:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -73,10 +73,10 @@ amp-stream-gallery .i-amphtml-carousel-scroll {
 }
 
 
-:not([i-amphtml-stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
-:not([i-amphtml-stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > [disabled],
-[i-amphtml-stream-gallery-hide-buttons]:not([i-amphtml-stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot,
-[i-amphtml-stream-gallery-hide-buttons]:not([i-amphtml-stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot {
+:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
+:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > [disabled],
+[i-amphtml-stream-gallery-hide-buttons]:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot,
+[i-amphtml-stream-gallery-hide-buttons]:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot {
   opacity: 0;
   /** 
    * Note, screen readers can still activate the buttons when hide buttons is
@@ -85,8 +85,8 @@ amp-stream-gallery .i-amphtml-carousel-scroll {
   pointer-events: none;
 }
 
-:not([i-amphtml-stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > .i-amphtml-stream-gallery-prev,
-:not([i-amphtml-stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > .i-amphtml-stream-gallery-next {
+:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > .i-amphtml-stream-gallery-prev,
+:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > .i-amphtml-stream-gallery-next {
   filter: drop-shadow(0px 1px 2px #4a4a4a);
   width: 40px;
   height: 40px;
@@ -96,11 +96,11 @@ amp-stream-gallery .i-amphtml-carousel-scroll {
   outline: none;
 }
 
-:not([i-amphtml-stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > .i-amphtml-stream-gallery-prev {
+:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > .i-amphtml-stream-gallery-prev {
   background-image: url('data:image/svg+xml;charset=utf-8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14,7.4 L9.4,12 L14,16.6" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" /></svg>');
 }
 
-:not([i-amphtml-stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > .i-amphtml-stream-gallery-next {
+:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > .i-amphtml-stream-gallery-next {
   background-image: url('data:image/svg+xml;charset=utf-8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10,7.4 L14.6,12 L10,16.6" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" /></svg>');
 }
 /* End inset arrow styles */

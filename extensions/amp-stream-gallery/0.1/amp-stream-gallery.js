@@ -602,7 +602,7 @@ class AmpStreamGallery extends AMP.BaseElement {
     );
     toggleAttribute(
       dev().assertElement(this.content_),
-      'i-amphtml-stream-gallery-outset-arrows',
+      'stream-gallery-outset-arrows',
       this.outsetArrows_
     );
   }
