@@ -1,3 +1,5 @@
+@import "arrows.css";
+
 amp-stream-gallery:not([i-amphtml-gallery-laid-out]) {
   visibility: hidden;
 }
@@ -15,95 +17,6 @@ amp-stream-gallery .i-amphtml-carousel-content {
 amp-stream-gallery .i-amphtml-carousel-scroll {
   margin-inline-end: auto;
 }
-
-.i-amphtml-stream-gallery-arrow-prev-slot {
-  order: 0;
-  left: 0;
-}
-
-.i-amphtml-stream-gallery-arrow-next-slot {
-  order: 2;
-  right: 0;
-}
-
-/* Start shared arrow styles */
-.i-amphtml-stream-gallery-arrow-prev-slot,
-.i-amphtml-stream-gallery-arrow-next-slot {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.i-amphtml-stream-gallery-prev,
-.i-amphtml-stream-gallery-next {
-  filter: drop-shadow(0px 1px 2px #4a4a4a);
-  width: 40px;
-  height: 40px;
-  padding: 20px;
-  background-color: transparent;
-  border: none;
-  outline: none;
-}
-/* End sharded arrow styles */
-
-
-/* Start outset arrow styles */
-[stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
-[stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-next-slot > [disabled] {
-  opacity: 0.4;
-}
-
-[stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-prev-slot > .i-amphtml-stream-gallery-prev {
-  background-image: url('data:image/svg+xml;charset=utf-8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path  d="M14,7.4 L9.4,12 L14,16.6" fill="none" stroke="#000" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" /></svg>');
-}
-
-[stream-gallery-outset-arrows] > .i-amphtml-stream-gallery-arrow-next-slot > .i-amphtml-stream-gallery-next {
-  background-image: url('data:image/svg+xml;charset=utf-8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path  d="M10,7.4 L14.6,12 L10,16.6" fill="none" stroke="#000" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" /></svg>');
-}
-/* End outset arrow styles */
-
-
-/* Start inset arrow styles */
-:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot,
-:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  z-index: 1;
-}
-
-
-:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
-:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > [disabled],
-[i-amphtml-stream-gallery-hide-buttons]:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot,
-[i-amphtml-stream-gallery-hide-buttons]:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot {
-  opacity: 0;
-  /** 
-   * Note, screen readers can still activate the buttons when hide buttons is
-   * specified, even though we have `pointer-events: none`.
-   */
-  pointer-events: none;
-}
-
-:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > .i-amphtml-stream-gallery-prev,
-:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > .i-amphtml-stream-gallery-next {
-  filter: drop-shadow(0px 1px 2px #4a4a4a);
-  width: 40px;
-  height: 40px;
-  padding: 20px;
-  background-color: transparent;
-  border: none;
-  outline: none;
-}
-
-:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > .i-amphtml-stream-gallery-prev {
-  background-image: url('data:image/svg+xml;charset=utf-8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14,7.4 L9.4,12 L14,16.6" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" /></svg>');
-}
-
-:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > .i-amphtml-stream-gallery-next {
-  background-image: url('data:image/svg+xml;charset=utf-8,<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10,7.4 L14.6,12 L10,16.6" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" /></svg>');
-}
-/* End inset arrow styles */
 
 amp-stream-gallery .i-amphtml-carousel-slotted > .i-amphtml-replaced-content {
   /*

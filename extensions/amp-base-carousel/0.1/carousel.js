@@ -814,9 +814,7 @@ export class Carousel {
       return false;
     }
 
-    const el = this.scrollContainer_;
-    const {width} = el./*OK*/ getBoundingClientRect();
-    return el./*OK*/ scrollLeft + width >= el./*OK*/ scrollWidth;
+    return this.forwards ? this.isScrollAtEnd() : this.isScrollAtStart();
   }
 
   /**
@@ -828,6 +826,22 @@ export class Carousel {
       return false;
     }
 
+    return this.forwards ? this.isScrollAtStart() : this.isScrollAtEnd();
+  }
+
+  /**
+   *
+   */
+  isScrollAtEnd() {
+    const el = this.scrollContainer_;
+    const {width} = el./*OK*/ getBoundingClientRect();
+    return el./*OK*/ scrollLeft + width >= el./*OK*/ scrollWidth;
+  }
+
+  /**
+   *
+   */
+  isScrollAtStart() {
     return this.scrollContainer_./*OK*/ scrollLeft <= 0;
   }
 
