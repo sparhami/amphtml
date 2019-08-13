@@ -22,21 +22,22 @@
 import './polyfills'; // eslint-disable-line sort-imports-es6-autofix/sort-imports-es6
 
 import {Services} from './services';
-import {
-  adopt,
-  installAmpdocServices,
-  installBuiltins,
-  installRuntimeServices,
-} from './runtime';
+import {adopt} from './runtime';
 import {cssText as ampDocCss} from '../build/ampdoc.css';
-import {cssText as ampElementCss} from '../build/ampelement.css';
+import {cssText as ampSharedCss} from '../build/ampshared.css';
 import {fontStylesheetTimeout} from './font-stylesheet-timeout';
+import {
+  installAmpdocServices,
+  installBuiltinElements,
+  installRuntimeServices,
+} from './service/core-services';
 import {installAutoLightboxExtension} from './auto-lightbox';
 import {installDocService} from './service/ampdoc-impl';
 import {installErrorReporting} from './error';
 import {installPerformanceService} from './service/performance-impl';
 import {installPlatformService} from './service/platform-impl';
 import {installPullToRefreshBlocker} from './pull-to-refresh';
+import {installStandaloneExtension} from './standalone';
 import {
   installStylesForDoc,
   makeBodyVisible,
@@ -102,7 +103,7 @@ if (shouldMainBootstrapRun) {
     perf.tick('is');
     installStylesForDoc(
       ampdoc,
-      ampDocCss + ampElementCss,
+      ampDocCss + ampSharedCss,
       () => {
         startupChunk(self.document, function services() {
           // Core services.
@@ -117,19 +118,23 @@ if (shouldMainBootstrapRun) {
         });
         startupChunk(self.document, function builtins() {
           // Builtins.
-          installBuiltins(self);
+          installBuiltinElements(self);
         });
         startupChunk(self.document, function stub() {
           // Pre-stub already known elements.
           stubElementsForDoc(ampdoc);
         });
-        startupChunk(self.document, function final() {
-          installPullToRefreshBlocker(self);
-          installAutoLightboxExtension(ampdoc);
-
-          maybeValidate(self);
-          makeBodyVisible(self.document);
-        });
+        startupChunk(
+          self.document,
+          function final() {
+            installPullToRefreshBlocker(self);
+            installAutoLightboxExtension(ampdoc);
+            installStandaloneExtension(ampdoc);
+            maybeValidate(self);
+            makeBodyVisible(self.document);
+          },
+          /* makes the body visible */ true
+        );
         startupChunk(self.document, function finalTick() {
           perf.tick('e_is');
           Services.resourcesForDoc(ampdoc).ampInitComplete();

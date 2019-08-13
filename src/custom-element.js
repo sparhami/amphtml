@@ -30,8 +30,12 @@ import {ResourceState} from './service/resource';
 import {Services} from './services';
 import {Signals} from './utils/signals';
 import {blockedByConsentError, isBlockedByConsent, reportError} from './error';
-import {createLoaderElement} from '../src/loader';
-import {dev, devAssert, rethrowAsync, user} from './log';
+import {
+  createLegacyLoaderElement,
+  createNewLoaderElement,
+  isNewLoaderExperimentEnabled,
+} from '../src/loader.js';
+import {dev, devAssert, rethrowAsync, user, userAssert} from './log';
 import {getIntersectionChangeEntry} from '../src/intersection-observer-polyfill';
 import {getMode} from './mode';
 import {htmlFor} from './static-template';
@@ -39,6 +43,7 @@ import {isExperimentOn} from './experiments';
 import {parseSizeList} from './size-list';
 import {setStyle} from './style';
 import {shouldBlockOnConsentByMeta} from '../src/consent';
+import {startupChunk} from './chunk';
 import {toWin} from './types';
 import {tryResolve} from '../src/utils/promise';
 
@@ -188,7 +193,7 @@ function createBaseCustomElementClass(win) {
 
       /**
        * Resources can only be looked up when an element is attached.
-       * @private {?./service/resources-impl.Resources}
+       * @private {?./service/resources-impl.ResourcesDef}
        */
       this.resources_ = null;
 
@@ -203,6 +208,9 @@ function createBaseCustomElementClass(win) {
 
       /** @private {number} */
       this.layoutWidth_ = -1;
+
+      /** @private {number} */
+      this.layoutHeight_ = -1;
 
       /** @private {number} */
       this.layoutCount_ = 0;
@@ -335,7 +343,7 @@ function createBaseCustomElementClass(win) {
     /**
      * Returns Resources manager. Only available after attachment. It throws
      * exception before the element is attached.
-     * @return {!./service/resources-impl.Resources}
+     * @return {!./service/resources-impl.ResourcesDef}
      * @final @this {!Element}
      * @package
      */
@@ -344,7 +352,7 @@ function createBaseCustomElementClass(win) {
         this.resources_,
         'no resources yet, since element is not attached'
       );
-      return /** @typedef {!./service/resources-impl.Resources} */ this
+      return /** @typedef {!./service/resources-impl.ResourcesDef} */ this
         .resources_;
     }
 
@@ -439,15 +447,14 @@ function createBaseCustomElementClass(win) {
         this.layout_ != Layout.NODISPLAY &&
         !this.implementation_.isLayoutSupported(this.layout_)
       ) {
-        let error = 'Layout not supported: ' + this.layout_;
-        if (!this.getAttribute('layout')) {
-          error +=
-            '. The element did not specify a layout attribute. ' +
-            'Check https://www.ampproject.org/docs/guides/' +
-            'responsive/control_layout and the respective element ' +
-            'documentation for details.';
-        }
-        throw user().createError(error);
+        userAssert(
+          this.getAttribute('layout'),
+          'The element did not specify a layout attribute. ' +
+            'Check https://amp.dev/documentation/guides-and-tutorials/' +
+            'develop/style_and_layout/control_layout and the respective ' +
+            'element documentation for details.'
+        );
+        userAssert(false, `Layout not supported: ${this.layout_}`);
       }
     }
 
@@ -578,7 +585,7 @@ function createBaseCustomElementClass(win) {
         // If we do early preconnects we delay them a bit. This is kind of
         // an unfortunate trade off, but it seems faster, because the DOM
         // operations themselves are not free and might delay
-        Services.timerFor(toWin(this.ownerDocument.defaultView)).delay(() => {
+        startupChunk(self.document, () => {
           const TAG = this.tagName;
           if (!this.ownerDocument) {
             dev().error(TAG, 'preconnect without ownerDocument');
@@ -588,7 +595,7 @@ function createBaseCustomElementClass(win) {
             return;
           }
           this.implementation_.preconnectCallback(onLayout);
-        }, 1);
+        });
       }
     }
 
@@ -610,6 +617,7 @@ function createBaseCustomElementClass(win) {
      */
     updateLayoutBox(layoutBox, opt_measurementsChanged) {
       this.layoutWidth_ = layoutBox.width;
+      this.layoutHeight_ = layoutBox.height;
       if (this.isUpgraded()) {
         this.implementation_.layoutWidth_ = this.layoutWidth_;
       }
@@ -646,12 +654,34 @@ function createBaseCustomElementClass(win) {
     getSizer_() {
       if (
         this.sizerElement === undefined &&
-        this.layout_ === Layout.RESPONSIVE
+        (this.layout_ === Layout.RESPONSIVE ||
+          this.layout_ === Layout.INTRINSIC)
       ) {
         // Expect sizer to exist, just not yet discovered.
         this.sizerElement = this.querySelector('i-amphtml-sizer');
       }
       return this.sizerElement || null;
+    }
+
+    /**
+     * @param {Element} sizer
+     * @private
+     */
+    resetSizer_(sizer) {
+      if (this.layout_ === Layout.RESPONSIVE) {
+        setStyle(sizer, 'paddingTop', '0');
+        return;
+      }
+      if (this.layout_ === Layout.INTRINSIC) {
+        const intrinsicSizerImg = sizer.querySelector(
+          '.i-amphtml-intrinsic-sizer'
+        );
+        if (!intrinsicSizerImg) {
+          return;
+        }
+        intrinsicSizerImg.setAttribute('src', '');
+        return;
+      }
     }
 
     /**
@@ -735,7 +765,7 @@ function createBaseCustomElementClass(win) {
         // responsible for managing its height. Aspect ratio is no longer
         // preserved.
         this.sizerElement = null;
-        setStyle(sizer, 'paddingTop', '0');
+        this.resetSizer_(sizer);
         this.mutateOrInvoke_(() => {
           dom.removeElement(sizer);
         });
@@ -1021,6 +1051,18 @@ function createBaseCustomElementClass(win) {
      */
     createPlaceholder() {
       return this.implementation_.createPlaceholderCallback();
+    }
+
+    /**
+     * Creates a loader logo.
+     * @return {{
+     *  content: (!Element|undefined),
+     *  color: (string|undefined),
+     * }}
+     * @final @this {!Element}
+     */
+    createLoaderLogo() {
+      return this.implementation_.createLoaderLogoCallback();
     }
 
     /**
@@ -1592,7 +1634,10 @@ function createBaseCustomElementClass(win) {
       if (show == true) {
         const fallbackElement = this.getFallback();
         if (fallbackElement) {
-          this.getResources().scheduleLayout(this, fallbackElement);
+          Services.ownersForDoc(this.getAmpDoc()).scheduleLayout(
+            this,
+            fallbackElement
+          );
         }
       }
     }
@@ -1624,30 +1669,32 @@ function createBaseCustomElementClass(win) {
       // 5. The element is a `placeholder` or a `fallback`;
       // 6. The element's layout is not a size-defining layout.
       // 7. The document is A4A.
-      if (this.isInA4A_()) {
+      if (this.isInA4A()) {
         return false;
       }
       if (this.loadingDisabled_ === undefined) {
         this.loadingDisabled_ = this.hasAttribute('noloading');
       }
+
       if (
+        this.layoutCount_ > 0 ||
+        this.layoutWidth_ <= 0 || // Layout is not ready or invisible
         this.loadingDisabled_ ||
         !isLoadingAllowed(this) ||
-        this.layoutWidth_ < MIN_WIDTH_FOR_LOADING ||
-        this.layoutCount_ > 0 ||
+        isTooSmallForLoader(this) ||
         isInternalOrServiceNode(this) ||
         !isLayoutSizeDefined(this.layout_)
       ) {
         return false;
       }
+
       return true;
     }
 
     /**
      * @return {boolean}
-     * @private
      */
-    isInA4A_() {
+    isInA4A() {
       return (
         // in FIE
         (this.ampdoc_ && this.ampdoc_.win != this.ownerDocument.defaultView) ||
@@ -1674,15 +1721,26 @@ function createBaseCustomElementClass(win) {
             <div class="i-amphtml-loading-container i-amphtml-fill-content
               amp-hidden"></div>`;
 
-        const element = createLoaderElement(
-          /** @type {!Document} */ (doc),
-          this.elementName()
-        );
-        container.appendChild(element);
+        let loadingElement;
+        if (isNewLoaderExperimentEnabled(this)) {
+          loadingElement = createNewLoaderElement(
+            this.ampdoc_,
+            this,
+            this.layoutWidth_,
+            this.layoutHeight_
+          );
+        } else {
+          loadingElement = createLegacyLoaderElement(
+            /** @type {!Document} */ (doc),
+            this.elementName()
+          );
+        }
+
+        container.appendChild(loadingElement);
 
         this.appendChild(container);
         this.loadingContainer_ = container;
-        this.loadingElement_ = element;
+        this.loadingElement_ = loadingElement;
       }
     }
 
@@ -1702,6 +1760,10 @@ function createBaseCustomElementClass(win) {
         (this.layoutCount_ > 0 || this.signals_.get(CommonSignals.RENDER_START))
       ) {
         // Loading has already been canceled. Ignore.
+        return;
+      }
+      if (state === this.loadingState_ && !opt_options) {
+        // Loading state is the same.
         return;
       }
       this.loadingState_ = state;
@@ -1834,7 +1896,10 @@ function createBaseCustomElementClass(win) {
   return win.BaseCustomElementClass;
 }
 
-/** @param {!Element} element */
+/**
+ * @param {!Element} element
+ * @return {boolean}
+ */
 function isInputPlaceholder(element) {
   return 'placeholder' in element;
 }
@@ -1871,6 +1936,20 @@ function isInternalOrServiceNode(node) {
     return true;
   }
   return false;
+}
+
+/**
+ * Whether element size is too small to show loader.
+ * @param {!Element} element
+ * @return {boolean}
+ */
+function isTooSmallForLoader(element) {
+  // New loaders experiments has its own sizing heuristics
+  if (isNewLoaderExperimentEnabled(element)) {
+    return false;
+  }
+
+  return element.layoutWidth_ < MIN_WIDTH_FOR_LOADING;
 }
 
 /**

@@ -213,7 +213,7 @@ export class Carousel {
     /** @private {!Array<!Element>} */
     this.afterSpacers_ = [];
 
-    /** @private {!Array<!Element>} */
+    /** @protected {!Array<!Element>} */
     this.allSpacers_ = [];
 
     /**
@@ -232,7 +232,7 @@ export class Carousel {
      * The offset from the start edge for the element at the current index.
      * This is used to preserve relative scroll position when updating the UI
      * after things have moved (e.g. on rotate).
-     * @private {number}
+     * @protected {number}
      */
     this.currentElementOffset_ = 0;
 
@@ -296,6 +296,9 @@ export class Carousel {
      * @private {boolean}
      */
     this.forwards_ = true;
+
+    /** @private {boolean} */
+    this.hideScrollbar_ = true;
 
     /**
      * TODO(sparhami) Rename this to `activeIndex`. We do not want to expose
@@ -487,6 +490,7 @@ export class Carousel {
       return;
     }
 
+    this.ignoreNextScroll_ = false;
     this.requestedIndex_ = index;
     this.actionSource_ = actionSource;
     this.scrollSlideIntoView_(this.slides_[index], {smoothScroll});
@@ -550,6 +554,15 @@ export class Carousel {
    */
   updateForwards(forwards) {
     this.forwards_ = forwards;
+    this.updateUi();
+  }
+
+  /**
+   * @param {boolean} hideScrollbar Whether or not the scrollbar should be
+   *    hidden.
+   */
+  updateHideScrollbar(hideScrollbar) {
+    this.hideScrollbar_ = hideScrollbar;
     this.updateUi();
   }
 
@@ -637,6 +650,7 @@ export class Carousel {
         'user-scrollable',
         this.userScrollable_
       );
+      this.scrollContainer_.setAttribute('hide-scrollbar', this.hideScrollbar_);
       this.scrollContainer_.setAttribute('horizontal', this.axis_ == Axis.X);
       this.scrollContainer_.setAttribute('loop', this.isLooping());
       this.scrollContainer_.setAttribute('snap', this.snap_);
@@ -708,6 +722,7 @@ export class Carousel {
     this.touching_ = true;
     this.actionSource_ = ActionSource.TOUCH;
     this.requestedIndex_ = null;
+    this.ignoreNextScroll_ = false;
 
     listenOnce(
       window,
@@ -730,6 +745,7 @@ export class Carousel {
   handleWheel_() {
     this.actionSource_ = ActionSource.WHEEL;
     this.requestedIndex_ = null;
+    this.ignoreNextScroll_ = false;
   }
 
   /**
@@ -814,7 +830,9 @@ export class Carousel {
       return false;
     }
 
-    return this.forwards ? this.isScrollAtEnd() : this.isScrollAtStart();
+    return this.forwards_
+      ? this.isScrollAtRightEdge()
+      : this.isScrollAtLeftEdge();
   }
 
   /**
@@ -826,22 +844,28 @@ export class Carousel {
       return false;
     }
 
-    return this.forwards ? this.isScrollAtStart() : this.isScrollAtEnd();
+    return this.forwards_
+      ? this.isScrollAtLeftEdge()
+      : this.isScrollAtRightEdge();
   }
 
   /**
-   *
+   * @return {boolean} True if the scrolling is at the right edge of the
+   *    carousel. Note that this ignores RTL, and only checks for the right
+   *    edge.
    */
-  isScrollAtEnd() {
+  isScrollAtRightEdge() {
     const el = this.scrollContainer_;
     const {width} = el./*OK*/ getBoundingClientRect();
     return el./*OK*/ scrollLeft + width >= el./*OK*/ scrollWidth;
   }
 
   /**
-   *
+   * @return {boolean} True if the scrolling is at the left edge of the
+   *    carousel. Note that this ignores RTL, and only checks for the left
+   *    edge.
    */
-  isScrollAtStart() {
+  isScrollAtLeftEdge() {
     return this.scrollContainer_./*OK*/ scrollLeft <= 0;
   }
 

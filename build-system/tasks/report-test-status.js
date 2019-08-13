@@ -20,18 +20,17 @@ const log = require('fancy-log');
 const requestPromise = require('request-promise');
 const {cyan, green, yellow} = require('ansi-colors');
 const {gitCommitHash} = require('../git');
-const {isTravisPullRequestBuild} = require('../travis');
+const {travisJobUrl, isTravisPullRequestBuild} = require('../travis');
 
 const reportBaseUrl = 'https://amp-test-status-bot.appspot.com/v0/tests';
 
+const IS_GULP_INTEGRATION = argv._[0] === 'integration';
+const IS_GULP_UNIT = argv._[0] === 'unit';
 const IS_GULP_E2E = argv._[0] === 'e2e';
-const IS_GULP_TEST = argv._[0] === 'test';
 
-const IS_INTEGRATION = !!argv.integration;
-const IS_LOCAL_CHANGES = !!argv['local-changes'];
-const IS_SAUCELABS = !!(argv.saucelabs || argv.saucelabs_lite);
+const IS_LOCAL_CHANGES = !!argv.local_changes;
+const IS_SAUCELABS = !!argv.saucelabs;
 const IS_SINGLE_PASS = !!argv.single_pass;
-const IS_UNIT = !!argv.unit;
 
 const TEST_TYPE_SUBTYPES = new Map([
   ['integration', ['local', 'single-pass', 'saucelabs']],
@@ -45,37 +44,48 @@ const TEST_TYPE_BUILD_TARGETS = new Map([
 ]);
 
 function inferTestType() {
-  if (IS_GULP_TEST) {
-    let type;
-    if (IS_UNIT) {
-      type = 'unit';
-    } else if (IS_INTEGRATION) {
-      type = 'integration';
-    } else {
-      return null;
-    }
-
-    if (IS_LOCAL_CHANGES) {
-      return `${type}/local-changes`;
-    } else if (IS_SAUCELABS) {
-      return `${type}/saucelabs`;
-    } else if (IS_SINGLE_PASS) {
-      return `${type}/single-pass`;
-    } else {
-      return `${type}/local`;
-    }
-  } else if (IS_GULP_E2E) {
+  if (IS_GULP_E2E) {
     return 'e2e/local';
   }
-  return null;
+
+  let type;
+  if (IS_GULP_UNIT) {
+    type = 'unit';
+  } else if (IS_GULP_INTEGRATION) {
+    type = 'integration';
+  } else {
+    return null;
+  }
+
+  if (IS_LOCAL_CHANGES) {
+    return `${type}/local-changes`;
+  }
+
+  if (IS_SAUCELABS) {
+    return `${type}/saucelabs`;
+  }
+
+  if (IS_SINGLE_PASS) {
+    return `${type}/single-pass`;
+  }
+
+  return `${type}/local`;
 }
 
 function postReport(type, action) {
   if (type !== null && isTravisPullRequestBuild()) {
     const commitHash = gitCommitHash();
-    const postUrl = `${reportBaseUrl}/${commitHash}/${type}/${action}`;
-    return requestPromise
-      .post(postUrl)
+    return requestPromise({
+      method: 'POST',
+      uri: `${reportBaseUrl}/${commitHash}/${type}/${action}`,
+      body: JSON.stringify({
+        travisJobUrl: travisJobUrl(),
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Do not use `json: true` because the response is a string, not JSON.
+    })
       .then(body => {
         log(
           green('INFO:'),
