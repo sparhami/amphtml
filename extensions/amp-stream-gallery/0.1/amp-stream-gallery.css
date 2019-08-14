@@ -1,9 +1,5 @@
 @import "arrows.css";
 
-amp-stream-gallery:not([i-amphtml-gallery-laid-out]) {
-  visibility: hidden;
-}
-
 amp-stream-gallery .i-amphtml-carousel-content {
   display: flex;
 }

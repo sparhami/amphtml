@@ -184,12 +184,6 @@ class AmpStreamGallery extends AMP.BaseElement {
      * @private {boolean}
      */
     this.hadTouch_ = false;
-
-    /**
-     * Whether or not the element has been laid out yet.
-     * @private {boolean}
-     */
-    this.laidOut_ = false;
   }
 
   /**
@@ -260,7 +254,6 @@ class AmpStreamGallery extends AMP.BaseElement {
       initialIndex: this.getInitialIndex_(),
       runMutate: cb => this.mutateElement(cb),
     });
-    this.carousel_.pauseLayout();
     this.carousel_.updateSnap(false);
     this.carousel_.updateSlides(this.slides_);
 
@@ -292,30 +285,10 @@ class AmpStreamGallery extends AMP.BaseElement {
     this.carousel_.resumeLayout();
   }
 
-  /**
-   * Does the first layout for the carousel implementation.
-   * @private
-   */
-  firstLayout_() {
-    this.carousel_.resumeLayout();
-    // Unhides the content once things are stable. This uses mutate element to
-    // synchronize with the rest of the carousel layout, even though
-    // `layoutCallback` is in a mutate context.
-    this.mutateElement(() => {
-      this.element.setAttribute('i-amphtml-gallery-laid-out', '');
-    });
-  }
-
   /** @override */
   layoutCallback() {
     this.updateVisibleCount_();
-
-    if (!this.laidOut_) {
-      this.laidOut_ = true;
-      this.firstLayout_();
-    } else {
-      this.carousel_.updateUi();
-    }
+    this.carousel_.updateUi();
 
     return Promise.resolve();
   }
