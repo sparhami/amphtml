@@ -157,9 +157,6 @@ class AmpStreamGallery extends AMP.BaseElement {
     /** @private {!ArrowVisibility} */
     this.insetArrowVisibility_ = InsetArrowVisibility.AUTO;
 
-    /** @private {?Element} */
-    this.insetArrowContainer_ = null;
-
     /** @private {number} */
     this.maxItemWidth_ = Number.MAX_VALUE;
 
@@ -178,9 +175,6 @@ class AmpStreamGallery extends AMP.BaseElement {
     /** @private {number} */
     this.peek_ = 0;
 
-    /** @private {number} */
-    this.visibleCount_ = 1;
-
     /** @private {!Array<!Element>} */
     this.slides_ = [];
 
@@ -196,11 +190,6 @@ class AmpStreamGallery extends AMP.BaseElement {
      * @private {boolean}
      */
     this.laidOut_ = false;
-
-    /**
-     * @private {boolean}
-     */
-    this.updateVisibleCountRequested_ = false;
   }
 
   /**
@@ -249,9 +238,6 @@ class AmpStreamGallery extends AMP.BaseElement {
       '.i-amphtml-stream-gallery-slides'
     );
     this.content_ = element.querySelector('.i-amphtml-carousel-content');
-    this.insetArrowContainer_ = element.querySelector(
-      '.i-amphtml-stream-gallery-inset-arrows'
-    );
     this.prevArrowSlot_ = element.querySelector(
       '.i-amphtml-stream-gallery-arrow-prev-slot'
     );
@@ -285,6 +271,7 @@ class AmpStreamGallery extends AMP.BaseElement {
 
     this.setupActions_();
     this.setupListeners_();
+    this.updateUi_();
 
     // Signal for runtime to check children for layout.
     return this.mutateElement(() => {});
@@ -358,15 +345,12 @@ class AmpStreamGallery extends AMP.BaseElement {
   renderContainerDom_() {
     const html = htmlFor(this.element);
     return html`
-      <div>
-        <div class="i-amphtml-carousel-content">
-          <div class="i-amphtml-stream-gallery-slides">
-            <div class="i-amphtml-carousel-scroll"></div>
-          </div>
-          <div class="i-amphtml-stream-gallery-arrow-prev-slot"></div>
-          <div class="i-amphtml-stream-gallery-arrow-next-slot"></div>
+      <div class="i-amphtml-carousel-content">
+        <div class="i-amphtml-stream-gallery-slides">
+          <div class="i-amphtml-carousel-scroll"></div>
         </div>
-        <div class="i-amphtml-stream-gallery-inset-arrows"></div>
+        <div class="i-amphtml-stream-gallery-arrow-prev-slot"></div>
+        <div class="i-amphtml-stream-gallery-arrow-next-slot"></div>
       </div>
     `;
   }
@@ -514,59 +498,50 @@ class AmpStreamGallery extends AMP.BaseElement {
    * Updates the number of items visible for the internal carousel.
    */
   updateVisibleCount_() {
-    if (this.updateVisibleCountRequested_) {
-      return;
-    }
+    const {
+      maxItemWidth_,
+      minItemWidth_,
+      maxVisibleCount_,
+      minVisibleCount_,
+      slides_,
+    } = this;
+    // For outset arrows, we need to check the slides container to get the
+    // available width. Ideally, we wouldn't do a read here. We cannot do a
+    // measure, since the internal carousel implementation would update its
+    // calculations on the next frame when we update things below.
+    const width = this.outsetArrows_
+      ? this.slidesContainer_./*OK*/ getBoundingClientRect().width
+      : this.getLayoutBox().width;
+    const maxItems = this.getItemsForWidth_(width, maxItemWidth_, true);
+    const minItems = this.getItemsForWidth_(width, minItemWidth_, false);
+    const items = Math.min(minItems, maxItems);
 
-    this.updateVisibleCountRequested_ = true;
-    Promise.resolve().then(() => {
-      this.updateVisibleCountRequested_ = false;
+    const maxVisibleSlides = Math.min(slides_.length, maxVisibleCount_);
+    const visibleCount = clamp(items, minVisibleCount_, maxVisibleSlides);
+    const advanceCount = Math.floor(visibleCount);
 
-      const {
-        maxItemWidth_,
-        minItemWidth_,
-        maxVisibleCount_,
-        minVisibleCount_,
-        slides_,
-      } = this;
-      // For outset arrows, we need to check the slides container to get the
-      // available width. Ideally, we wouldn't do a read here. We cannot do a
-      // measure, since the internal carousel implementation would update its
-      // calculations on the next frame when we update things below.
-      const width = this.outsetArrows_
-        ? this.slidesContainer_./*OK*/ getBoundingClientRect().width
-        : this.getLayoutBox().width;
-      const maxItems = this.getItemsForWidth_(width, maxItemWidth_, true);
-      const minItems = this.getItemsForWidth_(width, minItemWidth_, false);
-      const items = Math.min(minItems, maxItems);
+    this.mutateElement(() => {
+      /*
+       * When we are going to show more slides than we have, cap the width so
+       * that we do not go over the max requested slide width. Otherwise,
+       * when the number of min items is less than the number of maxItems, =
+       * then we need to cap the width, so that the extra space goes to the
+       * sides.
+       */
+      const maxContainerWidth =
+        items > maxVisibleSlides
+          ? `${maxVisibleSlides * maxItemWidth_}px`
+          : minItems <= maxItems
+          ? `${minItems * maxItemWidth_}px`
+          : '';
 
-      const maxVisibleSlides = Math.min(slides_.length, maxVisibleCount_);
-      const visibleCount = clamp(items, minVisibleCount_, maxVisibleSlides);
-      const advanceCount = Math.floor(visibleCount);
-
-      this.mutateElement(() => {
-        /*
-         * When we are going to show more slides than we have, cap the width so
-         * that we do not go over the max requested slide width. Otherwise,
-         * when the number of min items is less than the number of maxItems, =
-         * then we need to cap the width, so that the extra space goes to the
-         * sides.
-         */
-        const maxContainerWidth =
-          items > maxVisibleSlides
-            ? `${maxVisibleSlides * maxItemWidth_}px`
-            : minItems <= maxItems
-            ? `${minItems * maxItemWidth_}px`
-            : '';
-
-        setStyle(this.scrollContainer_, 'max-width', maxContainerWidth);
-      });
-      this.carousel_.updateSlides(this.slides_);
-      this.carousel_.updateAdvanceCount(advanceCount);
-      this.carousel_.updateAutoAdvanceCount(advanceCount);
-      this.carousel_.updateSnapBy(advanceCount);
-      this.carousel_.updateVisibleCount(visibleCount);
+      setStyle(this.scrollContainer_, 'max-width', maxContainerWidth);
     });
+    this.carousel_.updateSlides(this.slides_);
+    this.carousel_.updateAdvanceCount(advanceCount);
+    this.carousel_.updateAutoAdvanceCount(advanceCount);
+    this.carousel_.updateSnapBy(advanceCount);
+    this.carousel_.updateVisibleCount(visibleCount);
   }
 
   /**
@@ -575,15 +550,6 @@ class AmpStreamGallery extends AMP.BaseElement {
    */
   updateOutsetArrows_(outsetArrows) {
     this.outsetArrows_ = outsetArrows;
-
-    if (this.outsetArrows_) {
-      this.content_.appendChild(this.prevArrowSlot_);
-      this.content_.appendChild(this.nextArrowSlot_);
-    } else {
-      this.insetArrowContainer_.appendChild(this.prevArrowSlot_);
-      this.insetArrowContainer_.appendChild(this.nextArrowSlot_);
-    }
-
     this.updateUi_();
   }
 

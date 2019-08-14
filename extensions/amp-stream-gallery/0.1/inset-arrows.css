@@ -1,7 +1,17 @@
+:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot {
+  width: 0;
+  justify-content: flex-start;
+}
+
+:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot {
+  width: 0;
+  justify-content: flex-end;
+}
+
 :not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > [disabled],
 :not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > [disabled],
-[i-amphtml-stream-gallery-hide-inset-buttons]:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-prev-slot > *,
-[i-amphtml-stream-gallery-hide-inset-buttons]:not([stream-gallery-outset-arrows]) > .i-amphtml-stream-gallery-arrow-next-slot > * {
+[i-amphtml-stream-gallery-hide-inset-buttons]:not([stream-gallery-outset-arrows]) .i-amphtml-stream-gallery-arrow-prev-slot > *,
+[i-amphtml-stream-gallery-hide-inset-buttons]:not([stream-gallery-outset-arrows]) .i-amphtml-stream-gallery-arrow-next-slot > * {
   opacity: 0;
   /** 
    * Note, screen readers can still activate the buttons when hide buttons is
