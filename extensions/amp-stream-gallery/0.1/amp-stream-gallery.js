@@ -19,6 +19,7 @@ import {ActionTrust} from '../../../src/action-constants';
 import {CSS} from '../../../build/amp-stream-gallery-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel.js';
 import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
+import {ChildLayoutManager} from '../../amp-base-carousel/0.1/child-layout-manager';
 import {
   ResponsiveAttributes,
   getResponsiveAttributeValue,
@@ -187,6 +188,9 @@ class AmpStreamGallery extends AMP.BaseElement {
      * @private {boolean}
      */
     this.hadTouch_ = false;
+
+    /** @private {?ChildLayoutManager} */
+    this.childLayoutManager_ = null;
   }
 
   /**
@@ -258,12 +262,27 @@ class AmpStreamGallery extends AMP.BaseElement {
       runMutate: cb => this.mutateElement(cb),
     });
     this.carousel_.updateSnap(false);
-    this.carousel_.updateSlides(this.slides_);
 
     // Handle the initial set of attributes
     toArray(this.element.attributes).forEach(attr => {
       this.attributeMutated_(attr.name, attr.value);
     });
+
+    const owners = Services.ownersForDoc(element);
+    this.childLayoutManager_ = new ChildLayoutManager({
+      ampElement: this,
+      intersectionElement: this.scrollContainer_,
+      viewportIntersectionCallback: (child, isIntersecting) => {
+        if (isIntersecting) {
+          owners.scheduleResume(this.element, child);
+        } else {
+          owners.schedulePause(this.element, child);
+        }
+      },
+    });
+
+    this.childLayoutManager_.updateChildren(this.slides_);
+    this.carousel_.updateSlides(this.slides_);
 
     this.setupActions_();
     this.setupListeners_();
@@ -291,9 +310,15 @@ class AmpStreamGallery extends AMP.BaseElement {
   /** @override */
   layoutCallback() {
     this.updateVisibleCount_();
+    this.childLayoutManager_.wasLaidOut();
     this.carousel_.updateUi();
 
     return Promise.resolve();
+  }
+
+  /** @override */
+  unlayoutCallback() {
+    this.childLayoutManager_.wasUnlaidOut();
   }
 
   /** @override */
