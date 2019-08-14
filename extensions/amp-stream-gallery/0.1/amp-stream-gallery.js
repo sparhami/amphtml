@@ -58,6 +58,9 @@ class AmpStreamGallery extends AMP.BaseElement {
    */
   getAttributeConfig_() {
     return {
+      'extra-space': newValue => {
+        this.updateExtraSpace_(newValue);
+      },
       'inset-arrow-visibility': newValue => {
         this.updateInsetArrowVisibility_(newValue);
       },
@@ -392,6 +395,17 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
+   * @return {number}
+   * @private
+   */
+  getArrowsWidth_() {
+    return (
+      this.prevArrowSlot_./* OK */ getBoundingClientRect().width +
+      this.nextArrowSlot_./* OK */ getBoundingClientRect().width
+    );
+  }
+
+  /**
    * @param {!ActionSource|undefined} actionSource
    * @return {boolean} Whether or not the action is a high trust action.
    * @private
@@ -478,13 +492,9 @@ class AmpStreamGallery extends AMP.BaseElement {
       minVisibleCount_,
       slides_,
     } = this;
-    // For outset arrows, we need to check the slides container to get the
-    // available width. Ideally, we wouldn't do a read here. We cannot do a
-    // measure, since the internal carousel implementation would update its
-    // calculations on the next frame when we update things below.
-    const width = this.outsetArrows_
-      ? this.slidesContainer_./*OK*/ getBoundingClientRect().width
-      : this.getLayoutBox().width;
+    // Need to subtract out the width of the next/prev arrows. If these are
+    // inset, they will have no width.
+    const width = this.getLayoutBox().width - this.getArrowsWidth_();
     const maxItems = this.getItemsForWidth_(width, maxItemWidth_, true);
     const minItems = this.getItemsForWidth_(width, minItemWidth_, false);
     const items = Math.min(minItems, maxItems);
@@ -508,7 +518,7 @@ class AmpStreamGallery extends AMP.BaseElement {
           ? `${minItems * maxItemWidth_}px`
           : '';
 
-      setStyle(this.scrollContainer_, 'max-width', maxContainerWidth);
+      setStyle(this.slidesContainer_, 'max-width', maxContainerWidth);
     });
     this.carousel_.updateSlides(this.slides_);
     this.carousel_.updateAdvanceCount(advanceCount);
@@ -524,6 +534,17 @@ class AmpStreamGallery extends AMP.BaseElement {
   updateOutsetArrows_(outsetArrows) {
     this.outsetArrows_ = outsetArrows;
     this.updateUi_();
+  }
+
+  /**
+   * @param {string} extraSpace
+   * @private
+   */
+  updateExtraSpace_(extraSpace) {
+    this.content_.setAttribute(
+      'i-amphtml-stream-gallery-extra-space',
+      extraSpace
+    );
   }
 
   /**

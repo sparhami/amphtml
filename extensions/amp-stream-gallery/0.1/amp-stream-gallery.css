@@ -10,8 +10,8 @@ amp-stream-gallery .i-amphtml-carousel-content {
   min-width: 1px;
 }
 
-amp-stream-gallery .i-amphtml-carousel-scroll {
-  margin-inline-end: auto;
+[i-amphtml-stream-gallery-extra-space="around"] {
+  justify-content: center;
 }
 
 amp-stream-gallery .i-amphtml-carousel-slotted > .i-amphtml-replaced-content {
