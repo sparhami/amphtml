@@ -18,7 +18,6 @@ import {ActionSource} from '../../amp-base-carousel/0.1/action-source';
 import {ActionTrust} from '../../../src/action-constants';
 import {CSS} from '../../../build/amp-stream-gallery-0.1.css';
 import {Carousel} from '../../amp-base-carousel/0.1/carousel.js';
-import {CSS as CarouselCSS} from '../../../build/carousel-0.1.css';
 import {ChildLayoutManager} from '../../amp-base-carousel/0.1/child-layout-manager';
 import {
   ResponsiveAttributes,
@@ -63,7 +62,7 @@ class AmpStreamGallery extends AMP.BaseElement {
         this.updateExtraSpace_(newValue);
       },
       'inset-arrow-visibility': newValue => {
-        this.updateInsetArrowVisibility_(newValue);
+        this.updateInsetArrowVisibility_(newValue == 'true');
       },
       'loop': newValue => {
         this.carousel_.updateLoop(newValue == 'true');
@@ -656,9 +655,5 @@ class AmpStreamGallery extends AMP.BaseElement {
 }
 
 AMP.extension('amp-stream-gallery', '0.1', AMP => {
-  AMP.registerElement(
-    'amp-stream-gallery',
-    AmpStreamGallery,
-    CarouselCSS + CSS
-  );
+  AMP.registerElement('amp-stream-gallery', AmpStreamGallery, CSS);
 });
