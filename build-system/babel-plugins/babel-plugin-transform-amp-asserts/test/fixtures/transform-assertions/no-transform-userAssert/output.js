@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 The AMP HTML Authors. All Rights Reserved.
+ * Copyright 2019 The AMP HTML Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,33 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/**
- * @enum {number}
- */
-export const KeyCodes = {
-  ENTER: 13,
-  ESCAPE: 27,
-  SPACE: 32,
-  LEFT_ARROW: 37,
-  UP_ARROW: 38,
-  RIGHT_ARROW: 39,
-  DOWN_ARROW: 40,
-};
-
-/**
- * @enum {string}
- */
-export const Keys = {
-  ENTER: 'Enter',
-  ESCAPE: 'Escape',
-  SPACE: ' ',
-  LEFT_ARROW: 'ArrowLeft',
-  UP_ARROW: 'ArrowUp',
-  RIGHT_ARROW: 'ArrowRight',
-  DOWN_ARROW: 'ArrowDown',
-  TAB: 'Tab',
-  BACKSPACE: 'Backspace',
-  HOME: 'Home',
-  END: 'End',
-};
+userAssert(1 + 1);
+userAssert(2 + 2);
+userAssert();
+let result = userAssert(dev(), 'hello', 'world');
+let result2 = userAssert();
