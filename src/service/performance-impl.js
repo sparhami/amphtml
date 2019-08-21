@@ -23,7 +23,7 @@ import {getService, registerServiceBuilder} from '../service';
 import {isCanary} from '../experiments';
 import {layoutRectLtwh} from '../layout-rect';
 import {throttle} from '../utils/rate-limit';
-import {whenDocumentComplete} from '../document-ready';
+import {whenDocumentComplete, whenDocumentReady} from '../document-ready';
 
 /**
  * Maximum number of tick events we allow to accumulate in the performance
@@ -34,9 +34,6 @@ const QUEUE_LIMIT = 50;
 
 /** @const {string} */
 const VISIBILITY_CHANGE_EVENT = 'visibilitychange';
-
-/** @const {string} */
-const BEFORE_UNLOAD_EVENT = 'beforeunload';
 
 /**
  * Fields:
@@ -162,8 +159,6 @@ export class Performance {
       this.win.PerformanceObserver.supportedEntryTypes.includes('layout-shift');
 
     this.boundOnVisibilityChange_ = this.onVisibilityChange_.bind(this);
-    this.boundTickLayoutJankScore_ = this.tickLayoutJankScore_.bind(this);
-    this.boundTickLayoutShiftScore_ = this.tickLayoutShiftScore_.bind(this);
     this.onViewerVisibilityChange_ = this.onViewerVisibilityChange_.bind(this);
 
     // Add RTV version as experiment ID, so we can slice the data by version.
@@ -171,6 +166,11 @@ export class Performance {
     if (isCanary(this.win)) {
       this.addEnabledExperiment('canary');
     }
+    // Tick document ready event.
+    whenDocumentReady(win.document).then(() => {
+      this.tick('dr');
+      this.flush();
+    });
 
     // Tick window.onload event.
     whenDocumentComplete(win.document).then(() => this.onload_());
@@ -215,18 +215,6 @@ export class Performance {
         {capture: true}
       );
 
-      // Safari does not reliably fire the `pagehide` or `visibilitychange`
-      // events when closing a tab, so we have to use `beforeunload`.
-      // See https://bugs.webkit.org/show_bug.cgi?id=151234
-      const platform = Services.platformFor(this.win);
-      if (platform.isSafari()) {
-        // TODO(#23634): Remove, explain or adjust the usage of the unload listener
-        this.win.addEventListener(
-          BEFORE_UNLOAD_EVENT,
-          this.boundTickLayoutJankScore_
-        );
-      }
-
       this.viewer_.onVisibilityChanged(this.onViewerVisibilityChange_);
     }
 
@@ -241,17 +229,6 @@ export class Performance {
         this.boundOnVisibilityChange_,
         {capture: true}
       );
-
-      // Safari does not reliably fire the `pagehide` or `visibilitychange`
-      // events when closing a tab, so we have to use `beforeunload`.
-      // See https://bugs.webkit.org/show_bug.cgi?id=151234
-      const platform = Services.platformFor(this.win);
-      if (platform.isSafari()) {
-        this.win.addEventListener(
-          BEFORE_UNLOAD_EVENT,
-          this.boundTickLayoutShiftScore_
-        );
-      }
 
       this.viewer_.onVisibilityChanged(this.onViewerVisibilityChange_);
     }
@@ -474,10 +451,6 @@ export class Performance {
         this.boundOnVisibilityChange_,
         {capture: true}
       );
-      this.win.removeEventListener(
-        BEFORE_UNLOAD_EVENT,
-        this.boundTickLayoutJankScore_
-      );
     }
   }
 
@@ -508,10 +481,6 @@ export class Performance {
         VISIBILITY_CHANGE_EVENT,
         this.boundOnVisibilityChange_,
         {capture: true}
-      );
-      this.win.removeEventListener(
-        BEFORE_UNLOAD_EVENT,
-        this.boundTickLayoutShiftScore_
       );
     }
   }
