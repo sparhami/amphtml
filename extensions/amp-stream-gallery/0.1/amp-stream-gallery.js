@@ -193,6 +193,32 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
+   * @private
+   */
+  setupListeners_() {
+    this.element.addEventListener('indexchange', event => {
+      this.onIndexChanged_(event);
+    });
+    this.element.addEventListener('scrollpositionchange', () => {
+      this.updateUi_();
+    });
+    this.prevArrowSlot_.addEventListener('click', event => {
+      // Make sure the slot itself was not clicked, since that fills the
+      // entire height of the gallery.
+      if (event.target != event.currentTarget) {
+        this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
+      }
+    });
+    this.nextArrowSlot_.addEventListener('click', event => {
+      // Make sure the slot itself was not clicked, since that fills the
+      // entire height of the gallery.
+      if (event.target != event.currentTarget) {
+        this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
+      }
+    });
+  }
+
+  /**
    * Moves the Carousel to a given index.
    * @param {number} index
    */
@@ -609,32 +635,6 @@ class AmpStreamGallery extends AMP.BaseElement {
       'stream-gallery-outset-arrows',
       this.outsetArrows_
     );
-  }
-
-  /**
-   * @private
-   */
-  setupListeners_() {
-    this.element.addEventListener('indexchange', event => {
-      this.onIndexChanged_(event);
-    });
-    this.element.addEventListener('scrollpositionchange', () => {
-      this.updateUi_();
-    });
-    this.prevArrowSlot_.addEventListener('click', event => {
-      // Make sure the slot itself was not clicked, since that fills the
-      // entire height of the gallery.
-      if (event.target != event.currentTarget) {
-        this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
-      }
-    });
-    this.nextArrowSlot_.addEventListener('click', event => {
-      // Make sure the slot itself was not clicked, since that fills the
-      // entire height of the gallery.
-      if (event.target != event.currentTarget) {
-        this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
-      }
-    });
   }
 
   /**
