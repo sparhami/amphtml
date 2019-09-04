@@ -50,6 +50,19 @@ function isSizer(el) {
   return el.tagName == 'I-AMPHTML-SIZER';
 }
 
+/**
+ * A gallery of slides, used for things like related products or articles. The
+ * main way of using this component is to specify the min and max width for
+ * each slide, which the carousel uses to determine how many slides should be
+ * shown at a time.
+ *
+ * This component differs from amp-base-carousel in the following ways:
+ *
+ * - Supports sizing via min-item-width and max-item-width
+ * - Supports outset arrows
+ * - Does not snap by default
+ * - Does not support autoplay
+ */
 class AmpStreamGallery extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
@@ -200,7 +213,7 @@ class AmpStreamGallery extends AMP.BaseElement {
       this.onIndexChanged_(event);
     });
     this.element.addEventListener('scrollpositionchange', () => {
-      this.updateUi_();
+      this.onScrollPositionChanged_();
     });
     this.prevArrowSlot_.addEventListener('click', event => {
       // Make sure the slot itself was not clicked, since that fills the
@@ -241,11 +254,64 @@ class AmpStreamGallery extends AMP.BaseElement {
 
     this.action_ = Services.actionServiceForDoc(this.element);
 
-    const {element, win} = this;
+    this.setupCarouselDom_();
+
+    // Create the internal carousel implementation.
+    this.carousel_ = new Carousel({
+      win: this.win,
+      element: this.element,
+      scrollContainer: dev().assertElement(this.scrollContainer_),
+      initialIndex: this.getInitialIndex_(),
+      runMutate: cb => this.mutateElement(cb),
+    });
+    this.carousel_.updateSnap(false);
+
+    // Handle the initial set of attributes
+    toArray(this.element.attributes).forEach(attr => {
+      this.attributeMutated_(attr.name, attr.value);
+    });
+
+    // Set up management of layout for the child slides.
+    const owners = Services.ownersForDoc(this.element);
+    const isIos = Services.platformFor(this.win).isIos();
+    this.childLayoutManager_ = new ChildLayoutManager({
+      ampElement: this,
+      intersectionElement: this.scrollContainer_,
+      // For iOS, we cannot trigger layout during scrolling or the UI will
+      // flicker, so tell the layout to simply queue the changes, which we
+      // flush after scrolling stops.
+      queueChanges: isIos,
+      // For iOS, we queue changes until scrolling stops, which we detect
+      // ~200ms after it actually stops. Load items earlier so they have time
+      // to load.
+      nearbyMarginInPercent: isIos ? 200 : 100,
+      viewportIntersectionCallback: (child, isIntersecting) => {
+        if (isIntersecting) {
+          owners.scheduleResume(this.element, child);
+        } else {
+          owners.schedulePause(this.element, child);
+        }
+      },
+    });
+
+    this.childLayoutManager_.updateChildren(this.slides_);
+    this.carousel_.updateSlides(this.slides_);
+    this.setupActions_();
+    this.setupListeners_();
+    this.updateUi_();
+  }
+
+  /**
+   * Creates the DOM for the carousel, placing the children into their correct
+   * spot.
+   */
+  setupCarouselDom_() {
+    const {element} = this;
     const children = toArray(element.children);
     let prevArrow;
     let nextArrow;
-    // Figure out which slot the children go into.
+
+    // Figure out which "slot" the children go into.
     children.forEach(c => {
       const slot = c.getAttribute('slot');
       if (slot == 'prev-arrow') {
@@ -256,9 +322,9 @@ class AmpStreamGallery extends AMP.BaseElement {
         this.slides_.push(c);
       }
     });
-    // Create the carousel's inner DOM.
-    element.appendChild(this.renderContainerDom_());
 
+    // Create the DOM, get references to elements.
+    element.appendChild(this.renderContainerDom_());
     this.scrollContainer_ = element.querySelector('.i-amphtml-carousel-scroll');
     this.slidesContainer_ = element.querySelector(
       '.i-amphtml-stream-gallery-slides'
@@ -278,43 +344,6 @@ class AmpStreamGallery extends AMP.BaseElement {
     });
     this.prevArrowSlot_.appendChild(prevArrow || this.createPrevArrow_());
     this.nextArrowSlot_.appendChild(nextArrow || this.createNextArrow_());
-
-    this.carousel_ = new Carousel({
-      win,
-      element,
-      scrollContainer: dev().assertElement(this.scrollContainer_),
-      initialIndex: this.getInitialIndex_(),
-      runMutate: cb => this.mutateElement(cb),
-    });
-    this.carousel_.updateSnap(false);
-
-    // Handle the initial set of attributes
-    toArray(this.element.attributes).forEach(attr => {
-      this.attributeMutated_(attr.name, attr.value);
-    });
-
-    const owners = Services.ownersForDoc(element);
-    this.childLayoutManager_ = new ChildLayoutManager({
-      ampElement: this,
-      intersectionElement: this.scrollContainer_,
-      viewportIntersectionCallback: (child, isIntersecting) => {
-        if (isIntersecting) {
-          owners.scheduleResume(this.element, child);
-        } else {
-          owners.schedulePause(this.element, child);
-        }
-      },
-    });
-
-    this.childLayoutManager_.updateChildren(this.slides_);
-    this.carousel_.updateSlides(this.slides_);
-
-    this.setupActions_();
-    this.setupListeners_();
-    this.updateUi_();
-
-    // Signal for runtime to check children for layout.
-    return this.mutateElement(() => {});
   }
 
   /** @override */
@@ -445,10 +474,15 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
-   * @return {number}
+   * @return {number} The amount of horizontal space the arrows require. When
+   * the arrows are inset, this is zero as they do not take space.
    * @private
    */
-  getArrowsWidth_() {
+  getWidthTakenByArrows_() {
+    if (!this.outsetArrows_) {
+      return 0;
+    }
+
     return (
       this.prevArrowSlot_./* OK */ getBoundingClientRect().width +
       this.nextArrowSlot_./* OK */ getBoundingClientRect().width
@@ -532,7 +566,8 @@ class AmpStreamGallery extends AMP.BaseElement {
   }
 
   /**
-   * Updates the number of items visible for the internal carousel.
+   * Updates the number of items visible for the internal carousel based on
+   * the min/max item widths and how much space is available.
    */
   updateVisibleCount_() {
     const {
@@ -544,7 +579,7 @@ class AmpStreamGallery extends AMP.BaseElement {
     } = this;
     // Need to subtract out the width of the next/prev arrows. If these are
     // inset, they will have no width.
-    const width = this.getLayoutBox().width - this.getArrowsWidth_();
+    const width = this.getLayoutBox().width - this.getWidthTakenByArrows_();
     const maxItems = this.getItemsForWidth_(width, maxItemWidth_, true);
     const minItems = this.getItemsForWidth_(width, minItemWidth_, false);
     const items = Math.min(minItems, maxItems);
@@ -557,7 +592,7 @@ class AmpStreamGallery extends AMP.BaseElement {
       /*
        * When we are going to show more slides than we have, cap the width so
        * that we do not go over the max requested slide width. Otherwise,
-       * when the number of min items is less than the number of maxItems, =
+       * when the number of min items is less than the number of maxItems,
        * then we need to cap the width, so that the extra space goes to the
        * sides.
        */
@@ -635,6 +670,17 @@ class AmpStreamGallery extends AMP.BaseElement {
       'stream-gallery-outset-arrows',
       this.outsetArrows_
     );
+  }
+
+  /**
+   * Update the UI (buttons) for the new scroll position. This occurs when
+   * scrolling has settled.
+   */
+  onScrollPositionChanged_() {
+    // Now that scrolling has settled, flush any layout changes for iOS since
+    // it will not cause flickering.
+    this.childLayoutManager_.flushChanges();
+    this.updateUi_();
   }
 
   /**
