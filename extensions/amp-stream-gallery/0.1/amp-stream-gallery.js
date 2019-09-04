@@ -51,6 +51,71 @@ function isSizer(el) {
 }
 
 class AmpStreamGallery extends AMP.BaseElement {
+  /** @param {!AmpElement} element */
+  constructor(element) {
+    super(element);
+
+    /** @private @const */
+    this.responsiveAttributes_ = new ResponsiveAttributes(
+      this.getAttributeConfig_()
+    );
+
+    /** @private {?../../../src/service/action-impl.ActionService} */
+    this.action_ = null;
+
+    /** @private {?Carousel} */
+    this.carousel_ = null;
+
+    /** @private {?Element} */
+    this.content_ = null;
+
+    /** @private {?Element} */
+    this.nextArrowSlot_ = null;
+
+    /** @private {?Element} */
+    this.prevArrowSlot_ = null;
+
+    /** @private {?Element} */
+    this.scrollContainer_ = null;
+
+    /** @private {?Element} */
+    this.slidesContainer_ = null;
+
+    /** @private {!ArrowVisibility} */
+    this.insetArrowVisibility_ = InsetArrowVisibility.AUTO;
+
+    /** @private {number} */
+    this.maxItemWidth_ = Number.MAX_VALUE;
+
+    /** @private {number} */
+    this.maxVisibleCount_ = Number.MAX_VALUE;
+
+    /** @private {number} */
+    this.minItemWidth_ = 0;
+
+    /** @private {number} */
+    this.minVisibleCount_ = 1;
+
+    /** @private {boolean} */
+    this.outsetArrows_ = false;
+
+    /** @private {number} */
+    this.peek_ = 0;
+
+    /** @private {!Array<!Element>} */
+    this.slides_ = [];
+
+    /**
+     * Whether or not the user has interacted with the carousel using touch in
+     * the past at any point.
+     * @private {boolean}
+     */
+    this.hadTouch_ = false;
+
+    /** @private {?ChildLayoutManager} */
+    this.childLayoutManager_ = null;
+  }
+
   /**
    * The configuration for handling attributes on this element.
    * @return {!Object<string, function(string)>}
@@ -125,71 +190,6 @@ class AmpStreamGallery extends AMP.BaseElement {
       },
       ActionTrust.LOW
     );
-  }
-
-  /** @param {!AmpElement} element */
-  constructor(element) {
-    super(element);
-
-    /** @private @const */
-    this.responsiveAttributes_ = new ResponsiveAttributes(
-      this.getAttributeConfig_()
-    );
-
-    /** @private {?../../../src/service/action-impl.ActionService} */
-    this.action_ = null;
-
-    /** @private {?Carousel} */
-    this.carousel_ = null;
-
-    /** @private {?Element} */
-    this.content_ = null;
-
-    /** @private {?Element} */
-    this.nextArrowSlot_ = null;
-
-    /** @private {?Element} */
-    this.prevArrowSlot_ = null;
-
-    /** @private {?Element} */
-    this.scrollContainer_ = null;
-
-    /** @private {?Element} */
-    this.slidesContainer_ = null;
-
-    /** @private {!ArrowVisibility} */
-    this.insetArrowVisibility_ = InsetArrowVisibility.AUTO;
-
-    /** @private {number} */
-    this.maxItemWidth_ = Number.MAX_VALUE;
-
-    /** @private {number} */
-    this.maxVisibleCount_ = Number.MAX_VALUE;
-
-    /** @private {number} */
-    this.minItemWidth_ = 0;
-
-    /** @private {number} */
-    this.minVisibleCount_ = 1;
-
-    /** @private {boolean} */
-    this.outsetArrows_ = false;
-
-    /** @private {number} */
-    this.peek_ = 0;
-
-    /** @private {!Array<!Element>} */
-    this.slides_ = [];
-
-    /**
-     * Whether or not the user has interacted with the carousel using touch in
-     * the past at any point.
-     * @private {boolean}
-     */
-    this.hadTouch_ = false;
-
-    /** @private {?ChildLayoutManager} */
-    this.childLayoutManager_ = null;
   }
 
   /**
@@ -622,11 +622,15 @@ class AmpStreamGallery extends AMP.BaseElement {
       this.updateUi_();
     });
     this.prevArrowSlot_.addEventListener('click', event => {
+      // Make sure the slot itself was not clicked, since that fills the
+      // entire height of the gallery.
       if (event.target != event.currentTarget) {
         this.carousel_.prev(ActionSource.GENERIC_HIGH_TRUST);
       }
     });
     this.nextArrowSlot_.addEventListener('click', event => {
+      // Make sure the slot itself was not clicked, since that fills the
+      // entire height of the gallery.
       if (event.target != event.currentTarget) {
         this.carousel_.next(ActionSource.GENERIC_HIGH_TRUST);
       }
