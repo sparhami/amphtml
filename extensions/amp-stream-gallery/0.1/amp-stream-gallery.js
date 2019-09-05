@@ -31,7 +31,7 @@ import {dict} from '../../../src/utils/object';
 import {htmlFor} from '../../../src/static-template';
 import {isExperimentOn} from '../../../src/experiments';
 import {isLayoutSizeDefined} from '../../../src/layout';
-import {iterateCursor, toggleAttribute} from '../../../src/dom';
+import {isRTL, iterateCursor, toggleAttribute} from '../../../src/dom';
 import {setStyle} from '../../../src/style';
 import {toArray} from '../../../src/types';
 
@@ -265,6 +265,9 @@ class AmpStreamGallery extends AMP.BaseElement {
       runMutate: cb => this.mutateElement(cb),
     });
     this.carousel_.updateSnap(false);
+    // This is not correct, we really get the computed style of the element
+    // and check the direction, but that will force a style calculation.
+    this.carousel_.updateForwards(isRTL(this.element.ownerDocument));
 
     // Handle the initial set of attributes
     toArray(this.element.attributes).forEach(attr => {
