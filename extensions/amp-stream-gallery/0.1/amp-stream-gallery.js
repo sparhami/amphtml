@@ -140,7 +140,7 @@ class AmpStreamGallery extends AMP.BaseElement {
         this.updateExtraSpace_(newValue);
       },
       'inset-arrow-visibility': newValue => {
-        this.updateInsetArrowVisibility_(newValue == 'true');
+        this.updateInsetArrowVisibility_(newValue);
       },
       'loop': newValue => {
         this.carousel_.updateLoop(newValue == 'true');
@@ -667,7 +667,7 @@ class AmpStreamGallery extends AMP.BaseElement {
     );
     toggleAttribute(
       dev().assertElement(this.content_),
-      'stream-gallery-outset-arrows',
+      'amp-stream-gallery-outset-arrows',
       this.outsetArrows_
     );
   }
