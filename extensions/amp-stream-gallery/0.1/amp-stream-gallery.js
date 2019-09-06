@@ -267,7 +267,7 @@ class AmpStreamGallery extends AMP.BaseElement {
     this.carousel_.updateSnap(false);
     // This is not correct, we really get the computed style of the element
     // and check the direction, but that will force a style calculation.
-    this.carousel_.updateForwards(isRTL(this.element.ownerDocument));
+    this.carousel_.updateForwards(!isRTL(this.element.ownerDocument));
 
     // Handle the initial set of attributes
     toArray(this.element.attributes).forEach(attr => {

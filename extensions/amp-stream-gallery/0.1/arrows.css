@@ -50,7 +50,13 @@
   transition-timing-function: ease-out;
 }
 
-amp-stream-gallery[dir="rtl"] .i-amphtml-stream-gallery-prev,
-amp-stream-gallery[dir="rtl"] .i-amphtml-stream-gallery-next {
+/*
+ * TODO(sparhami): Ideally we would use amp-stream-gallery:dir(rtl), but it
+ * does not have wide support. This requires that the page sets an attribute
+ * explicitly and prevents mixed directionality (e.g. ltr content in an rtl
+ * page) from working correctly.
+ */
+[dir="rtl"] .i-amphtml-stream-gallery-prev,
+[dir="rtl"] .i-amphtml-stream-gallery-next {
   transform: scaleX(-1);
 }
