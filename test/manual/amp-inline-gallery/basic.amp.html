@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
   <link href='https://fonts.googleapis.com/css?family=Questrial' rel='stylesheet' type='text/css'>
   <script async custom-element="amp-inline-gallery" src="https://cdn.ampproject.org/v0/amp-inline-gallery-0.1.js"></script>
+  <script async custom-element="amp-base-carousel" src="https://cdn.ampproject.org/v0/amp-base-carousel-0.1.js"></script>
   <script async custom-element="amp-truncate-text" src="https://cdn.ampproject.org/v0/amp-truncate-text-0.1.js"></script>
   <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
   <script async src="https://cdn.ampproject.org/v0.js"></script>
@@ -50,7 +51,7 @@
     Some content above the carousel.
   </div>
   <amp-inline-gallery layout="container">
-    <amp-inline-gallery-slides layout="responsive" width="3.6" height="2" peek="0.2">
+    <amp-base-carousel layout="responsive" width="3.6" height="2" visible-count="1.4" snap-align="center" loop="true">
       <button class="prev-arrow" slot="prev-arrow">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path  d="M14,7.4 L9.4,12 L14,16.6" fill="none" stroke="#fff" stroke-width="2px" stroke-linejoin="round" stroke-linecap="round" /></svg>
       </button>
@@ -115,7 +116,7 @@
       <amp-inline-gallery-slide>
         <amp-img src="../amp-base-carousel/img/lilacgradient.png" layout="fill"></amp-img>
       </amp-inline-gallery-slide>
-    </amp-inline-gallery-slides>
+    </amp-base-carousel>
     <amp-inline-gallery-captions class="caption" layout="container">
     </amp-inline-gallery-captions>
     <amp-inline-gallery-pagination layout="fixed-height" height="24">
