@@ -160,7 +160,7 @@ git branch -u upstream/master master
 
 Now that you have all of the files copied locally you can actually build the code and run a local server to try things out. We use Node.js, the Yarn package manager, Closure Compiler, and the Gulp build system to build amphtml and start up a local server that lets you try out your changes.
 
-* Install the latest LTS version of [Node.js](https://nodejs.org/) (which includes npm). An easy way to do so is with `nvm` (Mac and Linux: [here](https://github.com/creationix/nvm), Windows: [here](https://github.com/coreybutler/nvm-windows))
+* Install the latest LTS version of [Node.js](https://nodejs.org/) (which includes npm). If you're on Mac or Linux, an easy way to install Node.js is with `nvm`: [here](https://github.com/creationix/nvm).
 
    ```
    nvm install --lts
@@ -205,9 +205,9 @@ Now whenever you're ready to build amphtml and start up your local server, simpl
 gulp
 ```
 
-Running the `gulp` command will compile the code and start up a Node.js server listening on port 8000.  Once you see a message like `Finished 'default'` you can access the local server in your browser at [http://localhost:8000](http://localhost:8000)
+Running the `gulp` command will start up a Node.js server listening on port 8000.  Once you see a message like `Finished 'default'` you can access the local server in your browser at [http://localhost:8000](http://localhost:8000).
 
-You can browse the [http://localhost:8000/examples](http://localhost:8000/examples) directory to see some demo pages for various AMP components and combination of components.
+You can browse the [http://localhost:8000/examples](http://localhost:8000/examples) directory to see some demo pages for various AMP components and combination of components. When a page is visited, the JS files and extensions used by the page will get lazily built and served.
 
 Note that by default each of the pages in the /examples directory uses the unminified AMP JavaScript from your local server. You can also change which JS to load from local server by hitting the `/serve_mode=<mode>` endpoint:
 
@@ -222,6 +222,12 @@ Note that by default each of the pages in the /examples directory uses the unmin
 - [http://localhost:8000/serve_mode=cdn](http://localhost:8000/serve_mode=cdn)
 
   Minified AMP JavaScript is served from `cdn.ampproject.org`.
+
+- http://localhost:8000/serve_mode=<RTV_NUMBER>
+
+  E.g. http://localhost:8000/serve_mode=001907161745080
+
+  Minified AMP JavaScript is served from `cdn.ampproject.org/rtv/<RTV_NUMBER>`, the RTV build from the given RTV number.
 
 When you're ready to make changes, you'll want to follow the steps below for creating a branch, testing and sending your changes for review.
 
@@ -354,7 +360,7 @@ For example, if you use [Visual Studio Code](https://code.visualstudio.com/), yo
 
 Alternatively, you can manually fix lint errors in your code by running:
 ```
-gulp lint --local-changes --fix
+gulp lint --local_changes --fix
 ```
 
 # Testing your changes
@@ -368,10 +374,10 @@ Note: You can automatically run critical checks before `git push` by enabling ou
 To run the tests that are affected by the changes on your feature branch:
 
 ```
-gulp test --local-changes
+gulp unit --local_changes
 ```
 
-By default, all tests are run on Chrome. Pass `--firefox` or `--safari` to run tests in Firefox and Safari, respectively.
+By default, all tests are run on Chrome. Pass one of the following flags to run tests on a different browser: `--firefox`, `--safari`, `--edge`, `--ie`.
 
 If you need help with fixing failing tests, please ask on the GitHub issue you're working on or reach out to the community as described in [How to get help](#how-to-get-help).
 
@@ -396,16 +402,22 @@ The `amphtml` testing framework uses the [Mocha](https://mochajs.org/), [Chai](h
 
 Existing components will usually have existing tests that you can follow as an example. For example, the [amp-video](../extensions/amp-video/amp-video.md) component has tests in [test/test-amp-video.js](../extensions/amp-video/0.1/test/test-amp-video.js).
 
-To run tests in a single file, use `gulp test --files=<path>`:
+To run tests in a single file, use `gulp unit --files=<path>`:
 
 ```
-gulp test --files=extensions/amp-youtube/0.1/test/test-amp-youtube.js
+gulp unit --files=extensions/amp-youtube/0.1/test/test-amp-youtube.js
+```
+
+To run tests in multiple files, use `gulp unit --files=<path-1> --files=<path-2>`:
+
+```
+gulp unit --files=extensions/amp-story/1.0/test/test-amp-story-embedded-component.js --files=extensions/amp-story/1.0/test/test-amp-story-hint.js
 ```
 
 Testing tips:
 
 - Use Mocha's [`.only()`](https://mochajs.org/#exclusive-tests) feature to exclusively run certain test-cases or suites.
-- Add `--watch` to your `gulp test` command to automatically re-run tests on code changes.
+- Add `--watch` to your `gulp unit` command to automatically re-run tests on code changes.
 
 For more help, see [How to get help](#how-to-get-help).
 

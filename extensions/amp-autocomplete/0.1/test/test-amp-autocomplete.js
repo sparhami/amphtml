@@ -16,7 +16,6 @@
 
 import '../amp-autocomplete';
 import {Keys} from '../../../../src/utils/key-codes';
-import {toggleExperiment} from '../../../../src/experiments';
 
 describes.realWin(
   'amp-autocomplete unit tests',
@@ -31,7 +30,6 @@ describes.realWin(
     beforeEach(() => {
       win = env.win;
       doc = win.document;
-      toggleExperiment(win, 'amp-autocomplete', true);
 
       const form = doc.createElement('form');
       const ampAutocomplete = doc.createElement('amp-autocomplete');
@@ -918,12 +916,23 @@ describes.realWin(
         });
       });
 
-      it('should display fallback when provided', () => {
+      it('should not display fallback before user interaction', () => {
         sandbox.stub(impl, 'getFallback').returns(true);
         return element.layoutCallback().then(() => {
-          expect(getDataSpy).to.have.been.calledOnce;
-          expect(fallbackSpy).to.have.been.calledWith('Error for test');
-          expect(toggleFallbackSpy).to.have.been.calledWith(true);
+          expect(getDataSpy).not.to.have.been.called;
+          expect(fallbackSpy).not.to.have.been.called;
+          expect(toggleFallbackSpy).not.to.have.been.called;
+        });
+      });
+
+      it('should display fallback after user interaction if provided', () => {
+        sandbox.stub(impl, 'getFallback').returns(true);
+        return element.layoutCallback().then(() => {
+          impl.checkFirstInteractionAndMaybeFetchData_().then(() => {
+            expect(getDataSpy).to.have.been.calledOnce;
+            expect(fallbackSpy).to.have.been.calledWith('Error for test');
+            expect(toggleFallbackSpy).to.have.been.calledWith(true);
+          });
         });
       });
     });

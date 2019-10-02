@@ -34,6 +34,7 @@ import {
   closest,
   closestAncestorElementBySelector,
   elementByTag,
+  getVerticalScrollbarWidth,
   scopedQuerySelectorAll,
   toggleAttribute,
 } from '../../../src/dom';
@@ -60,7 +61,7 @@ import {triggerAnalyticsEvent} from '../../../src/analytics';
 const TAG = 'amp-lightbox-gallery';
 const DEFAULT_GALLERY_ID = 'amp-lightbox-gallery';
 const SLIDE_ITEM_SELECTOR =
-  '.i-amphtml-slide-item, .i-amphtml-carousel-slotted, > :not([slot])';
+  '.i-amphtml-slide-item, .i-amphtml-carousel-slide-item, > :not([slot])';
 
 /**
  * Set of namespaces that indicate the lightbox controls mode.
@@ -103,12 +104,6 @@ export class AmpLightboxGallery extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
-
-    /** @private @const {boolean} */
-    this.useBaseCarousel_ = isExperimentOn(
-      this.win,
-      'amp-lightbox-gallery-base-carousel'
-    );
 
     /** @private {!Document} */
     this.doc_ = this.win.document;
@@ -156,7 +151,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     /** @private {?Element} */
     this.mask_ = null;
 
-    /** @private {?Element} */
+    /** @protected {?Element} */
     this.navControls_ = null;
 
     /** @private {?Element} */
@@ -171,7 +166,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     /** @private  {?Element} */
     this.gallery_ = null;
 
-    /** @private  {?Element} */
+    /** @protected  {?Element} */
     this.topBar_ = null;
 
     /** @private {!LightboxControlsModes} */
@@ -215,8 +210,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
         this.manager_ = manager;
         this.history_ = Services.historyForDoc(this.getAmpDoc());
         this.action_ = Services.actionServiceForDoc(this.element);
-        const viewer = Services.viewerForDoc(this.getAmpDoc());
-        return viewer.whenFirstVisible();
+        return this.getAmpDoc().whenFirstVisible();
       })
       .then(() => {
         this.container_ = htmlFor(/** @type {!Document} */ (this.doc_))`
@@ -280,6 +274,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    * Return a cleaned clone of the given element for building
    * carousel slides with.
    * @param {!Element} element
+   * @return {*} TODO(#23582): Specify return type
    * @private
    */
   cloneLightboxableElement_(element) {
@@ -313,6 +308,12 @@ export class AmpLightboxGallery extends AMP.BaseElement {
         const container = this.doc_.createElement('div');
         const imageViewer = htmlFor(this.doc_)`
           <amp-image-viewer layout="fill"></amp-image-viewer>`;
+        // Copy any data attributes from the cloneNode to the new slide
+        // container. For example. when cloning carousel slides, we want to
+        // carry over data-slide-id.
+        for (const name in clonedNode.dataset) {
+          container.dataset[name] = clonedNode.dataset[name];
+        }
         clonedNode.removeAttribute('class');
         imageViewer.appendChild(clonedNode);
         container.appendChild(imageViewer);
@@ -333,11 +334,10 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    */
   findOrBuildCarousel_(lightboxGroupId) {
     devAssert(this.container_);
-    const tag = this.useBaseCarousel_ ? 'amp-base-carousel' : 'amp-carousel';
     const existingCarousel = this.element.querySelector(
-      `${escapeCssSelectorIdent(
-        tag
-      )}[amp-lightbox-group=${escapeCssSelectorIdent(lightboxGroupId)}]`
+      `amp-carousel[amp-lightbox-group=${escapeCssSelectorIdent(
+        lightboxGroupId
+      )}]`
     );
     if (existingCarousel) {
       this.carousel_ = existingCarousel;
@@ -367,13 +367,18 @@ export class AmpLightboxGallery extends AMP.BaseElement {
    * @private
    */
   buildCarousel_(lightboxGroupId) {
-    const extension = this.useBaseCarousel_
-      ? 'amp-base-carousel'
-      : 'amp-carousel';
+    const carouselVersion = isExperimentOn(
+      this.win,
+      'amp-lightbox-gallery-carousel-0-2'
+    )
+      ? '0.2'
+      : '0.1';
+
     return Promise.all([
       Services.extensionsFor(this.win).installExtensionForDoc(
         this.getAmpDoc(),
-        extension
+        'amp-carousel',
+        carouselVersion
       ),
       Services.extensionsFor(this.win).installExtensionForDoc(
         this.getAmpDoc(),
@@ -384,14 +389,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
         return this.manager_.getElementsForLightboxGroup(lightboxGroupId);
       })
       .then(list => {
-        this.carousel_ = this.useBaseCarousel_
-          ? htmlFor(this.doc_)`
-          <amp-base-carousel type="slides" layout="fill" loop="true">
-            <div slot="prev-arrow"></div>
-            <div slot="next-arrow"></div>
-          </amp-base-carousel>
-        `
-          : htmlFor(this.doc_)`
+        this.carousel_ = htmlFor(this.doc_)`
           <amp-carousel type="slides" layout="fill" loop="true"></amp-carousel>
         `;
         this.carousel_.setAttribute('amp-lightbox-group', lightboxGroupId);
@@ -667,7 +665,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     const slides = this.elementsMetadata_[lbgId].map(
       elemMetadata => elemMetadata.element
     );
-    this.schedulePause(slides);
+    Services.ownersForDoc(this.element).schedulePause(this.element, slides);
   }
 
   /**
@@ -739,8 +737,7 @@ export class AmpLightboxGallery extends AMP.BaseElement {
     this.sourceElement_ = element;
     const lightboxGroupId = element.getAttribute('lightbox') || 'default';
     this.currentLightboxGroupId_ = lightboxGroupId;
-    this.hasVerticalScrollbarWidth_ =
-      this.getViewport().getVerticalScrollbarWidth() > 0;
+    this.hasVerticalScrollbarWidth_ = getVerticalScrollbarWidth(this.win) > 0;
     return this.findOrInitializeLightbox_(lightboxGroupId)
       .then(() => {
         return this.getViewport().enterLightboxMode();
@@ -755,8 +752,16 @@ export class AmpLightboxGallery extends AMP.BaseElement {
       .then(() => {
         this.isActive_ = true;
 
-        this.updateInViewport(dev().assertElement(this.container_), true);
-        this.scheduleLayout(dev().assertElement(this.container_));
+        const owners = Services.ownersForDoc(this.element);
+        owners.updateInViewport(
+          this.element,
+          dev().assertElement(this.container_),
+          true
+        );
+        owners.scheduleLayout(
+          this.element,
+          dev().assertElement(this.container_)
+        );
 
         this.doc_.documentElement.addEventListener(
           'keydown',
@@ -1187,7 +1192,10 @@ export class AmpLightboxGallery extends AMP.BaseElement {
         if (this.hasVerticalScrollbarWidth_) {
           this.getViewport().leaveLightboxMode();
         }
-        this.schedulePause(dev().assertElement(this.container_));
+        Services.ownersForDoc(this.element).schedulePause(
+          this.element,
+          dev().assertElement(this.container_)
+        );
         this.pauseLightboxChildren_();
         this.carousel_ = null;
         if (this.historyId_ != -1) {
