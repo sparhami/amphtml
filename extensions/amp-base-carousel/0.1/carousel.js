@@ -1121,7 +1121,7 @@ export class Carousel {
     const offset = getPercentageOffsetFromAlignment(
       axis_,
       alignment_,
-      element_,
+      scrollContainer_,
       overlappingElement
     );
     this.updateCurrentElementOffset_(newIndex, offset);
@@ -1222,7 +1222,7 @@ export class Carousel {
     const actualOffset = getPercentageOffsetFromAlignment(
       axis_,
       alignment_,
-      element_,
+      scrollContainer_,
       currentElement
     );
     const deltaOffset = actualOffset - currentElementOffset_;
@@ -1232,7 +1232,7 @@ export class Carousel {
 
     // No scroll will happen, make sure the `ignoreNextScroll_` flag is not
     // set.
-    if (scrollPos === pos) {
+    if (!deltaInPixels) {
       return;
     }
 
