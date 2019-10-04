@@ -720,7 +720,7 @@ export class Carousel {
         dict({
           'index': restingIndex,
           'total': this.slides_.length,
-          'actionSource': this.actionSource_,
+          'actionSource': actionSource,
           'slides': this.slides_,
         }),
         {
@@ -742,7 +742,7 @@ export class Carousel {
     this.element_.dispatchEvent(
       createCustomEvent(
         this.win_,
-        'offsetchange',
+        CarouselEvents.OFFSET_CHANGE,
         dict({
           'index': index,
           'total': this.slides_.length,

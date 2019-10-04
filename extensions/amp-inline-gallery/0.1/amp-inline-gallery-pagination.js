@@ -40,11 +40,13 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     const sr = this.element.attachShadow({mode: 'open'});
     sr.innerHTML = `
       <style>${CSS}</style>
-      <div class="pagination-dots" aria-hidden="true"></div>
-      <div class="pagination-numbers">
-        <span class="pagination-index"></span>
-        /
-        <span class="pagination-total"></span>
+      <div class="pagination-container">
+        <div class="pagination-dots" aria-hidden="true"></div>
+        <div class="pagination-numbers">
+          <span class="pagination-index"></span>
+          &nbsp;/&nbsp;
+          <span class="pagination-total"></span>
+        </div>
       </div>
     `;
     return sr;
@@ -80,6 +82,9 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     this.paginationTotalEl_ = sr.querySelector('.pagination-total');
 
     this.element.addEventListener('offsetchange-update', event => {
+      this.handleOffsetChangeUpdate_(event);
+    });
+    this.element.addEventListener('indexchange-update', event => {
       this.handleIndexChangeUpdate_(event);
     });
   }
@@ -204,7 +209,7 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
   /**
    * @param {!Event} event
    */
-  handleIndexChangeUpdate_(event) {
+  handleOffsetChangeUpdate_(event) {
     const detail = getDetail(event);
     const total = detail['total'];
     const index = detail['index'];
@@ -218,6 +223,18 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
       } else {
         this.updateIndex_(index);
       }
+    });
+  }
+
+    /**
+   * @param {!Event} event
+   */
+  handleIndexChangeUpdate_(event) {
+    const detail = getDetail(event);
+    const index = detail['index'];
+
+    Array.from(this.paginationDots_.children).forEach((dot, i) => {
+      dot.setAttribute('amp-inline-gallery-pagination-dot-active', i === index);
     });
   }
 }

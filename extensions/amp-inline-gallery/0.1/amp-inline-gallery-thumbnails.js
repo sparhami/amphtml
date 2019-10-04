@@ -32,6 +32,7 @@ import {dict} from '../../../src/utils/object';
 import {getStyle, setStyle} from '../../../src/style';
 import {htmlFor} from '../../../src/static-template';
 import {scopedQuerySelector} from '../../../src/dom';
+import { CarouselEvents } from '../../amp-base-carousel/0.1/carousel-events';
 
 /**
  * @param {!Element} el The Element to check.
@@ -187,13 +188,13 @@ export class AmpInlineGalleryThumbnails extends AMP.BaseElement {
     this.element.addEventListener('offsetchange-update', event => {
       this.handleOffsetChangeUpdate_(event);
     });
-    this.element.addEventListener('offsetchange', event => {
+    this.element.addEventListener(CarouselEvents.OFFSET_CHANGE, event => {
       event.stopPropagation();
     });
     this.element.addEventListener('indexchange-update', event => {
       this.handleIndexChangeUpdate_(event);
     });
-    this.element.addEventListener('indexchange', event => {
+    this.element.addEventListener(CarouselEvents.INDEX_CHANGE, event => {
       event.stopPropagation();
     });
     this.element.addEventListener(

@@ -24,6 +24,7 @@ import {Layout} from '../../../src/layout';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {isExperimentOn} from '../../../src/experiments';
 import {toArray} from '../../../src/types';
+import { CarouselEvents } from '../../amp-base-carousel/0.1/carousel-events';
 
 class AmpInlineGallery extends AMP.BaseElement {
   /** @param {!AmpElement} element */
@@ -33,10 +34,10 @@ class AmpInlineGallery extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    this.element.addEventListener('offsetchange', event => {
+    this.element.addEventListener(CarouselEvents.OFFSET_CHANGE, event => {
       this.onOffsetChange_(event);
     });
-    this.element.addEventListener('indexchange', event => {
+    this.element.addEventListener(CarouselEvents.INDEX_CHANGE, event => {
       this.onIndexChange_(event);
     });
     this.element.addEventListener('goToSlide', event => {

@@ -1,5 +1,6 @@
 amp-inline-gallery {
   --amp-caption-margin-top: 6px;
+  --amp-caption-height: 0px;
 }
 
 amp-inline-gallery amp-img > .i-amphtml-replaced-content {
@@ -11,10 +12,10 @@ amp-inline-gallery amp-img > .i-amphtml-replaced-content {
 
 amp-inline-gallery > amp-base-carousel,
 amp-inline-gallery > amp-inline-gallery-slides {
-  padding-bottom: var(--amp-caption-height, 0px);
+  padding-bottom: var(--amp-caption-height);
 }
 
 amp-inline-gallery .i-amphtml-base-carousel-arrow-prev-slot,
 amp-inline-gallery .i-amphtml-base-carousel-arrow-next-slot {
-  margin-bottom: var(--amp-caption-height, 0);
+  margin-bottom: var(--amp-caption-height);
 }
