@@ -95,7 +95,7 @@
    * having it be semi-transparent.
    *
    * This can be harder to distinguish on middle greys. For this current
-   * current configuration, hsl(0, 0%, 37%) to hsl(0, 0%, 41%) can appear quite
+   * current configuration, hsl(0, 0%, 31%) to hsl(0, 0%, 35%) can appear quite
    * close to the background color.
    *
    * The blur here is used for averaging the backdrop color, so that sharp
@@ -105,7 +105,7 @@
    * The greyscale is used to have the container slightly tinted by the inverse
    * color, but also not be too tinted.
    */
-  backdrop-filter: blur(18px) invert(1) grayscale(0.6) brightness(0.9) opacity(0.7);
+  backdrop-filter: blur(18px) invert(1) grayscale(0.6) brightness(0.9) opacity(0.6);
   /**
    * Note: we always ad some darkening using background-color, since we do not
    * change the dot color. As the dots are currently children of the container,
@@ -113,7 +113,7 @@
    * would need to put them in a different subtree (and duplicate them for
    * sizing of the dots container), and then position them on top of this container.
    */
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 :host([inset]) .pagination-dots {
