@@ -90,10 +90,6 @@ class AmpInlineGallery extends AMP.BaseElement {
 }
 
 AMP.extension('amp-inline-gallery', '0.1', AMP => {
-  if (!isExperimentOn(AMP.win, 'amp-inline-gallery')) {
-    return;
-  }
-
   AMP.registerElement('amp-inline-gallery-captions', AmpInlineGalleryCaptions);
   AMP.registerElement(
     'amp-inline-gallery-pagination',
