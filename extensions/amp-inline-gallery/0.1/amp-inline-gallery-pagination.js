@@ -26,6 +26,7 @@ import {htmlFor} from '../../../src/static-template';
  * progress percentage and a power to decay at.
  * @param {number} percentage
  * @param {number} power
+ * @return {number}
  */
 function exponentialFalloff(percentage, power) {
   return Math.max(0, 1 - 1 / Math.pow(percentage, power));
@@ -97,8 +98,8 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
   }
 
   /**
-   *
-   * @param {*} index
+   * @param {number} index
+   * @return {!Element}
    */
   createPaginationDot_(index) {
     const html = htmlFor(this.element);
@@ -226,7 +227,7 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     });
   }
 
-    /**
+  /**
    * @param {!Event} event
    */
   handleIndexChangeUpdate_(event) {

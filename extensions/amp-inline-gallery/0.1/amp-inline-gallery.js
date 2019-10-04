@@ -20,11 +20,11 @@ import {AmpInlineGallerySlide} from './amp-inline-gallery-slide';
 import {AmpInlineGallerySlides} from './amp-inline-gallery-slides';
 import {AmpInlineGalleryThumbnails} from './amp-inline-gallery-thumbnails';
 import {CSS} from '../../../build/amp-inline-gallery-0.1.css';
+import {CarouselEvents} from '../../amp-base-carousel/0.1/carousel-events';
 import {Layout} from '../../../src/layout';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {isExperimentOn} from '../../../src/experiments';
 import {toArray} from '../../../src/types';
-import { CarouselEvents } from '../../amp-base-carousel/0.1/carousel-events';
 
 class AmpInlineGallery extends AMP.BaseElement {
   /** @param {!AmpElement} element */

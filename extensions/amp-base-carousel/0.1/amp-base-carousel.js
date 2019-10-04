@@ -25,19 +25,16 @@ import {
   getResponsiveAttributeValue,
 } from './responsive-attributes';
 import {Services} from '../../../src/services';
-import {
-  closestAncestorElementBySelector,
-  iterateCursor,
-  toggleAttribute,
-  scopedQuerySelector,
-  scopedQuerySelectorAll,
-} from '../../../src/dom';
 import {createCustomEvent, getDetail} from '../../../src/event-helper';
 import {dev} from '../../../src/log';
 import {dict} from '../../../src/utils/object';
 import {htmlFor} from '../../../src/static-template';
-import {isExperimentOn} from '../../../src/experiments';
 import {isLayoutSizeDefined} from '../../../src/layout';
+import {
+  iterateCursor,
+  scopedQuerySelectorAll,
+  toggleAttribute,
+} from '../../../src/dom';
 import {toArray} from '../../../src/types';
 
 /**
@@ -55,9 +52,6 @@ class AmpCarousel extends AMP.BaseElement {
 
     /** @private @const */
     this.responsiveAttributes_ = this.getAttributeConfig_();
-
-    /** @private {number} */
-    this.advanceCount_ = 1;
 
     /** @private {?Carousel} */
     this.carousel_ = null;
@@ -256,7 +250,7 @@ class AmpCarousel extends AMP.BaseElement {
     this.slidesContainer_ = element.querySelector(
       '.i-amphtml-stream-gallery-slides'
     );
-    
+
     this.content_ = element.querySelector('.i-amphtml-carousel-content');
     this.prevArrowSlot_ = this.element.querySelector(
       '.i-amphtml-base-carousel-arrow-prev-slot'
@@ -274,7 +268,6 @@ class AmpCarousel extends AMP.BaseElement {
     this.prevArrowSlot_.appendChild(prevArrow || this.createPrevArrow_());
     this.nextArrowSlot_.appendChild(nextArrow || this.createNextArrow_());
   }
-
 
   /**
    * @return {!Element}
@@ -332,6 +325,10 @@ class AmpCarousel extends AMP.BaseElement {
       : ActionSource.GENERIC_LOW_TRUST;
   }
 
+  /**
+   * Setups up visibility tracking for the child elements, laying them out
+   * when needed.
+   */
   setupChildVisibilityTracking_() {
     // Set up management of layout for the child slides.
     const owners = Services.ownersForDoc(this.element);
@@ -359,9 +356,9 @@ class AmpCarousel extends AMP.BaseElement {
     // which is transformed instead of the slide.
     const monitoredDescendants = this.slides_
       .map(slide => {
-        return slide.localName === 'amp-inline-gallery-slide' ?
-            toArray(scopedQuerySelectorAll(slide, '> :not([slot])')) :
-            slide;
+        return slide.localName === 'amp-inline-gallery-slide'
+          ? toArray(scopedQuerySelectorAll(slide, '> :not([slot])'))
+          : slide;
       })
       .reduce((arr, children) => arr.concat(children), []);
     this.childLayoutManager_.updateChildren(monitoredDescendants);
@@ -395,7 +392,6 @@ class AmpCarousel extends AMP.BaseElement {
       ActionTrust.LOW
     );
   }
-
 
   /**
    * @private
@@ -532,12 +528,5 @@ class AmpCarousel extends AMP.BaseElement {
 }
 
 AMP.extension('amp-base-carousel', '0.1', AMP => {
-  if (
-    !isExperimentOn(AMP.win, 'amp-base-carousel') &&
-    !isExperimentOn(AMP.win, 'amp-lightbox-gallery-base-carousel')
-  ) {
-    return;
-  }
-
   AMP.registerElement('amp-base-carousel', AmpCarousel, CSS);
 });
