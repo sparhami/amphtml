@@ -42,8 +42,8 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
     sr.innerHTML = `
       <style>${CSS}</style>
       <div class="pagination-container">
-        <div class="pagination-dots" aria-hidden="true"></div>
-        <div class="pagination-numbers">
+        <div class="pagination-dots" aria-hidden="true" hidden></div>
+        <div class="pagination-numbers" hidden>
           <span class="pagination-index"></span>
           &nbsp;/&nbsp;
           <span class="pagination-total"></span>
@@ -153,7 +153,7 @@ export class AmpInlineGalleryPagination extends AMP.BaseElement {
       width * maxWidthPercentage > dotWidthTotal + dotSpacingTotal;
     const dotCount = useDots ? total : 0;
 
-    if (total == this.total_ && useDots == this.useDots_) {
+    if (total === this.total_ && useDots === this.useDots_) {
       return;
     }
 
