@@ -86,8 +86,8 @@
 :host([inset]) .pagination-numbers {
   margin: 18px;
   border-radius: 12px;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(18px) invert(1) grayscale(0.6) brightness(0.9) opacity(0.5);
 }
 
 :host([inset]) .pagination-dots {
