@@ -1080,7 +1080,6 @@ export class Carousel {
       alignment_,
       axis_,
       currentIndex_,
-      element_,
       scrollContainer_,
       slides_,
     } = this;
@@ -1212,7 +1211,6 @@ export class Carousel {
       axis_,
       currentElementOffset_,
       currentIndex_,
-      element_,
       scrollContainer_,
       slides_,
     } = this;
