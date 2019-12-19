@@ -219,4 +219,4 @@ Configurations on how the carousel and slides are displayed are done using the [
 
 ## Validation
 
-See [amp-carousel rules](https://github.com/ampproject/amphtml/blob/master/extensions/amp-carousel/validator-amp-carousel.protoascii) in the AMP validator specification.
+See [amp-inline-gallery rules](https://github.com/ampproject/amphtml/blob/master/extensions/amp-inline-gallery/validator-amp-inline-gallery.protoascii) in the AMP validator specification.
